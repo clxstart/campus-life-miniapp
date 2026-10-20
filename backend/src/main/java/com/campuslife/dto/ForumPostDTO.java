@@ -1,0 +1,3 @@
+package com.campuslife.dto;
+import com.fasterxml.jackson.annotation.JsonFormat; import lombok.Data; import java.time.LocalDateTime;
+@Data public class ForumPostDTO { public String getAuthorName(){return authorNickname;} Long id; Long authorId; String authorNickname; String authorAvatar; String title; String content; String image; String tag; String learnCategory; Long circleId; String circleName; Long schoolId; Boolean crossSchool; String location; Integer likeCount; Integer commentCount; Integer viewCount; Boolean liked; Boolean followed; Boolean favored; @JsonFormat(pattern="yyyy-MM-dd HH:mm") LocalDateTime createdAt; }

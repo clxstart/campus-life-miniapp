@@ -1,0 +1,8 @@
+{
+  "navigationStyle": "custom",
+  "backgroundColor": "#fcfcfc",
+  "usingComponents": {
+    "offline-banner": "/components/offline-banner/index",
+    "ui-popup": "/components/ui-popup/index"
+  }
+}

@@ -1,0 +1,38 @@
+server:
+  port: 8080
+spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/campus_life?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: root
+    password: chang090011
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jackson:
+    time-zone: Asia/Shanghai
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+# 登录鉴权：未配置微信 AppID 时启用开发登录（/api/auth/dev-login），便于 touristappid 下跑通流程。
+campus:
+  jwt:
+    # ⌈生产环境必须改为环境变量注入的随机密钥⌋
+    secret: campus-life-local-dev-secret-please-change-in-production
+    ttl-seconds: 604800
+    # 管理端 token 有效期：8 小时（比小程序短，管理权限更敏感）
+    admin-ttl-seconds: 28800
+  wx:
+    appid: ''
+    secret: ''
+  upload:
+    dir: uploads
+    public-prefix: /uploads
+    # 上传接口返回的图片基址：必须是小程序可访问的 http(s) 地址
+    # 生产环境改为真实域名（如 https://api.example.com）
+    base-url: http://127.0.0.1:8080
+# 生产环境请将前端基址切换为 HTTPS，并在微信公众平台配置 request 合法域名。

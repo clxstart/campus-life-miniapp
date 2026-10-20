@@ -1,0 +1,14 @@
+<view class="detail-page">
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px"><view class="back" catchtap="goBack">‹</view><view class="nav-title">物品详情</view></view>
+  <offline-banner />
+  <view wx:if="{{loading}}" class="state">正在打开物品详情</view>
+  <view wx:elif="{{error}}" class="state"><text class="state-title">{{error}}</text><view bindtap="goBack">返回市场</view></view>
+  <block wx:elif="{{item}}">
+    <swiper wx:if="{{item.images.length > 1}}" class="detail-swiper" indicator-dots indicator-color="rgba(255,255,255,.55)" indicator-active-color="#ffffff" circular><swiper-item wx:for="{{item.images}}" wx:for-item="img" wx:key="*this"><image class="detail-swiper-image" src="{{img}}" mode="aspectFill"/></swiper-item></swiper>
+    <image wx:else class="detail-image" src="{{item.image || '/assets/home/secondhand-box.webp'}}" mode="aspectFill"/>
+    <view class="detail-main"><view class="price-row"><text class="detail-price">¥{{item.priceText}}</text><text class="condition">{{item.conditionLevel || '九成新'}}</text></view><view class="created">发布于 {{item.createdAt}}<text wx:if="{{heatText}}"> · {{heatText}}</text></view><view class="detail-title">{{item.title}}</view><view class="description">{{item.description || '卖家没有填写更多描述。'}}</view></view>
+    <view class="seller-card" bindtap="openSeller"><view class="seller-avatar" style="background:{{item.sellerColor}}">{{item.sellerInitial}}</view><view class="seller-copy"><text class="seller-name">{{item.sellerName}}</text><text class="seller-note">校园同学 · 查看主页了解更多</text></view><text class="seller-link">进主页 ›</text></view>
+    <view class="bottom-bar"><button class="fav-button {{favored ? 'on' : ''}}" bindtap="toggleFavorite">{{favored ? '★ 已收藏' : '☆ 收藏'}}</button><button class="want-button" bindtap="chatSeller">我想要 · 私聊卖家</button></view>
+  </block>
+  <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose"/>
+</view>

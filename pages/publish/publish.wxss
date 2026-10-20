@@ -1,0 +1,353 @@
+.publish-page {
+  min-height: 100vh;
+  background: #f7f9fc;
+}
+
+.publish-navbar {
+  background: rgba(247, 249, 252, 0.98);
+}
+
+.publish-navbar-row {
+  padding-left: 38rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.publish-title {
+  font-size: 34rpx;
+  line-height: 44rpx;
+  font-weight: 700;
+  color: #111820;
+}
+
+.draft-link {
+  padding: 12rpx 0 12rpx 20rpx;
+  font-size: 17rpx;
+  color: #6c96cf;
+}
+
+.publish-content {
+  padding: 14rpx 32rpx calc(130rpx + env(safe-area-inset-bottom));
+}
+
+.publish-intro {
+  position: relative;
+  height: 128rpx;
+  padding: 25rpx 24rpx;
+  overflow: hidden;
+  border-radius: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #deedff, #e7f8f0 63%, #fff0f5);
+}
+
+.intro-title,
+.intro-subtitle {
+  display: block;
+}
+
+.intro-title {
+  font-size: 30rpx;
+  line-height: 39rpx;
+  font-weight: 700;
+  color: #17314b;
+}
+
+.intro-subtitle {
+  margin-top: 5rpx;
+  font-size: 17rpx;
+  line-height: 24rpx;
+  color: #73889a;
+}
+
+.intro-mark {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #69adff, #3b7ff0);
+  color: #ffffff;
+  font-size: 31rpx;
+  box-shadow: 0 8rpx 18rpx rgba(56, 123, 228, 0.2);
+}
+
+.section-label {
+  display: block;
+  margin-top: 25rpx;
+  font-size: 22rpx;
+  line-height: 30rpx;
+  font-weight: 600;
+  color: #19242e;
+}
+
+.type-grid {
+  margin-top: 12rpx;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14rpx;
+}
+
+/* 2×2 布局：每个类型带上「去哪」的说明，避免用户误以为只是打个标签 */
+.type-card {
+  position: relative;
+  padding: 20rpx 18rpx;
+  border: 2rpx solid transparent;
+  border-radius: 18rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: #ffffff;
+  color: #26313a;
+  font-size: 24rpx;
+  line-height: 32rpx;
+}
+
+.type-card.selected {
+  border-color: #75aaf4;
+  background: #f7fbff;
+  color: #3379dc;
+  font-weight: 600;
+}
+
+.type-desc {
+  margin-top: 6rpx;
+  color: #8b959f;
+  font-size: 19rpx;
+  line-height: 26rpx;
+  font-weight: 400;
+}
+
+.type-card.selected .type-desc {
+  color: #6d9ad6;
+}
+
+/* 设置行里的输入框：与右侧数值对齐 */
+.setting-input {
+  flex: none;
+  width: 150rpx;
+  text-align: right;
+  font-size: 25rpx;
+  color: #26313a;
+}
+
+.setting-input.wide {
+  width: 260rpx;
+}
+
+.type-icon {
+  width: 52rpx;
+  height: 52rpx;
+  margin-bottom: 14rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 26rpx;
+}
+
+.selected-check {
+  position: absolute;
+  right: 6rpx;
+  top: 6rpx;
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 50%;
+  background: #3476f6;
+  color: #ffffff;
+  font-size: 11rpx;
+  line-height: 18rpx;
+  text-align: center;
+}
+
+.form-card,
+.setting-card {
+  margin-top: 18rpx;
+  border-radius: 22rpx;
+  background: #ffffff;
+  box-shadow: 0 5rpx 18rpx rgba(46, 65, 86, 0.045);
+}
+
+.form-card {
+  position: relative;
+  padding: 0 21rpx 21rpx;
+}
+
+.title-input {
+  height: 65rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #1b252e;
+}
+
+.form-placeholder {
+  color: #adb3b9;
+  font-weight: 400;
+}
+
+.form-divider {
+  height: 1rpx;
+  background: #edf0f3;
+}
+
+.content-input {
+  width: 100%;
+  height: 164rpx;
+  padding: 15rpx 0 26rpx;
+  font-size: 18rpx;
+  line-height: 29rpx;
+  color: #3b4650;
+}
+
+.content-count {
+  position: absolute;
+  right: 22rpx;
+  top: 205rpx;
+  font-size: 13rpx;
+  color: #a7adb3;
+}
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10rpx;
+}
+
+.media-item,
+.media-add {
+  position: relative;
+  height: 143rpx;
+  overflow: hidden;
+  border-radius: 15rpx;
+}
+
+.media-item image {
+  width: 100%;
+  height: 100%;
+}
+
+.media-remove {
+  position: absolute;
+  right: 7rpx;
+  top: 7rpx;
+  width: 25rpx;
+  height: 25rpx;
+  border-radius: 50%;
+  background: rgba(32, 39, 46, 0.72);
+  color: #ffffff;
+  font-size: 19rpx;
+  line-height: 23rpx;
+  text-align: center;
+}
+
+.media-add {
+  border: 2rpx dashed #cfd8e1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #9aa3ab;
+  font-size: 13rpx;
+  line-height: 19rpx;
+}
+
+.camera-icon {
+  margin-bottom: 5rpx;
+  font-size: 33rpx;
+  line-height: 35rpx;
+  color: #7d95aa;
+}
+
+.setting-card {
+  overflow: hidden;
+}
+
+.setting-row {
+  min-height: 78rpx;
+  padding: 14rpx 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.setting-row + .setting-row {
+  border-top: 1rpx solid #edf0f3;
+}
+
+.setting-left {
+  display: flex;
+  align-items: center;
+}
+
+.setting-icon {
+  flex: none;
+  width: 39rpx;
+  height: 39rpx;
+  border-radius: 13rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 17rpx;
+}
+
+.blue-setting { background: #5b9ff1; }
+.green-setting { background: #61c58d; }
+
+.setting-copy {
+  margin-left: 12rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.setting-title {
+  font-size: 18rpx;
+  line-height: 25rpx;
+  font-weight: 500;
+  color: #222d36;
+}
+
+.setting-value {
+  margin-top: 1rpx;
+  font-size: 14rpx;
+  line-height: 20rpx;
+  color: #9aa1a8;
+}
+
+.setting-arrow {
+  font-size: 30rpx;
+  color: #a5adb4;
+}
+
+switch {
+  transform: scale(0.72);
+  transform-origin: right center;
+}
+
+.submit-button {
+  display: block;
+  width: 100%;
+  height: 67rpx;
+  margin: 23rpx auto 0;
+  padding: 0;
+  border-radius: 22rpx;
+  background: linear-gradient(135deg, #4b91fb, #2f6ff4);
+  color: #ffffff;
+  font-size: 21rpx;
+  line-height: 67rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 20rpx rgba(52, 111, 249, 0.22);
+}
+
+.submit-button:after {
+  border: 0;
+}
+
+.submit-button[disabled] {
+  opacity: 0.75;
+  color: #ffffff;
+}

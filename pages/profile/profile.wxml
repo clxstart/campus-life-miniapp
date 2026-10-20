@@ -1,0 +1,97 @@
+<page-meta page-style="background:#F6F8FB;" />
+<view class="profile-page">
+  <view class="profile-navbar" style="padding-top: {{statusBarHeight}}px;">
+    <view class="profile-navbar-row" style="height: {{navBarHeight}}px; padding-right: {{capsuleReservedRight}}px;">
+      <text class="profile-page-title">我的</text>
+      <view class="settings-button" bindtap="openSettings">⚙</view>
+    </view>
+  </view>
+  <offline-banner />
+
+  <view class="profile-content">
+    <view class="profile-hero">
+      <view class="hero-ring ring-a"></view>
+      <view class="hero-ring ring-b"></view>
+      <view class="profile-main">
+        <view class="avatar-wrap">
+          <image class="profile-avatar" src="{{profile.avatar}}" mode="aspectFill" />
+          <view class="verified-dot">✓</view>
+        </view>
+        <view class="profile-copy">
+          <view class="profile-name-row">
+            <text class="profile-name">{{profile.name}}</text>
+            <text class="campus-chip">学生认证</text>
+          </view>
+          <text class="profile-major">{{profile.major}}</text>
+          <text class="profile-id">{{profile.studentId}}</text>
+        </view>
+        <view class="edit-profile" bindtap="editProfile">编辑</view>
+      </view>
+
+      <view class="stats-row">
+        <view class="stat-item" bindtap="openItem" data-label="我的发布">
+          <text class="stat-number">{{profile.posts}}</text><text class="stat-label">发布</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item" bindtap="openItem" data-label="我的关注">
+          <text class="stat-number">{{profile.following}}</text><text class="stat-label">关注</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item" bindtap="openItem" data-label="我的粉丝">
+          <text class="stat-number">{{profile.followers}}</text><text class="stat-label">粉丝</text>
+        </view>
+      </view>
+    </view>
+
+    <text class="profile-section-title">常用功能</text>
+    <view class="service-grid">
+      <view wx:for="{{services}}" wx:key="name" class="service-card" bindtap="openService" data-key="{{item.key}}">
+        <view class="service-icon" style="background:{{item.color}}">{{item.icon}}</view>
+        <text class="service-name">{{item.name}}</text>
+        <text class="service-desc">{{item.desc}}</text>
+      </view>
+    </view>
+
+    <view class="campus-card">
+      <view class="campus-card-icon">校</view>
+      <view class="campus-card-copy">
+        <text class="campus-card-eyebrow">MY CAMPUS</text>
+        <text class="campus-card-title">{{profile.school}}校园身份</text>
+        <text class="campus-card-desc">已完成学生认证，享受校园专属服务</text>
+      </view>
+      <text class="campus-card-arrow">›</text>
+    </view>
+
+    <text class="profile-section-title menu-heading">更多服务</text>
+    <view class="profile-menu">
+      <view wx:for="{{menus}}" wx:key="title" class="menu-row" bindtap="openMenu" data-key="{{item.key}}" data-label="{{item.title}}">
+        <view class="menu-icon {{item.tone}}">{{item.icon}}</view>
+        <text class="menu-title">{{item.title}}</text>
+        <text class="menu-value">{{item.value}}</text>
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
+  </view>
+  <bottom-nav active="profile" />
+
+  <ui-popup
+    id="ui-popup"
+    visible="{{uiPopup.visible}}"
+    mode="{{uiPopup.mode}}"
+    tone="{{uiPopup.tone}}"
+    title="{{uiPopup.title}}"
+    message="{{uiPopup.message}}"
+    editable="{{uiPopup.editable}}"
+    placeholder="{{uiPopup.placeholder}}"
+    inputValue="{{uiPopup.inputValue}}"
+    actions="{{uiPopup.actions}}"
+    show-cancel="{{uiPopup.showCancel}}"
+    cancel-text="{{uiPopup.cancelText}}"
+    confirm-text="{{uiPopup.confirmText}}"
+    bindconfirm="onPopupConfirm"
+    bindcancel="onPopupCancel"
+    bindaction="onPopupAction"
+    bindinput="onPopupInput"
+    bindclose="onPopupClose"
+  />
+</view>

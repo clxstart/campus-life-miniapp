@@ -1,0 +1,8 @@
+{
+  "navigationStyle": "custom",
+  "backgroundColor": "#F7F9FC",
+  "usingComponents": {
+    "bottom-nav": "/components/bottom-nav/index",
+    "ui-popup": "/components/ui-popup/index"
+  }
+}

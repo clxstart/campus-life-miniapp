@@ -1,0 +1,108 @@
+<page-meta page-style="background:#F6F8FB;" />
+<view class="discover-page">
+  <view class="discover-navbar" style="padding-top: {{statusBarHeight}}px;">
+    <view class="discover-navbar-row" style="height: {{navBarHeight}}px; padding-right: {{capsuleReservedRight}}px;">
+      <text class="page-title">圈子</text>
+      <!-- 本校/全部：圈子按校隔离 -->
+      <view class="scope-switch"><view class="scope-opt {{schoolScope==='local'?'on':''}}" data-scope="local" catchtap="switchSchoolScope">本校</view><view class="scope-opt {{schoolScope==='all'?'on':''}}" data-scope="all" catchtap="switchSchoolScope">全部</view></view>
+      <view class="discover-search" bindtap="openSearch">
+        <image src="/assets/icons/search.svg" mode="aspectFit" />
+        <text>搜索圈子</text>
+      </view>
+    </view>
+  </view>
+  <offline-banner local="{{offline}}" />
+
+  <view class="discover-content">
+    <!-- 顶部轮播：热门圈子，UI 沿用原 hero 样式 -->
+    <swiper
+      class="hero-swiper"
+      autoplay
+      circular
+      interval="4200"
+      indicator-dots="{{heroCircles.length > 1}}"
+      indicator-color="rgba(21, 51, 78, 0.14)"
+      indicator-active-color="#4d91e7"
+    >
+      <swiper-item wx:for="{{heroCircles}}" wx:key="id" class="swiper-item">
+        <view class="discover-hero {{item.theme}}" data-index="{{index}}" bindtap="openHero">
+          <view class="hero-copy">
+            <text class="hero-eyebrow">{{item.eyebrow}}</text>
+            <text class="hero-title">{{item.title}}</text>
+            <text class="hero-subtitle">{{item.subtitle}}</text>
+          </view>
+          <view class="hero-badge">{{item.badge}}</view>
+        </view>
+      </swiper-item>
+    </swiper>
+
+    <view class="topic-heading">
+      <text>我的圈子</text>
+      <text class="topic-more">{{circles.length}} 个</text>
+    </view>
+
+    <view class="category-tabs">
+      <view
+        wx:for="{{categories}}"
+        wx:key="*this"
+        class="category-tab {{activeCategory === index ? 'selected' : ''}}"
+        bindtap="selectCategory"
+        data-index="{{index}}"
+      >{{item}}</view>
+    </view>
+
+    <view class="feed-loading" wx:if="{{loading}}">正在加载圈子…</view>
+    <view class="feed-empty" wx:if="{{!loading && !circles.length}}">
+      <text class="empty-icon">◌</text>
+      <text>这个分类下还没有圈子</text>
+    </view>
+
+    <view
+      wx:for="{{circles}}"
+      wx:key="id"
+      class="circle-card"
+      data-id="{{item.id}}"
+      bindtap="openCircle"
+    >
+      <image class="circle-cover" src="{{item.cover}}" mode="aspectFill" />
+      <view class="circle-main">
+        <view class="circle-title-row">
+          <text class="circle-name">{{item.name}}</text>
+          <text class="circle-category">{{item.category}}</text>
+        </view>
+        <text class="circle-desc">{{item.description}}</text>
+        <view class="circle-meta">
+          <text>{{item.memberText}} 成员</text>
+          <text class="circle-dot">·</text>
+          <text>{{item.postText}} 帖子</text>
+        </view>
+      </view>
+      <view
+        class="circle-join {{item.joined ? 'joined' : ''}}"
+        catchtap="toggleJoin"
+        data-id="{{item.id}}"
+      >{{item.joined ? '已加入' : '＋ 加入'}}</view>
+    </view>
+  </view>
+  <bottom-nav active="discover" />
+  <ui-popup
+    id="ui-popup"
+    visible="{{uiPopup.visible}}"
+    mode="{{uiPopup.mode}}"
+    tone="{{uiPopup.tone}}"
+    title="{{uiPopup.title}}"
+    message="{{uiPopup.message}}"
+    editable="{{uiPopup.editable}}"
+    placeholder="{{uiPopup.placeholder}}"
+    inputValue="{{uiPopup.inputValue}}"
+    actions="{{uiPopup.actions}}"
+    show-cancel="{{uiPopup.showCancel}}"
+    cancel-text="{{uiPopup.cancelText}}"
+    confirm-text="{{uiPopup.confirmText}}"
+    bindconfirm="onPopupConfirm"
+    bindcancel="onPopupCancel"
+    bindaction="onPopupAction"
+    bindinput="onPopupInput"
+    bindclose="onPopupClose"
+  />
+</view>

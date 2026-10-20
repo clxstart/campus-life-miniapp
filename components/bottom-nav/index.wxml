@@ -1,0 +1,30 @@
+<view class="bottom-nav">
+  <view class="nav-row">
+    <view class="nav-item {{active === 'home' ? 'active' : ''}}" bindtap="navigate" data-key="home">
+      <image class="nav-icon" src="{{active === 'home' ? '/assets/icons/home-active.svg' : '/assets/icons/home.svg'}}" mode="aspectFit" />
+      <text class="nav-label">首页</text>
+    </view>
+    <view class="nav-item {{active === 'discover' ? 'active' : ''}}" bindtap="navigate" data-key="discover">
+      <image class="nav-icon" src="{{active === 'discover' ? '/assets/icons/compass-active.svg' : '/assets/icons/compass.svg'}}" mode="aspectFit" />
+      <text class="nav-label">发现</text>
+    </view>
+    <view class="nav-item publish" bindtap="navigate" data-key="publish">
+      <view class="publish-circle">
+        <image class="publish-plus" src="/assets/icons/plus.svg" mode="aspectFit" />
+      </view>
+      <text class="nav-label publish-text {{active === 'publish' ? 'active-text' : ''}}">发布</text>
+    </view>
+    <view class="nav-item {{active === 'messages' ? 'active' : ''}}" bindtap="navigate" data-key="messages">
+      <view class="icon-wrap">
+        <image class="nav-icon message-icon" src="{{active === 'messages' ? '/assets/icons/message-active.svg' : '/assets/icons/message.svg'}}" mode="aspectFit" />
+        <view class="unread-dot" wx:if="{{unread > 0}}"></view>
+      </view>
+      <text class="nav-label">消息</text>
+    </view>
+    <view class="nav-item {{active === 'profile' ? 'active' : ''}}" bindtap="navigate" data-key="profile">
+      <image class="nav-icon" src="{{active === 'profile' ? '/assets/icons/user-active.svg' : '/assets/icons/user.svg'}}" mode="aspectFit" />
+      <text class="nav-label">我的</text>
+    </view>
+  </view>
+  <view class="safe-bottom"></view>
+</view>

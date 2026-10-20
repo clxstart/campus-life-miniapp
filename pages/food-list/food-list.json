@@ -1,0 +1,9 @@
+{
+  "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#F7F9FC",
+  "navigationBarTitleText": "校园外卖",
+  "usingComponents": {
+    "ui-popup": "/components/ui-popup/index"
+  }
+}

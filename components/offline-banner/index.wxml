@@ -1,0 +1,1 @@
+<view wx:if="{{demo || local}}" class="offline-banner">部分数据为本地演示 · 离线操作不会自动同步到后端</view>

@@ -1,0 +1,6 @@
+{
+  "backgroundColor": "#FFF5F8",
+  "usingComponents": {
+    "ui-popup": "/components/ui-popup/index"
+  }
+}

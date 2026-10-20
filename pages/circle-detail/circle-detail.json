@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "ui-popup": "/components/ui-popup/index",
+    "offline-banner": "/components/offline-banner/index"
+  }
+}

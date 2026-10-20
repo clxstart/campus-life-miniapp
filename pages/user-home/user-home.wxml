@@ -1,0 +1,33 @@
+<view class="uh-page" wx:if="{{user}}">
+  <!-- 自定义导航：状态栏/胶囊避让 + 返回键，与社区页同款 -->
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px"><view class="back" catchtap="goBack">‹</view><view class="nav-title">个人主页</view></view>
+  <offline-banner />
+  <view class="uh-head">
+    <image wx:if="{{user.avatar}}" class="uh-avatar" src="{{user.avatar}}" mode="aspectFill"/>
+    <view wx:else class="uh-avatar fallback">{{user.initial}}</view>
+    <view class="uh-name">{{user.nickname}}</view>
+    <view class="uh-school">⌖ {{user.school}}</view>
+    <view class="uh-stats">
+      <view class="stat"><text class="stat-num">{{user.posts}}</text><text class="stat-label">帖子</text></view>
+      <view class="stat"><text class="stat-num">{{user.following}}</text><text class="stat-label">关注</text></view>
+      <view class="stat"><text class="stat-num">{{user.followers}}</text><text class="stat-label">粉丝</text></view>
+      <view class="stat"><text class="stat-num">{{user.likedTotal}}</text><text class="stat-label">获赞</text></view>
+    </view>
+    <view class="uh-btns">
+      <view class="uh-btn {{user.followed?'ghost':''}}" catchtap="onFollow">{{user.followed?'已关注':'+ 关注'}}</view>
+      <view class="uh-btn primary" catchtap="chat">✉ 私聊</view>
+    </view>
+  </view>
+  <view class="uh-section">TA的动态 · {{total}}</view>
+  <view wx:if="{{error}}" class="uh-empty">{{error}}</view>
+  <view wx:elif="{{!posts.length && !loading}}" class="uh-empty">还没有发布过帖子</view>
+  <view wx:for="{{posts}}" wx:key="id" class="uh-post" data-id="{{item.id}}" catchtap="openDetail">
+    <view class="uh-post-title">{{item.title||item.content}}</view>
+    <view class="uh-post-meta">{{item.createdAt}}<text wx:if="{{item.tag}}"> · {{item.tag}}</text> · ♥ {{item.likeCount||0}} · ◌ {{item.commentCount||0}}</view>
+  </view>
+  <view class="uh-more" wx:if="{{hasMore}}" bindtap="loadMore">{{loadingMore ? '加载中…' : '加载更多'}}</view>
+  <view class="uh-more end" wx:elif="{{posts.length}}">已经到底啦</view>
+</view>
+<view wx:else class="uh-empty page-tip">{{error || '加载中…'}}</view>
+
+<ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" editable="{{uiPopup.editable}}" placeholder="{{uiPopup.placeholder}}" inputValue="{{uiPopup.inputValue}}" actions="{{uiPopup.actions}}" show-cancel="{{uiPopup.showCancel}}" confirm-text="{{uiPopup.confirmText}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose" />

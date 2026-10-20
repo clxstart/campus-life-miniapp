@@ -1,0 +1,9 @@
+{
+  "navigationStyle": "custom",
+  "enablePullDownRefresh": false,
+  "backgroundColor": "#F7F9FC",
+  "navigationBarTitleText": "店铺点餐",
+  "usingComponents": {
+    "ui-popup": "/components/ui-popup/index"
+  }
+}

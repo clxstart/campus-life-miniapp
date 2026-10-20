@@ -1,0 +1,20 @@
+<view class="market-page">
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px">
+    <view class="back" catchtap="goBack">‹</view><view class="nav-title">二手市场</view>
+    <!-- 本校/全部：二手要当面交易，默认只看本校 -->
+    <view class="scope-switch"><view class="scope-opt {{schoolScope==='local'?'on':''}}" data-scope="local" catchtap="switchSchoolScope">本校</view><view class="scope-opt {{schoolScope==='all'?'on':''}}" data-scope="all" catchtap="switchSchoolScope">全部</view></view>
+  </view>
+  <offline-banner />
+  <view class="mode-tabs"><view wx:for="{{modes}}" wx:key="value" class="mode-tab {{mode===item.value?'active':''}}" data-mode="{{item.value}}" bindtap="chooseMode">{{item.label}}</view></view>
+  <scroll-view class="chips" scroll-x enhanced show-scrollbar="{{false}}"><view class="chip-row"><view wx:for="{{categories}}" wx:key="*this" class="chip {{category===item?'active':''}}" data-category="{{item}}" bindtap="chooseCategory">{{item}}</view></view></scroll-view>
+  <view wx:if="{{loading}}" class="state">正在翻找校园里的好物</view>
+  <view wx:elif="{{!goods.length}}" class="state"><text class="state-title">还没有相关物品</text>换个分类看看吧</view>
+  <view wx:else class="goods-grid">
+    <view wx:for="{{goods}}" wx:key="id" class="goods-card" data-id="{{item.id}}" bindtap="openDetail">
+      <image class="goods-image" src="{{item.image || '/assets/home/secondhand-box.webp'}}" mode="aspectFill"/>
+      <view class="goods-body"><view class="goods-title">{{item.title}}</view><view class="goods-price">¥{{item.priceText}}</view><text class="condition">{{item.conditionText}}</text><view class="seller"><view class="seller-avatar" style="background:{{item.sellerColor}}">{{item.sellerInitial}}</view><text class="seller-name">{{item.sellerName}}</text></view></view>
+    </view>
+  </view>
+  <view class="fab" bindtap="openPublish"><text>＋</text><label>发布</label></view>
+  <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose"/>
+</view>

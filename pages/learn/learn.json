@@ -1,0 +1,11 @@
+{
+  "navigationStyle": "custom",
+  "backgroundColor": "#fcfcfc",
+  "backgroundTextStyle": "dark",
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 120,
+  "usingComponents": {
+    "offline-banner": "/components/offline-banner/index",
+    "ui-popup": "/components/ui-popup/index"
+  }
+}

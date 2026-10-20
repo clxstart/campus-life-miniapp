@@ -1,0 +1,55 @@
+.idol-page{min-height:100vh;background:#fff5f8;box-sizing:border-box;padding-bottom:60rpx}
+.nav{box-sizing:content-box;display:flex;align-items:center;padding:0 32rpx;background:transparent;position:relative;z-index:5
+  box-shadow: 0 2rpx 0 #eef1f4; /* 白导航压在浅底上，加分隔线否则边界看不清 */
+}
+.nav-title{font-size:36rpx;font-weight:700;color:#3d1f2e}
+.back{flex:none;margin-right:20rpx;padding:0 10rpx;font-size:40rpx;font-weight:400;color:#3d1f2e}
+
+/* 活动头图：粉紫渐变 + 光斑 */
+.idol-hero{position:relative;margin:-96rpx 32rpx 0;padding:150rpx 30rpx 30rpx;border-radius:28rpx;overflow:hidden;background:linear-gradient(135deg,#ffe9f2 0%,#fff0e9 52%,#f3ecff 100%);box-shadow:0 10rpx 30rpx rgba(240,96,143,.14)}
+.hero-glow{position:absolute;border-radius:50%;filter:blur(2rpx)}
+.glow-a{width:220rpx;height:220rpx;right:-50rpx;top:-60rpx;background:rgba(255,159,190,.35)}
+.glow-b{width:130rpx;height:130rpx;right:90rpx;top:60rpx;background:rgba(186,150,255,.28)}
+.idol-eyebrow{position:relative;z-index:2;display:block;font-size:17rpx;font-weight:600;letter-spacing:3rpx;color:#d4587f}
+.idol-hero-title{position:relative;z-index:2;display:block;margin-top:10rpx;font-size:44rpx;line-height:56rpx;font-weight:800;color:#3d1f2e}
+.idol-chips{position:relative;z-index:2;display:flex;gap:12rpx;margin-top:16rpx}
+.idol-chip{padding:6rpx 18rpx;border-radius:20rpx;background:rgba(255,255,255,.85);color:#8a6b7a;font-size:17rpx;font-weight:600}
+.idol-chip.live{background:linear-gradient(135deg,#ff9fbe,#f0608f);color:#fff}
+.idol-stats{position:relative;z-index:2;margin-top:24rpx;display:flex;align-items:center;background:rgba(255,255,255,.8);border-radius:20rpx;padding:18rpx 0}
+.idol-stat{flex:1;display:flex;flex-direction:column;align-items:center}
+.idol-stat .num{font-size:32rpx;font-weight:800;color:#d4587f}
+.idol-stat .label{margin-top:4rpx;font-size:16rpx;color:#a08390}
+.stat-divider{flex:none;width:1rpx;height:44rpx;background:#f2dbe4}
+
+/* 分组 tab：胶囊滑块 */
+.idol-tabs{margin:22rpx 32rpx 0;padding:6rpx;border-radius:26rpx;background:#ffffff;box-shadow:0 5rpx 18rpx rgba(120,70,90,.06);display:flex}
+.idol-tab{flex:1;height:64rpx;line-height:64rpx;text-align:center;border-radius:22rpx;font-size:24rpx;font-weight:600;color:#a08390}
+.idol-tab.active{background:linear-gradient(135deg,#ff9fbe,#f0608f);color:#ffffff}
+
+/* 选手卡：两列瀑布 */
+.idol-grid{margin:20rpx 32rpx 0;display:grid;grid-template-columns:repeat(2,1fr);gap:16rpx}
+.idol-card{border-radius:20rpx;overflow:hidden;background:#ffffff;box-shadow:0 6rpx 20rpx rgba(120,70,90,.07)}
+.idol-photo-wrap{position:relative;height:300rpx;background:#f6e8ee}
+.idol-photo{width:100%;height:100%}
+.idol-rank{position:absolute;left:12rpx;top:12rpx;padding:4rpx 14rpx;border-radius:18rpx;font-size:16rpx;font-weight:800;color:#ffffff}
+.idol-rank.r1{background:linear-gradient(135deg,#ffb64e,#f08a1d)}
+.idol-rank.r2{background:linear-gradient(135deg,#b8c4d4,#8b9bb0)}
+.idol-rank.r3{background:linear-gradient(135deg,#e8a983,#c97b4e)}
+.idol-info{padding:16rpx 18rpx 18rpx;display:flex;flex-direction:column}
+.idol-name{font-size:25rpx;font-weight:700;color:#3d1f2e}
+.idol-college{margin-top:4rpx;font-size:16rpx;color:#b18d9c}
+.idol-slogan{margin-top:8rpx;font-size:17rpx;line-height:24rpx;color:#8a6b7a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.idol-card-bottom{margin-top:12rpx;display:flex;align-items:center;justify-content:space-between}
+.idol-votes{font-size:20rpx;font-weight:700;color:#d4587f}
+.idol-vote-btn{flex:none;padding:0 22rpx;height:52rpx;line-height:52rpx;border-radius:26rpx;background:linear-gradient(135deg,#ff9fbe,#f0608f);color:#ffffff;font-size:20rpx;font-weight:700}
+.idol-vote-btn.voted{background:#f2e3e9;color:#bda2ad}
+
+.idol-empty{margin:40rpx 0;text-align:center;color:#bda2ad;font-size:22rpx}
+
+/* 活动规则 */
+.idol-rules{margin:26rpx 32rpx 0;padding:24rpx 26rpx;border-radius:20rpx;background:#ffffff;box-shadow:0 5rpx 18rpx rgba(120,70,90,.05)}
+.rules-title{display:block;font-size:22rpx;font-weight:700;color:#3d1f2e}
+.rules-item{display:block;margin-top:10rpx;font-size:17rpx;line-height:26rpx;color:#a08390}
+
+/* 报名悬浮按钮 */
+.idol-join-fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(36rpx + env(safe-area-inset-bottom));width:320rpx;height:88rpx;border-radius:44rpx;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ff9fbe,#f0608f);color:#ffffff;font-size:27rpx;font-weight:700;box-shadow:0 10rpx 28rpx rgba(240,96,143,.4);z-index:10}

@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Natural Organic 全局样式
+   严格遵循 StyleKit 规范：大地色系 / 有机圆角 / 衬线标题 / 纸张纹理
+   禁止：冷色、纯黑、尖锐几何、重阴影、渐变
+   ============================================================ */
+
+@layer base {
+  :root {
+    --organic-primary: #5c4033;
+    --organic-cream: #faf6f1;
+    --organic-sage: #8b9d77;
+    --organic-tan: #d4a373;
+    --organic-clay: #e9e0d4;
+    --organic-moss: #75a191;
+  }
+
+  html, body, #app {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-[#faf6f1] text-stone-800 antialiased font-sans;
+    /* 纸张质感：极淡的噪点，避免纯平色显得冷硬 */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-serif tracking-tight;
+  }
+
+  /* 焦点可见性：键盘导航必须能看到焦点 */
+  :focus-visible {
+    @apply outline-none ring-2 ring-stone-400 ring-offset-2 ring-offset-[#faf6f1];
+  }
+
+  /* 尊重系统的「减少动态效果」设置 */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* 卡片：有机圆角 + 细边框，不用重阴影 */
+  .no-card {
+    @apply bg-[#faf6f1] rounded-[2rem] border border-stone-200 p-6 md:p-8;
+  }
+
+  .no-card-plain {
+    @apply bg-white rounded-[2rem] border border-stone-200 p-6 md:p-8;
+  }
+
+  /* 按钮：柔和过渡，hover 用 stone-200（规范指定） */
+  .no-btn {
+    @apply px-6 py-3 rounded-full font-medium transition-colors duration-300 inline-flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .no-btn-primary {
+    @apply no-btn bg-stone-800 text-stone-50 hover:bg-stone-700 active:scale-95;
+  }
+  .no-btn-ghost {
+    @apply no-btn bg-transparent text-stone-800 border border-stone-300 hover:bg-stone-200 active:scale-95;
+  }
+  .no-btn-sage {
+    @apply no-btn bg-[#8b9d77] text-stone-900 hover:bg-[#7d8f6a] active:scale-95;
+  }
+  .no-btn-sm {
+    @apply px-4 py-2 text-sm;
+  }
+
+  /* 输入框：rounded-full，规范强制 */
+  .no-input {
+    @apply w-full px-5 py-3 bg-white border border-stone-200 rounded-full text-stone-800
+           placeholder:text-stone-400 focus:border-stone-400 focus:ring-2 focus:ring-stone-200
+           transition-all duration-300;
+  }
+
+  /* 徽标 */
+  .no-badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border;
+  }
+
+  /* 侧边栏导航项 */
+  .no-nav-item {
+    @apply flex items-center gap-3 px-5 py-3 rounded-full text-stone-600 transition-colors duration-300 hover:bg-stone-200/60;
+  }
+  .no-nav-item-active {
+    @apply bg-[#8b9d77] text-stone-900 font-medium;
+  }
+}
+
+/* 有机 blob 形状：用于装饰与头像，避免完美圆形 */
+.organic-blob {
+  border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%;
+}
+
+/* 缓慢的有机形变：模拟自然生长，500ms 以上 */
+@keyframes organic-morph {
+  0%, 100% { border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%; }
+  50%      { border-radius: 58% 42% 37% 63% / 56% 59% 41% 44%; }
+}
+.organic-morph {
+  animation: organic-morph 9s ease-in-out infinite;
+}
+
+@keyframes organic-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.organic-enter {
+  animation: organic-fade-in 0.5s ease-out both;
+}
+
+/* 滚动条也走大地色 */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #f0e9e1; }
+::-webkit-scrollbar-thumb { background: #d6c9bb; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #c4b4a2; }

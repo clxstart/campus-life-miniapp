@@ -1,0 +1,203 @@
+<page-meta page-style="background:#FCFCFC;" />
+
+<view class="page">
+  <view class="custom-navbar" style="padding-top: {{statusBarHeight}}px;">
+    <view
+      class="navbar-row"
+      style="height: {{navBarHeight}}px; padding-right: {{capsuleReservedRight}}px;"
+    >
+      <view class="school-selector" bindtap="chooseSchool">
+        <!-- 学校 logo：管理端填了才显示，没填就只显示名字 -->
+        <image wx:if="{{schoolLogo}}" class="school-logo" src="{{schoolLogo}}" mode="aspectFill" />
+        <text class="school-name">{{schoolName}}</text>
+        <view class="school-caret"></view>
+      </view>
+
+      <view class="search-entry">
+        <image class="search-icon" src="/assets/icons/search.svg" mode="aspectFit" />
+        <input
+          class="search-input"
+          placeholder="搜帖子、圈子、闲置、活动、兼职…"
+          placeholder-class="search-placeholder"
+          maxlength="64"
+          confirm-type="search"
+          bindconfirm="submitSearch"
+        />
+      </view>
+
+      <!-- AI 校园助手入口 -->
+      <view class="ai-entry" bindtap="openAiChat">
+        <text class="ai-entry-icon">✦</text>
+      </view>
+
+      <view class="notification-entry" bindtap="openNotifications">
+        <image class="notification-icon" src="/assets/icons/bell.svg" mode="aspectFit" />
+      </view>
+    </view>
+  </view>
+  <offline-banner />
+
+  <view class="content">
+    <view class="hero-card" bindtap="openFeature" data-label="开学优惠">
+      <image class="hero-image" src="/assets/home/hero-campus.webp" mode="aspectFill" />
+    </view>
+
+    <view class="feature-top-row">
+      <view class="feature-card delivery-card" bindtap="openFeature" data-label="外卖">
+        <view class="card-copy delivery-copy">
+          <text class="feature-title">外卖</text>
+          <text class="feature-subtitle">校园美食 快速送达</text>
+        </view>
+        <view class="round-arrow blue-arrow">›</view>
+        <view class="discount-copy">
+          <text class="discount-pill">今日优惠</text>
+          <text class="discount-title">满20减8</text>
+          <text class="discount-eta">预计 20–30 分钟送达</text>
+        </view>
+        <image class="food-art" src="/assets/home/food-bowl.webp" mode="aspectFit" />
+      </view>
+
+      <view class="feature-right-column">
+        <view class="feature-card market-card" bindtap="openFeature" data-label="二手市场">
+          <view class="card-copy compact-copy">
+            <text class="feature-title">二手市场</text>
+            <text class="feature-subtitle compact-subtitle">闲置流转 低价好物</text>
+          </view>
+          <image class="market-art" src="/assets/home/secondhand-box.webp" mode="aspectFit" />
+        </view>
+
+        <view class="feature-card forum-card" bindtap="openFeature" data-label="校园论坛">
+          <view class="card-copy compact-copy">
+            <text class="feature-title">校园论坛</text>
+            <text class="feature-subtitle compact-subtitle">分享生活 发现同好</text>
+          </view>
+          <view class="round-arrow forum-arrow">›</view>
+          <image class="forum-art" src="/assets/home/forum-bubbles.webp" mode="aspectFit" />
+        </view>
+      </view>
+    </view>
+
+    <view class="feature-bottom-row">
+      <view class="feature-card parttime-card" bindtap="openFeature" data-label="兼职">
+        <view class="card-copy">
+          <text class="feature-title">兼职</text>
+          <text class="feature-subtitle parttime-subtitle">靠谱兼职 灵活赚零花</text>
+        </view>
+        <view class="round-arrow blue-arrow">›</view>
+        <text class="job-tag job-tag-a">活动协助</text>
+        <text class="job-tag job-tag-b">家教</text>
+        <text class="job-tag job-tag-c">门店兼职</text>
+        <image class="parttime-art" src="/assets/home/parttime-worker.webp" mode="aspectFit" />
+      </view>
+
+      <view class="feature-card event-card" bindtap="openFeature" data-label="季节活动">
+        <view class="card-copy event-copy">
+          <text class="feature-title">季节活动</text>
+          <text class="feature-subtitle">精彩活动 不负好时光</text>
+        </view>
+        <view class="round-arrow pink-arrow">›</view>
+        <image class="event-art" src="/assets/home/spring-event.webp" mode="aspectFill" />
+      </view>
+    </view>
+
+    <!-- 整张卡片可点：点标题/空白区域都能进学习专区；三个小入口用 catchtap 避免重复触发 -->
+    <view class="thesis-card" bindtap="openLearnZone" hover-class="thesis-card-hover" hover-stay-time="80">
+      <view class="thesis-heading">
+        <text class="thesis-title">学习专区</text>
+        <text class="thesis-subtitle">作业答疑 · 论文指导 · 学习好物</text>
+      </view>
+      <text class="thesis-badge">真人辅导</text>
+
+      <view class="thesis-actions">
+        <view class="thesis-action" catchtap="openFeature" data-label="作业答疑">
+          <image class="thesis-action-icon" src="/assets/icons/structure.svg" mode="aspectFit" />
+          <view class="thesis-action-copy">
+            <text class="thesis-action-name">作业答疑</text>
+            <text class="thesis-action-desc">全科可问</text>
+          </view>
+        </view>
+        <view class="thesis-action" catchtap="openFeature" data-label="论文指导">
+          <image class="thesis-action-icon" src="/assets/icons/topic.svg" mode="aspectFit" />
+          <view class="thesis-action-copy">
+            <text class="thesis-action-name">论文指导</text>
+            <text class="thesis-action-desc">选题·结构·格式</text>
+          </view>
+        </view>
+        <view class="thesis-action" catchtap="openFeature" data-label="学习好物">
+          <image class="thesis-action-icon" src="/assets/icons/format.svg" mode="aspectFit" />
+          <view class="thesis-action-copy">
+            <text class="thesis-action-name">学习好物</text>
+            <text class="thesis-action-desc">教辅网课优惠</text>
+          </view>
+        </view>
+      </view>
+
+      <image class="thesis-art" src="/assets/learn/books.png" mode="aspectFit" />
+    </view>
+
+    <view class="recommend-section">
+      <view class="recommend-header">
+        <text class="recommend-heading">校园今日推荐</text>
+        <view class="refresh-entry" bindtap="changeRecommendations">
+          <text>换一批</text>
+          <image class="refresh-icon" src="/assets/icons/refresh.svg" mode="aspectFit" />
+        </view>      </view>
+
+      <view class="recommend-grid">
+        <view
+          wx:for="{{recommendations}}"
+          wx:key="type"
+          class="recommend-card"
+          bindtap="openRecommendation"
+          data-index="{{index}}"
+        >
+          <view class="recommend-image-wrap">
+            <image class="recommend-image" src="{{item.image}}" mode="aspectFill" />
+            <text class="recommend-tag">{{item.tag}}</text>
+          </view>
+          <view class="recommend-title">
+            <text class="recommend-line">{{item.title}}</text>
+            <text class="recommend-line">{{item.subtitle}}</text>
+          </view>
+          <view class="recommend-meta">
+            <view class="meta-side"><image class="meta-icon" src="/assets/icons/pin.svg" mode="aspectFit" /><text>{{item.location}}</text></view>
+            <view class="meta-side meta-hot"><image class="meta-icon fire-icon" src="/assets/icons/fire.svg" mode="aspectFit" /><text>{{item.heatText}}</text></view>
+          </view>
+        </view>
+        <view wx:if="{{recommendLoading && !recommendations.length}}" class="recommend-card recommend-skeleton">正在加载今日推荐…</view>
+
+        <view class="recommend-ad-card" bindtap="openFeature" data-label="联想小新校园优惠">
+          <text class="ad-title">联想小新</text>
+          <text class="ad-highlight">校园专属优惠</text>
+          <text class="ad-desc">轻薄高能 学习更高效</text>
+          <text class="ad-button">立即查看 ›</text>
+          <image class="ad-laptop" src="/assets/home/laptop-silver.webp" mode="aspectFit" />
+          <text class="ad-badge">广告</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <bottom-nav active="home" />
+
+  <ui-popup
+    id="ui-popup"
+    visible="{{uiPopup.visible}}"
+    mode="{{uiPopup.mode}}"
+    tone="{{uiPopup.tone}}"
+    title="{{uiPopup.title}}"
+    message="{{uiPopup.message}}"
+    editable="{{uiPopup.editable}}"
+    placeholder="{{uiPopup.placeholder}}"
+    inputValue="{{uiPopup.inputValue}}"
+    actions="{{uiPopup.actions}}"
+    show-cancel="{{uiPopup.showCancel}}"
+    cancel-text="{{uiPopup.cancelText}}"
+    confirm-text="{{uiPopup.confirmText}}"
+    bindconfirm="onPopupConfirm"
+    bindcancel="onPopupCancel"
+    bindaction="onPopupAction"
+    bindinput="onPopupInput"
+    bindclose="onPopupClose"
+  />
+</view>
