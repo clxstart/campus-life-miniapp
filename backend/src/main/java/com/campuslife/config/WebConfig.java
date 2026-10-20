@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration; import org.springfr
  }
  @Override public void addInterceptors(InterceptorRegistry registry){
    // 小程序端：解析失败不阻断，由接口自行降级（保证无后端也能演示）
-   registry.addInterceptor(authInterceptor).addPathPatterns("/api/**");
+   registry.addInterceptor(authInterceptor).addPathPatterns("/api/**").excludePathPatterns("/api/pay/notify");
    // 管理端：必须携带有效 token，否则 401。顺序在用户拦截器之后，互不影响。
    registry.addInterceptor(adminInterceptor).addPathPatterns("/api/admin/**");
  }
