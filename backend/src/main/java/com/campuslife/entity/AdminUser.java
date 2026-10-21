@@ -12,6 +12,8 @@ public class AdminUser {
     private String realName;
     private String role;
     private Long schoolId;
+    private String phone;
+    private String riderStatus;
     private Integer status;
     private Integer failCount;
     private LocalDateTime lockedUntil;

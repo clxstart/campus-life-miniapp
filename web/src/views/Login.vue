@@ -46,13 +46,6 @@
         </button>
       </form>
 
-      <div class="mt-6 no-card text-sm text-stone-600">
-        <p class="font-serif text-base text-stone-800 mb-2">演示账号</p>
-        <ul class="space-y-1">
-          <li>超级管理员：<span class="font-mono text-stone-800">admin / admin123</span></li>
-          <li>学校管理员：<span class="font-mono text-stone-800">neimenggu / school123</span></li>
-        </ul>
-      </div>
     </div>
   </div>
 </template>
@@ -76,7 +69,8 @@ async function submit() {
   loading.value = true
   try {
     await auth.login(form.username, form.password)
-    router.replace(route.query.redirect || '/dashboard')
+    const destination = auth.profile?.role === 'rider' ? '/rider' : auth.profile?.role === 'merchant' ? '/merchant' : '/dashboard'
+    router.replace(route.query.redirect && destination === '/dashboard' ? route.query.redirect : destination)
   } catch (e) {
     error.value = e.message || '登录失败'
   } finally {

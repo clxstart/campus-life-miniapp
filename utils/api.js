@@ -328,8 +328,14 @@ function getFoodShops(category='', schoolScope='local', schoolId=null) {
   return request(`/shops?category=${encodeURIComponent(category)}&schoolScope=${encodeURIComponent(schoolScope)}${school}&userId=${CURRENT_USER_ID}`, 'GET').catch(() => wait(mock.foodShops.filter(s => !category || s.category===category)))
 }
 function getFoodMenu(id) { return request(`/shops/${id}/menu`, 'GET').catch(() => wait(mock.foodMenus[id] || [])) }
-function createFoodOrder(payload) { return request('/orders', 'POST', {...payload,userId:CURRENT_USER_ID}).catch(error => { if (error.server) throw error; return wait(mock.makeFoodOrder(payload)) }) }
-Object.assign(module.exports, { CURRENT_USER_ID, getFoodShops, getFoodMenu, createFoodOrder })
+function createFoodOrder(payload) { return request('/orders', 'POST', {...payload,userId:currentUserId()}).catch(error => { if (error.server) throw error; return wait(mock.makeFoodOrder(payload)) }) }
+function getFoodOrder(orderId) {
+  if (String(orderId).startsWith('local-')) {
+    return wait({ id: orderId, status: 'paid', shopName: '演示订单', address: '', items: '[]', deliveryFee: 0, offline: true })
+  }
+  return request(`/orders/${encodeURIComponent(orderId)}?userId=${currentUserId()}`, 'GET')
+}
+Object.assign(module.exports, { CURRENT_USER_ID, getFoodShops, getFoodMenu, createFoodOrder, getFoodOrder })
 
 // 模块二至四：只在断网时使用本地兜底；后端返回的拒单/校验错误必须直接透传。
 

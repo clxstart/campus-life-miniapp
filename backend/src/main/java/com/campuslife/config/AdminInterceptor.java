@@ -35,6 +35,12 @@ public class AdminInterceptor implements HandlerInterceptor {
             reject(response, "登录已过期，请重新登录");
             return false;
         }
+        if ("rider".equals(claims.get("role", String.class))) {
+            response.setStatus(403);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":403,\"msg\":\"骑手账号不能访问管理端\",\"data\":null}");
+            return false;
+        }
         request.setAttribute(ADMIN_ID, Long.valueOf(claims.getSubject()));
         request.setAttribute(ADMIN_ROLE, claims.get("role", String.class));
         Object schoolId = claims.get("schoolId");

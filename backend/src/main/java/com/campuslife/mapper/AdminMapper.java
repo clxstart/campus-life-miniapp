@@ -73,4 +73,31 @@ import java.util.Map;
 
     @Update("UPDATE admin_user SET status = #{status} WHERE id = #{id}")
     int setAdminStatus(@Param("id") Long id, @Param("status") int status);
+
+    @Select("SELECT id FROM school WHERE id = #{id} AND status = 1")
+    Long activeSchool(@Param("id") Long id);
+
+    @Select("SELECT id, role, school_id AS schoolId, status FROM admin_user WHERE id = #{id}")
+    Map<String,Object> accountBrief(@Param("id") Long id);
+
+    @Select("""
+        SELECT a.id, a.username, a.real_name AS realName, a.school_id AS schoolId,
+               s.name AS schoolName, a.status, a.phone, a.rider_status AS riderStatus,
+               (SELECT COUNT(*) FROM user_order o WHERE o.rider_id=a.id AND o.status='completed'
+                 AND o.delivered_at >= CURDATE() AND o.delivered_at < CURDATE() + INTERVAL 1 DAY) AS todayOrders
+        FROM admin_user a LEFT JOIN school s ON s.id=a.school_id
+        WHERE a.role='rider' AND (#{schoolId} IS NULL OR a.school_id=#{schoolId})
+        ORDER BY a.id DESC
+        """)
+    List<Map<String,Object>> riders(@Param("schoolId") Long schoolId);
+
+    @Insert("INSERT INTO admin_user(username,password_hash,real_name,role,school_id,phone) VALUES(#{username},#{passwordHash},#{realName},'rider',#{schoolId},#{phone})")
+    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
+    int insertRider(Map<String,Object> row);
+
+    @Update("UPDATE admin_user SET status=#{status} WHERE id=#{id} AND role='rider'")
+    int setRiderStatus(@Param("id") Long id, @Param("status") int status);
+
+    @Update("UPDATE admin_user SET password_hash=#{passwordHash},fail_count=0,locked_until=NULL WHERE id=#{id} AND role='rider'")
+    int resetRiderPassword(@Param("id") Long id, @Param("passwordHash") String passwordHash);
 }
