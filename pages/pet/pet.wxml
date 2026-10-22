@@ -1,0 +1,63 @@
+<view class="pet-page">
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px">
+    <view class="back" catchtap="goBack">‹</view>
+    <view class="nav-title">我的宠物</view>
+    <view class="points-pill">积分 {{points}}</view>
+  </view>
+  <offline-banner />
+
+  <view wx:if="{{loading}}" class="state">正在召唤宠物…</view>
+
+  <block wx:else>
+    <!-- 动画区 -->
+    <view class="stage">
+      <canvas type="2d" id="pet-canvas" class="pet-canvas"></canvas>
+    </view>
+
+    <!-- 名字与等级 -->
+    <view class="pet-head">
+      <text class="pet-name">{{pet.name || '小星'}}</text>
+      <text class="pet-level">Lv.{{pet.level}}</text>
+    </view>
+
+    <!-- 状态条 -->
+    <view class="bars-card">
+      <view class="bar-row">
+        <text class="bar-label">饱食</text>
+        <view class="bar-track"><view class="bar-fill hunger" style="width:{{pet.hunger}}%"></view></view>
+        <text class="bar-num">{{pet.hunger}}</text>
+      </view>
+      <view class="bar-row">
+        <text class="bar-label">心情</text>
+        <view class="bar-track"><view class="bar-fill mood" style="width:{{pet.mood}}%"></view></view>
+        <text class="bar-num">{{pet.mood}}</text>
+      </view>
+      <view class="bar-row">
+        <text class="bar-label">经验</text>
+        <view class="bar-track"><view class="bar-fill exp" style="width:{{pet.expPercent}}%"></view></view>
+        <text class="bar-num">{{pet.exp}}/{{pet.expNeed}}</text>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="actions">
+      <view class="action-btn feed {{pet.canFeed ? '' : 'disabled'}}" bindtap="feed">
+        <text class="action-icon">🍖</text>
+        <text class="action-name">喂食</text>
+        <text class="action-cost">10 积分</text>
+      </view>
+      <view class="action-btn touch {{pet.canTouch ? '' : 'disabled'}}" bindtap="touch">
+        <text class="action-icon">🤚</text>
+        <text class="action-name">摸摸</text>
+        <text class="action-cost">免费</text>
+      </view>
+      <view class="action-btn checkin {{pet.canCheckin ? '' : 'disabled'}}" bindtap="checkin">
+        <text class="action-icon">📅</text>
+        <text class="action-name">签到</text>
+        <text class="action-cost">{{pet.canCheckin ? '每日一次' : '已签到'}}</text>
+      </view>
+    </view>
+  </block>
+
+  <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose"/>
+</view>

@@ -27,7 +27,8 @@
     "pages/jobs/jobs",
     "pages/activities/activities",
     "pages/search/search",
-    "pages/campus-offer/campus-offer"
+    "pages/campus-offer/campus-offer",
+    "pages/pet/pet"
   ],
   "window": {
     "navigationStyle": "custom",

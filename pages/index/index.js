@@ -149,6 +149,11 @@ Page({
     wx.navigateTo({ url: '/pages/learn/learn?category=daike' })
   },
 
+  // 我的宠物
+  openPet() {
+    wx.navigateTo({ url: '/pages/pet/pet' })
+  },
+
   // AI 校园助手（关键词匹配陪聊）
   openAiChat() { wx.navigateTo({ url: '/pages/ai-chat/ai-chat' }) },
 

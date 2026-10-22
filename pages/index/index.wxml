@@ -25,6 +25,11 @@
         />
       </view>
 
+      <!-- 我的宠物入口 -->
+      <view class="ai-entry" bindtap="openPet">
+        <text class="ai-entry-icon">🐾</text>
+      </view>
+
       <!-- AI 校园助手入口 -->
       <view class="ai-entry" bindtap="openAiChat">
         <text class="ai-entry-icon">✦</text>

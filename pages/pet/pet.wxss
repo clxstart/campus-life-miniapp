@@ -1,0 +1,100 @@
+page { background: #f7f9fb; }
+.pet-page { min-height: 100vh; padding-bottom: 60rpx; color: #18212b; }
+
+.nav {
+  box-sizing: content-box;
+  display: flex;
+  align-items: center;
+  padding-left: 24rpx;
+  background: #fff;
+  box-shadow: 0 2rpx 0 #eef1f4;
+}
+.nav-title { font-size: 34rpx; font-weight: 700; }
+.back { padding: 0 14rpx; margin-right: 12rpx; font-size: 42rpx; }
+.points-pill {
+  margin-left: auto;
+  padding: 8rpx 22rpx;
+  border-radius: 24rpx;
+  background: #fff7e8;
+  color: #b07a1f;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+/* 动画舞台 */
+.stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 30rpx 24rpx 0;
+  padding: 40rpx 0;
+  border-radius: 28rpx;
+  background: linear-gradient(180deg, #eaf2ff 0%, #f7f9fb 100%);
+}
+.pet-canvas { width: 480rpx; height: 480rpx; }
+
+/* 名字与等级 */
+.pet-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 14rpx;
+  margin-top: 6rpx;
+}
+.pet-name { font-size: 36rpx; font-weight: 700; }
+.pet-level {
+  padding: 4rpx 16rpx;
+  border-radius: 18rpx;
+  background: #3476f6;
+  color: #fff;
+  font-size: 20rpx;
+  font-weight: 600;
+}
+
+/* 状态条 */
+.bars-card {
+  margin: 26rpx 24rpx 0;
+  padding: 26rpx 28rpx;
+  border-radius: 24rpx;
+  background: #fff;
+  box-shadow: 0 8rpx 22rpx rgba(36, 62, 96, .05);
+}
+.bar-row { display: flex; align-items: center; }
+.bar-row + .bar-row { margin-top: 20rpx; }
+.bar-label { width: 84rpx; font-size: 22rpx; color: #737e88; }
+.bar-track {
+  flex: 1;
+  height: 16rpx;
+  border-radius: 8rpx;
+  background: #eef1f4;
+  overflow: hidden;
+}
+.bar-fill { height: 100%; border-radius: 8rpx; }
+.bar-fill.hunger { background: #ffa940; }
+.bar-fill.mood { background: #3476f6; }
+.bar-fill.exp { background: #52c41a; }
+.bar-num { width: 110rpx; text-align: right; font-size: 20rpx; color: #737e88; }
+
+/* 操作按钮 */
+.actions {
+  display: flex;
+  gap: 18rpx;
+  margin: 28rpx 24rpx 0;
+}
+.action-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 26rpx 0 22rpx;
+  border-radius: 22rpx;
+  background: #fff;
+  box-shadow: 0 8rpx 22rpx rgba(36, 62, 96, .05);
+}
+.action-btn.disabled { opacity: .5; }
+.action-icon { font-size: 44rpx; }
+.action-name { margin-top: 10rpx; font-size: 26rpx; font-weight: 600; }
+.action-cost { margin-top: 6rpx; font-size: 19rpx; color: #737e88; }
+
+/* 加载/空状态 */
+.state { padding: 220rpx 0; text-align: center; color: #9aa4ad; font-size: 26rpx; }

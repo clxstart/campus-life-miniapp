@@ -797,3 +797,35 @@ function getLearnCounts(schoolId = null, userId = currentUserId()) {
   })
 }
 Object.assign(module.exports, { getLearnTopics, getLearnCounts })
+
+
+// ========== 宠物 ==========
+// 查宠物：读接口，后端挂了回落本地演示数据
+function getPet(userId) {
+  return request(`/pet?userId=${userId}`, 'GET').catch(error => {
+    if (error.server) throw error
+    return wait({
+      id: 1, name: '小星', level: 3, exp: 50, expNeed: 350, expPercent: 14,
+      hunger: 60, mood: 70, state: 'idle',
+      canFeed: true, canTouch: true, canCheckin: true,
+      points: 320, offline: true
+    }, 80)
+  })
+}
+
+// 喂食：写接口，不兜底
+function petFeed(userId) {
+  return request('/pet/feed', 'POST', { userId })
+}
+
+// 摸摸：写接口，不兜底
+function petTouch(userId) {
+  return request('/pet/touch', 'POST', { userId })
+}
+
+// 签到：写接口，不兜底
+function petCheckin(userId) {
+  return request('/pet/checkin', 'POST', { userId })
+}
+
+Object.assign(module.exports, { getPet, petFeed, petTouch, petCheckin })
