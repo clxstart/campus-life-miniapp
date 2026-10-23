@@ -3,6 +3,7 @@
     "pages/index/index",
     "pages/discover/discover",
     "pages/circle-detail/circle-detail",
+    "pages/circle-chat/circle-chat",
     "pages/circle-publish/circle-publish",
     "pages/community/community",
     "pages/learn/learn",

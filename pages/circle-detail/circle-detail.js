@@ -54,6 +54,7 @@ Page({
   onUnload() { this._alive = false },
 
   onShow() {
+    if (this.data.circle) this.loadCircle()
     if (this.data.posts.length) this.loadPosts()
   },
 
@@ -147,6 +148,20 @@ Page({
     }
     // 跳独立发帖页：与「发布」页同一套表单，不再是连续弹窗
     wx.navigateTo({ url: `/pages/circle-publish/circle-publish?id=${this.circleId}` })
+  },
+
+  openChat() {
+    const circle = this.data.circle
+    if (!circle) return
+    const go = () => wx.navigateTo({ url: `/pages/circle-chat/circle-chat?id=${this.circleId}&name=${encodeURIComponent(circle.name || '圈子群聊')}` })
+    if (circle.joined) return go()
+    popup.modal(this, {
+      title: '还没加入圈子',
+      message: `加入「${circle.name}」后才能进入群聊，要现在加入吗？`,
+      confirmText: '加入并进入',
+      showCancel: true,
+      confirm: async () => { await this.toggleJoin(); if (this.data.circle && this.data.circle.joined) go() }
+    })
   },
 
   openPost(event) {

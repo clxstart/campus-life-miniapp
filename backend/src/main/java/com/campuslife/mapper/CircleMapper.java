@@ -11,15 +11,20 @@ public interface CircleMapper {
         <script>
         SELECT c.id, c.name, c.slug, c.category, c.description, c.cover, c.theme,
                c.member_count AS memberCount, c.post_count AS postCount, c.hot, c.sort,
+               c.last_message_at AS lastMessageAt, c.last_message AS lastMessage,
                c.school_id AS schoolId,
-               (SELECT COUNT(*) FROM circle_member m WHERE m.circle_id=c.id AND m.user_id=#{userId})>0 AS joined
+               (SELECT COUNT(*) FROM circle_member m WHERE m.circle_id=c.id AND m.user_id=#{userId})>0 AS joined,
+               (SELECT COUNT(*) FROM circle_message cm
+                WHERE cm.circle_id=c.id AND cm.id > COALESCE(
+                  (SELECT cr.last_read_id FROM circle_read cr WHERE cr.circle_id=c.id AND cr.user_id=#{userId}), 0
+               ) AND EXISTS (SELECT 1 FROM circle_member m WHERE m.circle_id=c.id AND m.user_id=#{userId})) AS unreadCount
         FROM circle c
         WHERE c.status=1
         <if test="category != null and category != ''">AND c.category=#{category}</if>
         <if test="hotOnly">AND c.hot=1</if>
         <!-- 按校隔离：每校有自己的圈子；schoolId 为 null 时看全部学校 -->
         <if test="schoolId != null">AND c.school_id=#{schoolId}</if>
-        ORDER BY c.sort, c.id
+        ORDER BY COALESCE(c.last_message_at, '1970-01-01') DESC, c.sort, c.id
         LIMIT #{limit} OFFSET #{offset}
         </script>
         """)
@@ -41,7 +46,12 @@ public interface CircleMapper {
     @Select("""
         SELECT c.id, c.name, c.slug, c.category, c.description, c.cover, c.theme,
                c.member_count AS memberCount, c.post_count AS postCount, c.hot, c.sort,
-               (SELECT COUNT(*) FROM circle_member m WHERE m.circle_id=c.id AND m.user_id=#{userId})>0 AS joined
+               c.last_message_at AS lastMessageAt, c.last_message AS lastMessage,
+               (SELECT COUNT(*) FROM circle_member m WHERE m.circle_id=c.id AND m.user_id=#{userId})>0 AS joined,
+               (SELECT COUNT(*) FROM circle_message cm
+                WHERE cm.circle_id=c.id AND cm.id > COALESCE(
+                  (SELECT cr.last_read_id FROM circle_read cr WHERE cr.circle_id=c.id AND cr.user_id=#{userId}), 0
+               ) AND EXISTS (SELECT 1 FROM circle_member m WHERE m.circle_id=c.id AND m.user_id=#{userId})) AS unreadCount
         FROM circle c WHERE c.id=#{id} AND c.status=1
         """)
     Map<String,Object> circle(@Param("id") Long id, @Param("userId") Long userId);

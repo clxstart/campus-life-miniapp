@@ -35,7 +35,9 @@ function circleCard(circle) {
     cover: circle.cover || '/assets/social/spring-picnic.webp',
     memberText: formatCount(circle.memberCount),
     postText: formatCount(circle.postCount),
-    joined: !!circle.joined
+    joined: !!circle.joined,
+    unreadCount: Number(circle.unreadCount) || 0,
+    lastMessage: circle.lastMessage || ''
   }
 }
 

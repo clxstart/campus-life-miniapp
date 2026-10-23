@@ -8,8 +8,9 @@
    - `backend/src/main/resources/db/schema.sql`（原有 20 张表与演示种子）
    - `backend/src/main/resources/db/module-messages-academics.sql`（消息/教学，+6 张）
    - `backend/src/main/resources/db/module-circles.sql`（圈子，+2 张并给 post 加 circle_id）
+   - `backend/src/main/resources/db/module-circle-chat.sql`（圈子群聊，+2 张并给 circle 加 last_message 字段）
    - `backend/src/main/resources/db/module-auth.sql`（给 user 加 openid）
-   共 28 张表。已有数据库只执行尚未跑过的脚本即可，四个脚本都必须按上述顺序。
+   共 30 张表。已有数据库只执行尚未跑过的脚本即可，上述脚本都必须按顺序执行。
 2. 修改 `backend/src/main/resources/application.yml` 中的数据库账号密码。
 3. 进入 `backend` 目录执行 `mvn spring-boot:run`，接口地址为 `http://127.0.0.1:8080/api`。
 4. 用微信开发者工具打开项目根目录，AppID 保持 `touristappid`。本地开发配置已关闭合法域名校验。
@@ -31,6 +32,7 @@
 mysql -u root -p < backend/src/main/resources/db/schema.sql
 mysql -u root -p < backend/src/main/resources/db/module-messages-academics.sql
 mysql -u root -p < backend/src/main/resources/db/module-circles.sql
+mysql -u root -p < backend/src/main/resources/db/module-circle-chat.sql
 mysql -u root -p < backend/src/main/resources/db/module-auth.sql
 mysql -u root -p < backend/src/main/resources/db/module-hotness.sql
 cd backend
@@ -88,6 +90,21 @@ mvn spring-boot:run -P "!jdk-1.8"
 - `GET /api/recommend` 的排序在 SQL 内完成：`(赞×3 + 评论×5 + 浏览×1) × 兴趣加权 × 时效衰减`。
   兴趣加权取自用户已加入的圈子。该表达式无法走索引，数据量大时需要改为离线预计算。
 
+## 圈子群聊（WebSocket）
+
+- 群聊与一对一私信完全分离：新增 `circle_message`（消息）和 `circle_read`（每人每圈的已读游标），不改动 `chat_message`。
+- 写消息只走 HTTP，WebSocket 只负责推送，因此审核失败、断线重试都有明确的成功/失败返回：
+  - `GET /api/circle-messages?circleId=&limit=&beforeId=&afterId=` 历史/增量；`beforeId` 向前翻页，`afterId` 用于重连补消息，返回始终按 id 升序。
+  - `POST /api/circle-messages` 发送（`circleId/type/content/image/clientId`），`clientId` 由客户端生成，同一发送者重复提交不会重复入库或重复推送。
+  - `POST /api/circle-messages/read` 标记已读（`circleId/lastReadId`）。
+  - `GET /api/circle-messages/unread` 返回当前用户在所有已加入圈子的未读数。
+  - `GET /api/circles` 的每个圈子额外返回 `unreadCount`、`lastMessage`、`lastMessageAt`。
+- WebSocket 端点为 `ws://127.0.0.1:8080/ws/circle?token=<JWT>&circleId=<圈子ID>`。连接时校验 token、圈子 `status=1` 和 `circle_member` 成员关系，任一不满足会收到 `{"type":"error"}` 后按 1008 关闭。
+- 服务端每 30 秒推送 `{"type":"ping"}`，90 秒未收到客户端 `pong` 会关闭连接；小程序端在 `app.js` 统一维护连接、25 秒心跳、3 秒退避重连（最多 5 次），页面只订阅事件。
+- 消息字段：`{type:"message",data:{id,circleId,senderId,senderName,senderAvatar,messageType,content,image,createdAt}}`；另有 `online`（在线人数与名单）、`join`、`leave`、`error`。
+- 内容审核先走本地词库，配置了 `campus.wx.appid/secret` 时再调用微信 `msg_sec_check`；`touristappid` 开发环境只走本地词库。
+- 小程序真机必须使用 `wss://`。`app.js` 会根据 `utils/api.js` 的 `BASE_URL` 自动切换 ws/wss，上线时把 `BASE_URL` 换成 HTTPS 域名并在微信公众平台配置合法域名。
+
 ## 教务数据
 
 各高校教务系统没有公开接口，字段也各不相同，因此**没有做「假装对接」**。
@@ -108,6 +125,7 @@ mvn spring-boot:run -P "!jdk-1.8"
 
 ```bash
 node --test tests/regression.test.js      # 22 项前端行为回归
+node --test tests/circle-chat.test.js     # 圈子群聊接口与全局 socket 行为
 python tests/validate_project.py          # 静态工程检查
 python tests/backend_smoke.py             # 需先起后端；只发 GET，不写业务数据
 ```

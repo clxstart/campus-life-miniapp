@@ -1,0 +1,37 @@
+<page-meta page-style="background:#F3F6FA;" />
+<view class="circle-chat-page">
+  <view class="circle-chat-navbar" style="padding-top:{{statusBarHeight}}px;">
+    <view class="circle-chat-navbar-row" style="height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px;">
+      <view class="circle-chat-back" bindtap="goBack">‹</view>
+      <view class="circle-chat-title"><text>{{circleName}}</text><text class="circle-chat-online">{{connected ? (onlineCount + ' 人在线' + (onlineNames ? ' · ' + onlineNames : '')) : '连接中…'}}</text></view>
+      <view class="circle-chat-more"></view>
+    </view>
+  </view>
+  <offline-banner local="{{offline}}" />
+  <scroll-view class="circle-message-scroll" scroll-y enhanced scroll-into-view="{{scrollIntoView}}" upper-threshold="80" bindscrolltoupper="loadOlder">
+    <view wx:if="{{hasMore}}" class="circle-chat-tip">上拉加载更早消息</view>
+    <view wx:if="{{loading}}" class="circle-chat-tip">正在加载消息…</view>
+    <view wx:if="{{error}}" class="circle-chat-tip circle-chat-error" bindtap="retry">{{error}} · 点击重试</view>
+    <view wx:if="{{!loading && !error && !messages.length}}" class="circle-chat-tip">还没有消息，先打个招呼吧</view>
+    <view wx:for="{{messages}}" wx:key="id" id="msg-{{item.id}}" class="circle-message-row {{item.mine ? 'mine' : 'theirs'}}">
+      <view wx:if="{{!item.mine}}" class="circle-message-avatar">
+        <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFill" />
+        <text wx:else>{{item.avatarText}}</text>
+      </view>
+      <view class="circle-message-body">
+        <view wx:if="{{!item.mine}}" class="circle-message-meta"><text>{{item.senderName}}</text><text>{{item.time}}</text></view>
+        <view class="circle-message-bubble {{item.messageType === 'image' ? 'image-bubble' : ''}} {{item.pending ? 'pending' : ''}}">
+          <text wx:if="{{item.messageType === 'text'}}">{{item.content}}</text>
+          <image wx:else src="{{item.image}}" mode="aspectFill" />
+        </view>
+        <text wx:if="{{item.mine}}" class="circle-message-time">{{item.time}}{{item.pending ? ' · 发送中' : ''}}</text>
+      </view>
+    </view>
+    <view id="msg-bottom" class="circle-message-end"></view>
+  </scroll-view>
+  <view class="circle-chat-composer">
+    <view class="circle-chat-plus" bindtap="chooseImage">＋</view>
+    <input class="circle-chat-input" value="{{inputValue}}" maxlength="1000" placeholder="说点什么…" disabled="{{sending || uploading}}" confirm-type="send" bindinput="inputMessage" bindconfirm="sendMessage" />
+    <view class="circle-chat-send {{inputValue ? 'ready' : ''}}" bindtap="sendMessage">{{uploading ? '上传中' : (sending ? '发送中' : '发送')}}</view>
+  </view>
+</view>
