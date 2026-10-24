@@ -1,0 +1,63 @@
+.rc {
+  margin-top: 12rpx;
+  padding: 22rpx 24rpx;
+  background: var(--c-card);
+  border: var(--bw) solid var(--c-line);
+  border-radius: 20rpx;
+}
+
+.rc-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.rc-type {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  padding: 2rpx 12rpx;
+  border-radius: var(--radius-pill);
+  background: var(--c-soft);
+  color: var(--c-primary);
+  line-height: 1.7;
+}
+
+.rc-title {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rc-desc {
+  display: block;
+  margin-top: 10rpx;
+  font-size: var(--fs-hint);
+  color: var(--c-text-sub);
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.rc-foot {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 14rpx;
+  flex-wrap: wrap;
+}
+
+.rc-source,
+.rc-dot,
+.rc-time {
+  font-size: 20rpx;
+  color: var(--c-text-sub);
+}
+
+.rc-go {
+  margin-left: auto;
+  font-size: 22rpx;
+  color: var(--c-primary);
+  font-weight: 600;
+}

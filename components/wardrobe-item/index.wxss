@@ -1,0 +1,121 @@
+.witem {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: var(--sp-card);
+  background: var(--c-card);
+  border: var(--bw) solid var(--c-line);
+  border-radius: var(--radius-card);
+}
+
+.witem + .witem {
+  margin-top: var(--sp-gap);
+}
+
+/* 已装备：加左侧竖条 + 边框强调，不只改字色 */
+.witem--equipped {
+  border-color: var(--c-primary);
+  box-shadow: inset 6rpx 0 0 var(--c-primary);
+}
+
+.witem-thumb {
+  flex-shrink: 0;
+  border-radius: 20rpx;
+  overflow: hidden;
+  background: var(--c-bg);
+  padding: 6rpx;
+}
+
+.witem-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.witem-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+}
+
+.witem-name {
+  font-size: var(--fs-card-title);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.witem-state {
+  font-size: 20rpx;
+  padding: 2rpx 12rpx;
+  border-radius: var(--radius-pill);
+  line-height: 1.6;
+}
+
+.witem-state--locked {
+  background: #F0EDE3;
+  color: var(--c-text-sub);
+}
+
+.witem-state--owned {
+  background: var(--c-soft);
+  color: var(--c-primary);
+}
+
+.witem-state--equipped {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+.witem-desc {
+  display: block;
+  margin-top: 6rpx;
+}
+
+.witem-price {
+  display: flex;
+  align-items: baseline;
+  gap: 4rpx;
+  margin-top: 8rpx;
+}
+
+.witem-price-num {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--c-accent);
+}
+
+.witem-price-unit {
+  font-size: 22rpx;
+  color: var(--c-text-sub);
+}
+
+.witem-action {
+  flex-shrink: 0;
+}
+
+.mini-btn {
+  min-width: 132rpx;
+  height: 60rpx;
+  line-height: 60rpx;
+  padding: 0 24rpx;
+  font-size: 26rpx;
+  border-radius: var(--radius-pill);
+  margin: 0;
+}
+
+.mini-btn--primary {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+.mini-btn--ghost {
+  background: transparent;
+  color: var(--c-primary);
+  border: var(--bw) solid var(--c-primary);
+}
+
+.mini-btn--flat {
+  background: var(--c-soft);
+  color: var(--c-primary);
+  border: none;
+}

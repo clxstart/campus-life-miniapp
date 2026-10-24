@@ -1,0 +1,9 @@
+<!-- pet-avatar：静态缩略头像，单帧绘制，不跑动画循环 -->
+<view class="avatar" style="width:{{size}}px;height:{{size}}px;">
+  <canvas
+    type="2d"
+    id="pet-avatar-canvas"
+    class="avatar-canvas"
+    style="width:{{size}}px;height:{{size}}px;"
+  ></canvas>
+</view>

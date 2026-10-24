@@ -1,0 +1,10 @@
+.avatar {
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--c-soft);
+  flex-shrink: 0;
+}
+
+.avatar-canvas {
+  display: block;
+}

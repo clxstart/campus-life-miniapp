@@ -1,0 +1,52 @@
+.editor {
+  background: var(--c-card);
+  border-top: var(--bw) solid var(--c-line);
+}
+
+.editor-options {
+  max-height: 420rpx;
+  padding: var(--sp-card);
+  box-sizing: border-box;
+}
+
+.opt-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-col);
+}
+
+.opt {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 14rpx 6rpx 12rpx;
+  border: var(--bw) solid var(--c-line);
+  border-radius: 20rpx;
+  background: var(--c-bg);
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.opt-name {
+  font-size: 22rpx;
+  color: var(--c-text-sub);
+  margin-top: 8rpx;
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* 选中标记：不只靠颜色，带勾 */
+.opt-check {
+  position: absolute;
+  right: 8rpx;
+  top: 4rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: var(--c-primary);
+}
+
+.editor .cp-selected .opt-name {
+  color: var(--c-primary);
+  font-weight: 600;
+}

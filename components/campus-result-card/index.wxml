@@ -1,0 +1,16 @@
+<!-- campus-result-card：校园数据结果卡片，带来源与更新时间 -->
+<view class="rc" bindtap="onOpen">
+  <view class="rc-head">
+    <text class="rc-type">{{typeName}}</text>
+    <text class="rc-title">{{result.title}}</text>
+  </view>
+
+  <text class="rc-desc" wx:if="{{result.summary}}">{{result.summary}}</text>
+
+  <view class="rc-foot">
+    <text class="rc-source">{{result.source || '校园生活平台'}}</text>
+    <text class="rc-dot">·</text>
+    <text class="rc-time">{{updatedText}}</text>
+    <text class="rc-go" wx:if="{{result.targetId}}">查看 ›</text>
+  </view>
+</view>
