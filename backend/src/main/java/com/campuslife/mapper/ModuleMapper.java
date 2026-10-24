@@ -20,7 +20,7 @@ public interface ModuleMapper {
                g.school_id AS schoolId,
                u.id AS sellerId, u.nickname AS sellerNickname
         FROM goods g LEFT JOIN `user` u ON u.id = g.user_id
-        WHERE g.status = 1 AND g.mode = #{mode}
+        WHERE g.status = 1 AND g.audit_status = 'passed' AND g.mode = #{mode}
         <if test="category != null and category != ''">AND g.category = #{category}</if>
         <!-- 按校隔离：schoolId 为 null 表示看全部学校（异地无法面交，默认只看本校） -->
         <if test="schoolId != null">AND g.school_id = #{schoolId}</if>
@@ -36,14 +36,14 @@ public interface ModuleMapper {
                g.school_id AS schoolId,
                u.id AS sellerId, u.nickname AS sellerNickname
         FROM goods g LEFT JOIN `user` u ON u.id = g.user_id
-        WHERE g.id = #{id} AND g.status = 1
+        WHERE g.id = #{id} AND g.status = 1 AND g.audit_status = 'passed'
         """)
     Map<String, Object> selectGood(@Param("id") Long id);
 
     // 发布商品：school_id 由发布者的学校决定，避免新商品变成无主数据
     @Insert("""
-        INSERT INTO goods(user_id, mode, title, price, condition_level, category, image, images, description, school_id)
-        VALUES(#{userId}, #{mode}, #{title}, #{price}, #{conditionLevel}, #{category}, #{image}, #{images}, #{description}, #{schoolId})
+        INSERT INTO goods(user_id, mode, title, price, condition_level, category, image, images, description, school_id, status, audit_status, audit_reason, audit_at)
+        VALUES(#{userId}, #{mode}, #{title}, #{price}, #{conditionLevel}, #{category}, #{image}, #{images}, #{description}, #{schoolId}, #{status}, #{auditStatus}, #{auditReason}, #{auditAt})
         """)
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insertGood(Map<String, Object> params);
@@ -59,6 +59,7 @@ public interface ModuleMapper {
                j.created_at AS createdAt, j.school_id AS schoolId, u.nickname AS publisherName
         FROM job j LEFT JOIN `user` u ON u.id = j.user_id
         <where>
+          j.audit_status = 'passed' AND j.status = '招聘中' AND
           <if test="settle != null and settle != ''">j.settle = #{settle} AND</if>
           <if test="keyword != null and keyword != ''">
             (j.title LIKE #{keyword} OR j.location LIKE #{keyword} OR j.description LIKE #{keyword}) AND
@@ -75,8 +76,8 @@ public interface ModuleMapper {
 
     // 发布兼职：与 goods 同一套归属模型，发布者即当前用户；school_id 必须写入
     @Insert("""
-        INSERT INTO job(title, day_salary, settle, location, time_desc, status, user_id, description, school_id)
-        VALUES(#{title}, #{daySalary}, #{settle}, #{location}, #{timeDesc}, '招聘中', #{userId}, #{description}, #{schoolId})
+        INSERT INTO job(title, day_salary, settle, location, time_desc, status, user_id, description, school_id, audit_status, audit_reason, audit_at)
+        VALUES(#{title}, #{daySalary}, #{settle}, #{location}, #{timeDesc}, #{status}, #{userId}, #{description}, #{schoolId}, #{auditStatus}, #{auditReason}, #{auditAt})
         """)
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insertJob(Map<String, Object> params);

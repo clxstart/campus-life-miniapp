@@ -9,6 +9,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(AuditRejectedException.class)
+    public ResponseEntity<ApiResponse<Object>> auditRejected(AuditRejectedException e) {
+        return ResponseEntity.badRequest().body(new ApiResponse<>(4001, e.getMessage(), null));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Object>> valid(MethodArgumentNotValidException e) {
         String msg = e.getBindingResult().getFieldError() != null

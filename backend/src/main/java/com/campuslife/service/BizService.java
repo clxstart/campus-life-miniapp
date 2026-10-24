@@ -11,6 +11,7 @@ import com.campuslife.mapper.ShopGoodsMapper;
 import com.campuslife.mapper.ShopMapper;
 import com.campuslife.mapper.UserMapper;
 import com.campuslife.mapper.UserOrderMapper;
+import com.campuslife.dto.AuditResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class BizService {
     // 下单成功后累加店铺真实订单数，供首页「今日推荐」按真实热度排序
     private final com.campuslife.mapper.RecommendMapper recommendMapper;
     private final ObjectMapper json;
+    private final AuditService auditService;
     private static final BigDecimal PACKING_FEE = new BigDecimal("2.00");
 
     // 外卖店铺：按校隔离（各校商家不同），schoolScope=all 时看全部学校
@@ -130,6 +132,7 @@ public class BizService {
         return goodView(row);
     }
 
+    @Transactional
     public Map<String, Object> publishGood(Map<String, Object> body) {
         Long userId = requiredLong(body.get("userId"), "用户不存在");
         if (userMapper.selectById(userId) == null) throw new IllegalArgumentException("用户不存在");
@@ -168,6 +171,8 @@ public class BizService {
                 throw new IllegalArgumentException("图片未上传成功，请重新选择图片");
             }
         }
+        AuditResult textAudit = auditService.checkText(title + "\n" + description, "goods", userId);
+        auditService.rejectIfNeeded(textAudit);
         String imagesJson;
         try {
             imagesJson = json.writeValueAsString(images);
@@ -183,9 +188,17 @@ public class BizService {
         params.put("image", images.get(0));
         params.put("images", imagesJson);
         params.put("description", description);
+        String auditStatus = auditService.initialStatus(textAudit, true);
+        params.put("auditStatus", auditStatus);
+        params.put("auditReason", textAudit.reason());
+        params.put("auditAt", "passed".equals(auditStatus) ? LocalDateTime.now() : null);
+        params.put("status", "passed".equals(auditStatus) ? 1 : 0);
         // 商品归属发布者的学校：不写会导致新商品变成无主数据（旧数据靠 SQL 回填过）
         params.put("schoolId", userSchoolId(userId));
         moduleMapper.insertGood(params);
+        Long goodsId = longValue(params.get("id"));
+        auditService.logTextResult("goods", goodsId, userId, title + "\n" + description, textAudit);
+        auditService.scheduleImagesAfterCommit(images, "goods", goodsId, userId);
         return Map.of("id", params.get("id"));
     }
 
@@ -227,13 +240,20 @@ public class BizService {
         if (timeDesc.length() > 64) throw new IllegalArgumentException("时间说明不能超过64字");
         String description = text(body.get("description")).trim();
         if (description.length() > 200) throw new IllegalArgumentException("描述不能超过200字");
+        AuditResult textAudit = auditService.checkText(title + "\n" + description, "job", userId);
+        auditService.rejectIfNeeded(textAudit);
         Map<String, Object> params = new LinkedHashMap<>();
+        String auditStatus = auditService.initialStatus(textAudit, false);
         params.put("userId", userId); params.put("title", title); params.put("daySalary", daySalary);
         params.put("settle", settle); params.put("location", location);
         params.put("timeDesc", timeDesc); params.put("description", description);
+        params.put("auditStatus", auditStatus); params.put("auditReason", textAudit.reason());
+        params.put("auditAt", "passed".equals(auditStatus) ? LocalDateTime.now() : null);
+        params.put("status", "passed".equals(auditStatus) ? "招聘中" : "待审核");
         // 岗位归属发布者学校：不写会导致新岗位在本校视图消失
         params.put("schoolId", userSchoolId(userId));
         moduleMapper.insertJob(params);
+        auditService.logTextResult("job", longValue(params.get("id")), userId, title + "\n" + description, textAudit);
         return Map.of("id", params.get("id"));
     }
 
@@ -331,6 +351,7 @@ public class BizService {
     private static String text(Object value) { return value == null ? "" : String.valueOf(value); }
     private static String textOr(Object value, String fallback) { String valueText = text(value).trim(); return valueText.isEmpty() ? fallback : valueText; }
     private static Long requiredLong(Object value, String message) { try { long number = Long.parseLong(text(value)); if (number < 1) throw new NumberFormatException(); return number; } catch (NumberFormatException e) { throw new IllegalArgumentException(message); } }
+    private static Long longValue(Object value) { if (value instanceof Number number) return number.longValue(); try { return Long.valueOf(String.valueOf(value)); } catch (Exception error) { throw new IllegalStateException("内容编号生成失败", error); } }
     private static int number(Object value) { return value instanceof Number n ? n.intValue() : Integer.parseInt(text(value)); }
 
     @Transactional

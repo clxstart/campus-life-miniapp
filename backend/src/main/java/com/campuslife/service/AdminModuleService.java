@@ -4,6 +4,7 @@ import com.campuslife.config.ForbiddenException;
 import com.campuslife.mapper.AdminModuleMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -13,6 +14,7 @@ import java.util.*;
 // 数据隔离：超管传 schoolId=null（看全部），校管强制用自己的 schoolId。
 @Service @RequiredArgsConstructor
 public class AdminModuleService {
+    private final AuditService auditService;
     private final AdminModuleMapper mapper;
 
     // ---- 通用工具 ----
@@ -460,9 +462,13 @@ public class AdminModuleService {
                     mapper.countCircles(schoolId, kw), p[0], p[1]);
     }
 
+    @Transactional
     public Map<String, Object> createCircle(Long schoolId, Map<String, Object> body) {
         String name = trim(body.get("name"));
         if (name.isEmpty() || name.length() > 32) throw new IllegalArgumentException("圈子名称须为1至32字");
+        String description = trim(body.get("description"));
+        var textAudit = auditService.checkText(name + "\n" + description, "circle");
+        auditService.rejectIfNeeded(textAudit);
         String slug = trim(body.get("slug"));
         if (slug.isEmpty()) slug = "c" + System.currentTimeMillis();
         if (!slug.matches("^[a-zA-Z0-9_-]{1,32}$")) throw new IllegalArgumentException("标识只能是字母数字下划线短横线");
@@ -471,30 +477,45 @@ public class AdminModuleService {
         row.put("name", name);
         row.put("slug", slug);
         row.put("category", trim(body.get("category")).isEmpty() ? "兴趣" : trim(body.get("category")));
-        row.put("description", trim(body.get("description")));
+        row.put("description", description);
         row.put("cover", trim(body.get("cover")));
         row.put("theme", trim(body.get("theme")).isEmpty() ? "blue" : trim(body.get("theme")));
         row.put("hot", intOr(body.get("hot"), 0) == 1 ? 1 : 0);
         row.put("sort", intOr(body.get("sort"), 0));
         row.put("schoolId", schoolId);
+        String auditStatus = auditService.initialStatus(textAudit, false);
+        row.put("auditStatus", auditStatus);
+        row.put("auditReason", textAudit.reason());
+        row.put("auditAt", "passed".equals(auditStatus) ? java.time.LocalDateTime.now() : null);
+        row.put("status", "passed".equals(auditStatus) ? (intOr(body.get("status"), 1) == 0 ? 0 : 1) : 0);
         mapper.insertCircle(row);
+        auditService.logTextResult("circle", longOr(row.get("id"), 0), null, name + "\n" + description, textAudit);
         return Map.of("id", row.get("id"));
     }
 
+    @Transactional
     public void updateCircle(Long schoolId, Long id, Map<String, Object> body) {
         Map<String, Object> row = new LinkedHashMap<>();
         String name = trim(body.get("name"));
         if (name.isEmpty() || name.length() > 32) throw new IllegalArgumentException("圈子名称须为1至32字");
+        String description = trim(body.get("description"));
+        var textAudit = auditService.checkText(name + "\n" + description, "circle");
+        auditService.rejectIfNeeded(textAudit);
         row.put("id", id);
         row.put("name", name);
         row.put("category", trim(body.get("category")).isEmpty() ? "兴趣" : trim(body.get("category")));
-        row.put("description", trim(body.get("description")));
+        row.put("description", description);
         row.put("cover", trim(body.get("cover")));
         row.put("theme", trim(body.get("theme")).isEmpty() ? "blue" : trim(body.get("theme")));
         row.put("hot", intOr(body.get("hot"), 0) == 1 ? 1 : 0);
         row.put("sort", intOr(body.get("sort"), 0));
-        row.put("status", intOr(body.get("status"), 1) == 0 ? 0 : 1);
+        String auditStatus = auditService.initialStatus(textAudit, false);
+        row.put("auditStatus", auditStatus);
+        row.put("auditReason", textAudit.reason());
+        row.put("auditAt", "passed".equals(auditStatus) ? java.time.LocalDateTime.now() : null);
+        row.put("status", "passed".equals(auditStatus) && intOr(body.get("status"), 1) == 1 ? 1 : 0);
         mapper.updateCircle(row);
+        auditService.logTextResult("circle", id, null, name + "\n" + description, textAudit);
     }
 
     // ---- 学期 ----
