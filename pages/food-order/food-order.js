@@ -8,12 +8,14 @@ Page({
   async onLoad() {
     this._alive = true
     try {
+      await api.ensureLogin()
       const pending = wx.getStorageSync('pending_order')
       if (!pending || !Number.isSafeInteger(Number(pending.shopId)) || Number(pending.shopId) < 1) throw new Error('暂时没有待结算订单')
       const [shops, menu, addresses] = await Promise.all([api.getFoodShops(), api.getFoodMenu(pending.shopId), api.getAddresses(api.CURRENT_USER_ID)])
       if (!this._alive) return
       const shop = shops.find(s => Number(s.id) === Number(pending.shopId))
       if (!shop) throw new Error('店铺不存在，请重新选购')
+      if (!shop.isOpen) throw new Error('本店休息中，暂时不能下单')
       const items = orderItems(menu, pending.items)
       this.setData({ shop, items, addresses, address: addresses[0] || null, fees: bill(shop, items), loading: false })
     } catch (error) {

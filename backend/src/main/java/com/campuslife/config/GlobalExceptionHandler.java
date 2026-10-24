@@ -22,6 +22,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(403).body(new ApiResponse<>(403, e.getMessage() == null ? "无权限" : e.getMessage(), null));
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiResponse<Object>> unauthorized(UnauthorizedException e) {
+        return ResponseEntity.status(401).body(new ApiResponse<>(401, e.getMessage() == null ? "请先登录" : e.getMessage(), null));
+    }
+
     // 请求过于频繁：429（上传频率限制等）
     @ExceptionHandler(TooManyRequestsException.class)
     public ResponseEntity<ApiResponse<Object>> tooMany(TooManyRequestsException e) {

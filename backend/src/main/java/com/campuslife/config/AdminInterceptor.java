@@ -18,12 +18,16 @@ public class AdminInterceptor implements HandlerInterceptor {
     public static final String ADMIN_ROLE = "adminRole";
     public static final String ADMIN_SCHOOL = "adminSchoolId";
     public static final String ADMIN_NAME = "adminName";
+    public static final String MERCHANT_SHOP = "merchantShopId";
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return true;
         String path = request.getRequestURI();
-        // 登录接口本身不需要 token
+        if (path.endsWith("/api/merchant/apply")) return true;
+        // License files use private storage while application submission remains public.
+        if (path.endsWith("/api/admin/upload/private") && noToken(request)) return true;
+        // Login does not need a token.
         if (path.endsWith("/api/admin/login")) return true;
 
         String header = request.getHeader("Authorization");
@@ -32,20 +36,42 @@ public class AdminInterceptor implements HandlerInterceptor {
             : request.getHeader("X-Admin-Token");
         Claims claims = jwt.parse(token);
         if (claims == null) {
-            reject(response, "登录已过期，请重新登录");
+            reject(response, 401, "登录已过期，请重新登录");
+            return false;
+        }
+        String role = claims.get("role", String.class);
+        boolean merchantPath = path.startsWith(request.getContextPath() + "/api/merchant/");
+        if (merchantPath && !"merchant".equals(role)) {
+            reject(response, 403, "商家账号才可访问该接口");
+            return false;
+        }
+        if (!merchantPath && !"super".equals(role) && !"school".equals(role)) {
+            reject(response, 403, "无权访问管理端接口");
             return false;
         }
         request.setAttribute(ADMIN_ID, Long.valueOf(claims.getSubject()));
-        request.setAttribute(ADMIN_ROLE, claims.get("role", String.class));
+        request.setAttribute(ADMIN_ROLE, role);
         Object schoolId = claims.get("schoolId");
         if (schoolId instanceof Number n) request.setAttribute(ADMIN_SCHOOL, n.longValue());
         request.setAttribute(ADMIN_NAME, claims.get("name", String.class));
+        Object shopId = claims.get("shopId");
+        if (shopId instanceof Number n) request.setAttribute(MERCHANT_SHOP, n.longValue());
+        if (merchantPath && (!(shopId instanceof Number n) || n.longValue() < 1)) {
+            reject(response, 403, "商家账号未绑定店铺");
+            return false;
+        }
         return true;
     }
 
-    private void reject(HttpServletResponse response, String message) throws Exception {
-        response.setStatus(401);
+    private boolean noToken(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        String token = header != null && header.startsWith("Bearer ") ? header.substring(7).trim() : request.getHeader("X-Admin-Token");
+        return token == null || token.isBlank();
+    }
+
+    private void reject(HttpServletResponse response, int status, String message) throws Exception {
+        response.setStatus(status);
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"code\":401,\"msg\":\"" + message + "\",\"data\":null}");
+        response.getWriter().write("{\"code\":" + status + ",\"msg\":\"" + message + "\",\"data\":null}");
     }
 }

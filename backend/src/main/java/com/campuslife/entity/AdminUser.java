@@ -12,6 +12,7 @@ public class AdminUser {
     private String realName;
     private String role;
     private Long schoolId;
+    private Long shopId;
     private Integer status;
     private Integer failCount;
     private LocalDateTime lockedUntil;

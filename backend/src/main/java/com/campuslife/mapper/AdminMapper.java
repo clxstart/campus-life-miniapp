@@ -12,7 +12,7 @@ import java.util.Map;
 
     @Select("""
         SELECT id, username, password_hash AS passwordHash, real_name AS realName, role,
-               school_id AS schoolId, status, fail_count AS failCount, locked_until AS lockedUntil,
+               school_id AS schoolId, shop_id AS shopId, status, fail_count AS failCount, locked_until AS lockedUntil,
                last_login_at AS lastLoginAt, created_at AS createdAt
         FROM admin_user WHERE username = #{username} LIMIT 1
         """)
@@ -58,7 +58,7 @@ import java.util.Map;
     long countLogs(@Param("adminId") Long adminId);
 
     @Select("""
-        SELECT id, username, real_name AS realName, role, school_id AS schoolId, status,
+        SELECT id, username, real_name AS realName, role, school_id AS schoolId, shop_id AS shopId, status,
                last_login_at AS lastLoginAt, created_at AS createdAt
         FROM admin_user ORDER BY role, id
         """)

@@ -1,0 +1,19 @@
+.detail-page{min-height:100vh;background:#f6f8fb;padding-bottom:50rpx}
+.nav{display:flex;align-items:center;padding-left:34rpx;background:#f6f8fb}
+.nav-title{flex:1;text-align:center;font-size:31rpx;font-weight:700;color:#18232d}
+.back{width:56rpx;color:#56645b;font-size:42rpx}
+.nav-action{width:100rpx;text-align:right;color:#8a968e;font-size:17rpx}
+.status-panel{margin:20rpx 28rpx;padding:36rpx 24rpx;text-align:center;border-radius:16rpx;background:#eaf5ec;color:#2f7046}
+.status-mark{display:block;font-size:30rpx}
+.status-title{display:block;margin-top:10rpx;font-size:31rpx;font-weight:700}
+.status-note{display:block;margin-top:8rpx;font-size:20rpx;color:#6f8976}
+.detail-card{margin:18rpx 28rpx;padding:24rpx;border:1rpx solid #e5ebe6;border-radius:16rpx;background:#fff}
+.shop-name{display:block;margin-bottom:18rpx;font-size:28rpx;font-weight:700;color:#24342b}
+.item-row,.total-row{display:flex;justify-content:space-between;gap:18rpx;padding:13rpx 0;color:#65736a;font-size:22rpx}
+.total-row{margin-top:10rpx;border-top:1rpx solid #edf0ed;padding-top:20rpx;color:#24342b;font-weight:700}
+.total{font-size:27rpx}
+.address-card{display:flex;flex-direction:column;gap:12rpx;font-size:22rpx;line-height:1.6}
+.label{color:#87938a;font-size:19rpx}
+.remark{color:#65736a}
+.state{padding:150rpx 36rpx;text-align:center;color:#7c8980;font-size:22rpx}
+.state-title{display:block;margin-bottom:12rpx;color:#26362c;font-size:29rpx;font-weight:700}

@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 import java.util.ArrayList;
@@ -41,14 +42,39 @@ public class BizService {
     private static final BigDecimal PACKING_FEE = new BigDecimal("2.00");
 
     // 外卖店铺：按校隔离（各校商家不同），schoolScope=all 时看全部学校
-    public List<Shop> shops(String category, String schoolScope, Long explicitSchoolId, Long userId) {
+    public List<Map<String,Object>> shops(String category, String schoolScope, Long explicitSchoolId, Long userId) {
         String c = category == null ? "" : category.trim();
         Long schoolId = resolveSchoolId(schoolScope, explicitSchoolId, userId);
-        return shopMapper.selectList(new LambdaQueryWrapper<Shop>()
+        List<Shop> shops = shopMapper.selectList(new LambdaQueryWrapper<Shop>()
             .eq(Shop::getStatus, 1)
             .eq(!c.isEmpty() && !"全部".equals(c), Shop::getCategory, c)
             .eq(schoolId != null, Shop::getSchoolId, schoolId)
             .orderByAsc(Shop::getId));
+        return shops.stream().map(this::publicShop).toList();
+    }
+
+    private Map<String,Object> publicShop(Shop shop) {
+        Map<String,Object> row = new LinkedHashMap<>();
+        row.put("id", shop.getId()); row.put("name", shop.getName()); row.put("cover", shop.getCover());
+        row.put("category", shop.getCategory()); row.put("rating", shop.getRating()); row.put("monthlySales", shop.getMonthlySales());
+        row.put("minPrice", shop.getMinPrice()); row.put("deliveryFee", shop.getDeliveryFee()); row.put("deliveryTime", shop.getDeliveryTime());
+        row.put("discount", shop.getDiscount()); row.put("notice", shop.getNotice()); row.put("schoolId", shop.getSchoolId());
+        row.put("contactPhone", shop.getContactPhone()); row.put("address", shop.getAddress()); row.put("openTime", shop.getOpenTime());
+        row.put("closeTime", shop.getCloseTime()); row.put("status", shop.getStatus()); row.put("isOpen", orderable(shop));
+        return row;
+    }
+
+    private static boolean orderable(Shop shop) {
+        if (!Integer.valueOf(1).equals(shop.getStatus()) || !Integer.valueOf(1).equals(shop.getIsOpen())) return false;
+        try {
+            LocalTime now = LocalTime.now();
+            LocalTime open = LocalTime.parse(shop.getOpenTime());
+            LocalTime close = LocalTime.parse(shop.getCloseTime());
+            if (open.equals(close)) return true;
+            return open.isBefore(close) ? !now.isBefore(open) && now.isBefore(close) : !now.isBefore(open) || now.isBefore(close);
+        } catch (Exception error) {
+            return false;
+        }
     }
 
     private Shop requireShop(Long id) {
@@ -62,7 +88,7 @@ public class BizService {
         List<ShopGoods> list = goodsMapper.selectList(new LambdaQueryWrapper<ShopGoods>().eq(ShopGoods::getShopId, id).eq(ShopGoods::getStatus, 1).orderByAsc(ShopGoods::getSortNum).orderByAsc(ShopGoods::getId));
         Map<String, List<Map<String, Object>>> groups = new LinkedHashMap<>();
         for (ShopGoods g : list) {
-            groups.computeIfAbsent(g.getCategory(), k -> new ArrayList<>()).add(Map.of("id", g.getId(), "name", g.getName(), "price", g.getPrice(), "monthlySales", g.getMonthlySales(), "image", g.getImage()));
+            groups.computeIfAbsent(g.getCategory(), k -> new ArrayList<>()).add(Map.of("id", g.getId(), "name", g.getName(), "price", g.getPrice(), "monthlySales", g.getMonthlySales(), "image", g.getImage(), "status", g.getStatus()));
         }
         List<Map<String, Object>> out = new ArrayList<>();
         groups.forEach((category, goods) -> out.add(Map.of("category", category, "goods", goods)));
@@ -338,6 +364,7 @@ public class BizService {
     @Transactional
     public Map<String, Object> order(CreateOrderRequest r) {
         Shop shop = requireShop(r.getShopId());
+        if (!orderable(shop)) throw new IllegalArgumentException("这家店当前休息或不在营业时间内");
         if (userMapper.selectById(r.getUserId()) == null) throw new IllegalArgumentException("用户不存在");
         Map<Long, Integer> counts = new LinkedHashMap<>();
         for (CreateOrderRequest.Item item : r.getItems()) {

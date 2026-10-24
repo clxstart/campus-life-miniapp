@@ -8,6 +8,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/** task-12: 外卖下单支付（binarywang weixin-java-pay）。默认关闭，wxpay.enabled=true 时生效。 */
 @Configuration
 @EnableConfigurationProperties(WxPayProperties.class)
 public class WxPayConfiguration {

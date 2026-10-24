@@ -147,9 +147,20 @@ test('孤儿清理：只预览不删除时返回可清理数量', async (t) => {
 
 // ================= ④ 私有目录：敏感图片隔离 =================
 
-test('私有上传：无 token 必须 401', async (t) => {
+test('私有上传：公开入驻可无 token 上传，但只返回私有路径', async (t) => {
   if (!(await serverUp())) return t.skip('后端未启动')
   const res = await upload('/admin/upload/private', null, pngFile())
+  assert.equal(res.code, 0, `公开申请上传应成功：${JSON.stringify(res).slice(0, 160)}`)
+  assert.ok(res.data.path.startsWith('/private/'), `应返回私有路径，实际：${res.data.path}`)
+  assert.equal(res.data.url, '', '私有上传不应返回可直接访问的 URL')
+
+  const pub = await fetch(`http://127.0.0.1:8080${res.data.path}`, { signal: AbortSignal.timeout(6000) })
+  assert.notEqual(pub.status, 200, '私有文件不应能通过公开静态路径访问')
+})
+
+test('私有上传：伪造 token 仍必须 401', async (t) => {
+  if (!(await serverUp())) return t.skip('后端未启动')
+  const res = await upload('/admin/upload/private', 'eyJhbGciOiJIUzI1NiJ9.fake.sig', pngFile())
   assert.equal(res.http, 401)
 })
 

@@ -80,7 +80,7 @@ const reloadKey = ref(0)
 // 超管才看得到学校/管理员管理；登录页是 public 路由，不能进菜单
 const menus = computed(() => {
   const all = router.getRoutes()
-    .filter(r => r.meta?.title && r.name && !r.meta.public)
+    .filter(r => r.meta?.title && r.name && !r.meta.public && !r.meta.merchantOnly && !r.path.startsWith('/merchant'))
     .map(r => ({ name: r.name, title: r.meta.title, icon: r.meta.icon, superOnly: !!r.meta.superOnly }))
   return all.filter(m => !m.superOnly || auth.isSuper)
 })

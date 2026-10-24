@@ -27,7 +27,11 @@ export function clearAuth() {
 
 http.interceptors.request.use(config => {
   const token = getToken()
-  if (token) config.headers.Authorization = `Bearer ${token}`
+  if (config.skipAuth) {
+    config.headers.delete?.('Authorization')
+    delete config.headers.Authorization
+    delete config.headers.authorization
+  } else if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
@@ -61,5 +65,32 @@ export const adminApi = {
   admins: () => http.get('/admin/admins'),
   createAdmin: (payload) => http.post('/admin/admins', payload),
   setAdminStatus: (id, status) => http.post(`/admin/admins/${id}/status`, { status }),
-  logs: (params) => http.get('/admin/logs', { params })
+  logs: (params) => http.get('/admin/logs', { params }),
+  merchantApplies: (params) => http.get('/admin/merchant-applies', { params }),
+  merchantApply: (id) => http.get(`/admin/merchant-applies/${id}`),
+  approveMerchant: (id) => http.post(`/admin/merchant-applies/${id}/approve`),
+  rejectMerchant: (id, reason) => http.post(`/admin/merchant-applies/${id}/reject`, { reason }),
+  merchantLicenseImage: async (id) => {
+    const response = await axios.get(`/api/admin/merchant-applies/${id}/license-image`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+      responseType: 'blob'
+    })
+    return URL.createObjectURL(response.data)
+  }
+}
+
+export const merchantApi = {
+  home: () => http.get('/merchant/home'),
+  shop: () => http.get('/merchant/shop'),
+  updateShop: (payload) => http.put('/merchant/shop', payload),
+  goods: () => http.get('/merchant/goods'),
+  createGoods: (payload) => http.post('/merchant/goods', payload),
+  updateGoods: (id, payload) => http.put(`/merchant/goods/${id}`, payload),
+  deleteGoods: (id) => http.delete(`/merchant/goods/${id}`),
+  setGoodsStatus: (id, status) => http.post(`/merchant/goods/${id}/status`, { status }),
+  setGoodsStatusBatch: (ids, status) => http.post('/merchant/goods/status/batch', { ids, status }),
+  orders: (params) => http.get('/merchant/orders', { params }),
+  acceptOrder: (id) => http.post(`/merchant/orders/${id}/accept`),
+  rejectOrder: (id, reason) => http.post(`/merchant/orders/${id}/reject`, { reason }),
+  completeOrder: (id) => http.post(`/merchant/orders/${id}/complete`)
 }

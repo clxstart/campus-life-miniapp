@@ -3,6 +3,7 @@ package com.campuslife.config;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/** task-12: 外卖下单支付（binarywang weixin-java-pay）配置，前缀 wxpay。 */
 @Data
 @ConfigurationProperties(prefix = "wxpay")
 public class WxPayProperties {

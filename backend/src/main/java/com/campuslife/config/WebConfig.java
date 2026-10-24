@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration; import org.springfr
    // 小程序端：解析失败不阻断，由接口自行降级（保证无后端也能演示）
    registry.addInterceptor(authInterceptor).addPathPatterns("/api/**").excludePathPatterns("/api/pay/notify");
    // 管理端：必须携带有效 token，否则 401。顺序在用户拦截器之后，互不影响。
-   registry.addInterceptor(adminInterceptor).addPathPatterns("/api/admin/**");
+   registry.addInterceptor(adminInterceptor).addPathPatterns("/api/admin/**", "/api/merchant/**");
  }
  // 上传的图片通过 /uploads/** 直接访问
  @Override public void addResourceHandlers(ResourceHandlerRegistry registry){

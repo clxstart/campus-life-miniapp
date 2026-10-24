@@ -40,7 +40,7 @@ public class UploadController {
     @PostMapping("/admin/upload/private")
     public ApiResponse<Map<String,Object>> adminUploadPrivate(@RequestParam("file") MultipartFile file,
                                                               HttpServletRequest request) {
-        limiter.acquire(adminKey(request));
+        limiter.acquire(privateUploadKey(request));
         return ApiResponse.ok(service.storePrivate(file));
     }
 
@@ -52,25 +52,20 @@ public class UploadController {
         return ApiResponse.ok(service.cleanOrphans(dryRun, olderThanDays));
     }
 
-    /**
-     * 频率限制的来源标识：
-     * 管理端用 adminId（同一账号共享配额），游客用 IP + 可选的客户端标识头。
-     * 允许客户端自带标识是为了让不同来源互不影响（也便于测试）。
-     */
+    /** Authenticated staff may use a client label; anonymous uploads use only the socket peer address. */
     private static String adminKey(HttpServletRequest request) {
         Object adminId = request.getAttribute(AdminInterceptor.ADMIN_ID);
         String who = request.getHeader("X-Upload-Client");
         if (adminId != null) return "admin:" + adminId + (who == null ? "" : ":" + who);
-        return "admin-ip:" + ip(request) + (who == null ? "" : ":" + who);
+        return "admin-ip:" + request.getRemoteAddr() + (who == null ? "" : ":" + who);
+    }
+
+    private static String privateUploadKey(HttpServletRequest request) {
+        Object adminId = request.getAttribute(AdminInterceptor.ADMIN_ID);
+        return adminId == null ? "private-guest:" + request.getRemoteAddr() : "admin:" + adminId;
     }
 
     private static String clientKey(HttpServletRequest request) {
-        String who = request.getHeader("X-Upload-Client");
-        return "guest:" + ip(request) + (who == null ? "" : ":" + who);
-    }
-
-    private static String ip(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        return forwarded != null && !forwarded.isBlank() ? forwarded.split(",")[0].trim() : request.getRemoteAddr();
+        return "guest:" + request.getRemoteAddr();
     }
 }

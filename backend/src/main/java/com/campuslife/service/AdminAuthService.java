@@ -38,15 +38,22 @@ public class AdminAuthService {
             mapper.bumpFail(admin.getId(), lock);
             throw new IllegalArgumentException("账号或密码错误");
         }
+        if ("merchant".equals(admin.getRole()) && (admin.getShopId() == null || admin.getShopId() < 1)) {
+            throw new IllegalArgumentException("商家账号尚未绑定店铺");
+        }
+        if ("school".equals(admin.getRole()) && (admin.getSchoolId() == null || admin.getSchoolId() < 1)) {
+            throw new IllegalArgumentException("学校管理员账号尚未绑定学校");
+        }
         mapper.markLogin(admin.getId());
         Map<String,Object> out = new LinkedHashMap<>();
-        out.put("token", jwt.issue(admin.getId(), admin.getRole(), admin.getSchoolId(), admin.getRealName()));
+        out.put("token", jwt.issue(admin.getId(), admin.getRole(), admin.getSchoolId(), admin.getShopId(), admin.getRealName()));
         out.put("expiresIn", jwt.ttlSeconds());
         out.put("id", admin.getId());
         out.put("username", admin.getUsername());
         out.put("realName", admin.getRealName());
         out.put("role", admin.getRole());
         out.put("schoolId", admin.getSchoolId());
+        out.put("shopId", admin.getShopId());
         return out;
     }
 

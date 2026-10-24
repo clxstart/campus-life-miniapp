@@ -26,7 +26,7 @@ public class AdminJwtUtil {
         this.ttlSeconds = ttlSeconds;
     }
 
-    public String issue(Long adminId, String role, Long schoolId, String name) {
+    public String issue(Long adminId, String role, Long schoolId, Long shopId, String name) {
         Instant now = Instant.now();
         var builder = Jwts.builder()
             .subject(String.valueOf(adminId))
@@ -35,6 +35,7 @@ public class AdminJwtUtil {
             .issuedAt(Date.from(now))
             .expiration(Date.from(now.plusSeconds(ttlSeconds)));
         if (schoolId != null) builder.claim("schoolId", schoolId);
+        if (shopId != null) builder.claim("shopId", shopId);
         return builder.signWith(key).compact();
     }
 

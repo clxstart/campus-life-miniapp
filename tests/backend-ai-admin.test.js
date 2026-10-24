@@ -271,7 +271,7 @@ test('欢迎语：公开接口返回可配置的欢迎语', async (t) => {
 })
 
 test('欢迎语：管理端能改，改完公开接口立刻生效', async (t) => {
-  if (!(await serverUp())) t.skip('后端未启动')
+  if (!(await serverUp())) return t.skip('后端未启动')
   const token = await login()
   const before = await (await fetch(`${BASE}/ai/welcome`, { signal: AbortSignal.timeout(6000) })).json()
 

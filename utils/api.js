@@ -323,22 +323,24 @@ module.exports = { BASE_URL, request, searchPosts, searchAll, getConversations, 
 // 外卖：读取接口均离线兜底；写入接口仅在网络失败时演示，保留服务端拒单消息。
 function localFoodAddresses(userId) { try { const rows=wx.getStorageSync('food_addresses_'+userId); return Array.isArray(rows)?rows:(userId===CURRENT_USER_ID?mock.foodAddresses:[]) } catch(error) { return userId===CURRENT_USER_ID?mock.foodAddresses:[] } }
 function cacheFoodAddresses(userId, rows) { try { wx.setStorageSync('food_addresses_'+userId,rows) } catch(error) {} }
-function getFoodShops(category='', schoolScope='local', schoolId=null) {
+  function getFoodShops(category='', schoolScope='local', schoolId=null) {
   const school = schoolId ? `&schoolId=${encodeURIComponent(schoolId)}` : ''
-  return request(`/shops?category=${encodeURIComponent(category)}&schoolScope=${encodeURIComponent(schoolScope)}${school}&userId=${CURRENT_USER_ID}`, 'GET').catch(() => wait(mock.foodShops.filter(s => !category || s.category===category)))
-}
-function getFoodMenu(id) { return request(`/shops/${id}/menu`, 'GET').catch(() => wait(mock.foodMenus[id] || [])) }
-function createFoodOrder(payload) { return request('/orders', 'POST', {...payload,userId:CURRENT_USER_ID}).catch(error => { if (error.server) throw error; return wait(mock.makeFoodOrder(payload)) }) }
-// 支付是写操作，服务端失败时必须把错误直接交给页面处理，避免用户误以为已经付款。
-function payOrder(orderId) { return request(`/orders/${encodeURIComponent(orderId)}/pay`, 'POST', {}) }
-// 订单详情是读操作，断网时允许进入未知状态，由页面继续提示用户稍后查看。
-function getOrderDetail(orderId) {
-  return request(`/orders/${encodeURIComponent(orderId)}`, 'GET').catch(error => {
-    if (error.server) throw error
-    return wait({ id: orderId, orderId, payStatus: 'unknown', status: 'unknown', offline: true })
-  })
-}
-Object.assign(module.exports, { CURRENT_USER_ID, getFoodShops, getFoodMenu, createFoodOrder, payOrder, getOrderDetail })
+    return request(`/food/shops?category=${encodeURIComponent(category)}&schoolScope=${encodeURIComponent(schoolScope)}${school}&userId=${CURRENT_USER_ID}`, 'GET').then(rows => (rows || []).map(s => ({ ...s, isOpen: Boolean(s.isOpen) }))).catch(error => { if (error.server) throw error; return wait(mock.foodShops.filter(s => !category || s.category===category).map(s => ({ ...s, isOpen: true }))) })
+  }
+  function getFoodMenu(id) { return request(`/food/shops/${id}/menu`, 'GET').catch(error => { if (error.server) throw error; return wait(mock.foodMenus[id] || []) }) }
+  function createFoodOrder(payload) { return request('/orders', 'POST', {...payload,userId:currentUserId()}).catch(error => { if (error.server) throw error; return wait(mock.makeFoodOrder(payload)) }) }
+  function getFoodOrders(page=1,size=20) { return request(`/orders?page=${page}&size=${size}`, 'GET').catch(error => { if (error.server) throw error; return wait({list:[],total:0,page,size,offline:true}) }) }
+  function getFoodOrderDetail(id) { return request(`/orders/${encodeURIComponent(id)}`, 'GET') }
+  // 支付是写操作，服务端失败时必须把错误直接交给页面处理，避免用户误以为已经付款。
+  function payOrder(orderId) { return request(`/orders/${encodeURIComponent(orderId)}/pay`, 'POST', {}) }
+  // 订单详情是读操作，断网时允许进入未知状态，由页面继续提示用户稍后查看。
+  function getOrderDetail(orderId) {
+    return request(`/orders/${encodeURIComponent(orderId)}`, 'GET').catch(error => {
+      if (error.server) throw error
+      return wait({ id: orderId, orderId, payStatus: 'unknown', status: 'unknown', offline: true })
+    })
+  }
+  Object.assign(module.exports, { CURRENT_USER_ID, getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail, payOrder, getOrderDetail })
 
 // 模块二至四：只在断网时使用本地兜底；后端返回的拒单/校验错误必须直接透传。
 

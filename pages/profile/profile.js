@@ -16,6 +16,7 @@ Page({
       { key: 'views', icon: '迹', name: '浏览记录', desc: '', color: '#F0B24E' }
     ],
     menus: [
+      { key: 'food-orders', icon: '餐', title: '我的外卖订单', value: '', tone: 'green' },
       { key: 'timetable', icon: '课', title: '我的课表', value: '', tone: 'blue' },
       { key: 'calendar', icon: '历', title: '校历', value: '', tone: 'green' },
       { key: 'cert', icon: '✓', title: '校园身份认证', value: '已认证', tone: 'blue' },
@@ -52,8 +53,8 @@ Page({
     this.setData({
       'services[1].desc': `${(favorites || []).length}个收藏`,
       'services[2].desc': `最近${(views || []).length}条`,
-      'menus[3].value': `${(addresses || []).length}个地址`,
-      'menus[4].value': `${(coupons || []).length}张可用`
+      'menus[4].value': `${(addresses || []).length}个地址`,
+      'menus[5].value': `${(coupons || []).length}张可用`
     })
   },
 
@@ -67,10 +68,10 @@ Page({
       const weekNo = getTermWeek(today, termInfo.termStart)
       const todayCourses = courses.filter(course => course.day === todayIdx).length
       this.setData({
-        'menus[0].value': `第${weekNo}周 · 今天${todayCourses ? `${todayCourses}节` : '无课'}`,
-        'menus[1].value': `距期中还有${daysUntil(termInfo.midtermStart, today)}天`
+        'menus[1].value': `第${weekNo}周 · 今天${todayCourses ? `${todayCourses}节` : '无课'}`,
+        'menus[2].value': `距期中还有${daysUntil(termInfo.midtermStart, today)}天`
       })
-    } catch (error) { this.setData({ 'menus[0].value': '点击查看课表', 'menus[1].value': '点击查看校历' }) }
+    } catch (error) { this.setData({ 'menus[1].value': '点击查看课表', 'menus[2].value': '点击查看校历' }) }
   },
 
   openService(event) {
@@ -85,6 +86,7 @@ Page({
 
   openMenu(event) {
     const key = event.currentTarget.dataset.key
+    if (key === 'food-orders') return wx.navigateTo({ url: '/pages/food-orders/food-orders' })
     if (key === 'timetable') return wx.navigateTo({ url: '/pages/timetable/timetable' })
     if (key === 'calendar') return wx.navigateTo({ url: '/pages/calendar/calendar' })
     if (key === 'address') return this.openAddresses()
