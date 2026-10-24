@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -357,11 +359,11 @@ public class BizService {
         BigDecimal total = subtotal.subtract(discount).add(PACKING_FEE).add(shop.getDeliveryFee()).setScale(2);
         if (total.compareTo(new BigDecimal("99999999.99")) > 0) throw new IllegalArgumentException("订单金额超出限制");
         UserOrder order = new UserOrder();
-        order.setUserId(r.getUserId()); order.setShopId(shop.getId()); order.setItems(snapshotJson(snapshots)); order.setAddress(r.getAddress().trim()); order.setRemark(r.getRemark() == null ? "" : r.getRemark().trim()); order.setSubtotal(subtotal); order.setPackingFee(PACKING_FEE); order.setDeliveryFee(shop.getDeliveryFee()); order.setDiscountAmount(discount); order.setTotal(total); order.setStatus("created"); order.setCreatedAt(LocalDateTime.now());
+        order.setUserId(r.getUserId()); order.setShopId(shop.getId()); order.setItems(snapshotJson(snapshots)); order.setAddress(r.getAddress().trim()); order.setRemark(r.getRemark() == null ? "" : r.getRemark().trim()); order.setSubtotal(subtotal); order.setPackingFee(PACKING_FEE); order.setDeliveryFee(shop.getDeliveryFee()); order.setDiscountAmount(discount); order.setTotal(total); order.setStatus(OrderStatus.CREATED.value()); order.setPayAmountCents(total.movePointRight(2).setScale(0).intValueExact()); order.setPayStatus("unpaid"); order.setOutTradeNo("CL" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + UUID.randomUUID().toString().replace("-", "").substring(0, 10)); order.setCreatedAt(LocalDateTime.now());
         orderMapper.insert(order);
         // 真实热度：下单成功才累加店铺订单数（与订单写入同一事务）
         recommendMapper.increaseShopOrder(shop.getId());
-        return Map.of("orderId", order.getId(), "total", total);
+        return Map.of("orderId", order.getId(), "id", order.getId(), "total", total, "payAmountCents", order.getPayAmountCents(), "outTradeNo", order.getOutTradeNo(), "payStatus", order.getPayStatus());
     }
 
     private String snapshotJson(List<Map<String, Object>> items) { try { return json.writeValueAsString(items); } catch (JsonProcessingException e) { throw new IllegalStateException("订单商品保存失败", e); } }

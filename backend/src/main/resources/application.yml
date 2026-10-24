@@ -35,4 +35,13 @@ campus:
     # 上传接口返回的图片基址：必须是小程序可访问的 http(s) 地址
     # 生产环境改为真实域名（如 https://api.example.com）
     base-url: http://127.0.0.1:8080
+wxpay:
+  enabled: false
+  app-id: ''
+  mch-id: ''
+  api-v3-key: ''
+  cert-serial-no: ''
+  private-key-path: ''
+  notify-url: 'https://your-domain.example/api/pay/notify'
+  sandbox: false
 # 生产环境请将前端基址切换为 HTTPS，并在微信公众平台配置 request 合法域名。
