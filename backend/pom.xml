@@ -77,6 +77,12 @@
       <artifactId>wechatpay-java</artifactId>
       <version>0.2.17</version>
     </dependency>
+    <!-- task-13: 内容审核（本地敏感词引擎） -->
+    <dependency>
+      <groupId>com.github.houbb</groupId>
+      <artifactId>sensitive-word</artifactId>
+      <version>0.2.0</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

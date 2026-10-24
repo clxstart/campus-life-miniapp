@@ -1,7 +1,7 @@
 package com.campuslife.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper; import com.baomidou.mybatisplus.extension.plugins.pagination.Page; import com.campuslife.dto.*; import com.campuslife.entity.*; import com.campuslife.mapper.*; import lombok.RequiredArgsConstructor; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional; import java.time.LocalDateTime; import java.util.*;
 @Service @RequiredArgsConstructor public class ForumService {
- private final CampusMapper campusMapper; private final CircleService circleService; private final PostMapper postMapper; private final UserMapper userMapper; private final PostLikeMapper likeMapper; private final CommentMapper commentMapper; private final FollowMapper followMapper; private final PostViewMapper viewMapper; private final FavoriteMapper favoriteMapper; private final com.campuslife.mapper.BannerMapper bannerMapper;
+ private final CampusMapper campusMapper; private final CircleService circleService; private final PostMapper postMapper; private final UserMapper userMapper; private final PostLikeMapper likeMapper; private final CommentMapper commentMapper; private final FollowMapper followMapper; private final PostViewMapper viewMapper; private final FavoriteMapper favoriteMapper; private final com.campuslife.mapper.BannerMapper bannerMapper; private final AuditService auditService;
  public List<com.campuslife.entity.Banner> banners(String slot){return bannerMapper.selectList(new LambdaQueryWrapper<com.campuslife.entity.Banner>().eq(com.campuslife.entity.Banner::getSlot,slot).eq(com.campuslife.entity.Banner::getStatus,1).orderByAsc(com.campuslife.entity.Banner::getSort));}
  public Map<String,Object> page(String tag,String scope,String postScope,Long userId,int page,int size){
    return page(tag,scope,postScope,userId,page,size,null);
@@ -129,17 +129,31 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper; import
  @Transactional public Post create(CreatePostRequest r){
    String learnCategory=r.getLearnCategory();
    if(learnCategory!=null&&!learnCategory.isEmpty()&&!LEARN_CATEGORIES.contains(learnCategory))throw new IllegalArgumentException("学习分类不合法");
- if(!validImage(r.getImage()))throw new IllegalArgumentException("图片未上传成功，请重新选择图片"); Post p=new Post(); p.setUserId(r.getUserId());p.setTitle(r.getTitle());p.setContent(r.getContent());p.setImage(r.getImage());p.setTag(learnCategory!=null&&!learnCategory.isEmpty()?"学习":r.getTag());p.setLearnCategory(learnCategory==null||learnCategory.isEmpty()?null:learnCategory);p.setLocation(r.getLocation()); if(r.getCircleId()!=null&&r.getCircleId()>0){circleService.brief(r.getCircleId()); p.setCircleId(r.getCircleId());} /* 帖子归属：显式跨校→school_id 置空（所有学校可见）；否则归发布者本校 */ if(learnCategory!=null&&!learnCategory.isEmpty()){
-   if(Boolean.TRUE.equals(r.getCrossSchool()))throw new IllegalArgumentException("学习交流仅在所选学校可见");
-   Long selectedSchoolId=learnSchoolId(r.getSchoolId(),r.getUserId());
-   if(selectedSchoolId==null||campusMapper.publicSchools().stream().noneMatch(row->row.get("id") instanceof Number&&selectedSchoolId.equals(((Number)row.get("id")).longValue())))
-     throw new IllegalArgumentException("请先选择有效学校");
-   p.setSchoolId(selectedSchoolId);
- }else if(Boolean.TRUE.equals(r.getCrossSchool())){p.setSchoolId(null);}else{p.setSchoolId(userSchoolId(r.getUserId()));} p.setLikeCount(0);p.setCommentCount(0);p.setStatus(1);p.setCreatedAt(LocalDateTime.now());p.setUpdatedAt(LocalDateTime.now());postMapper.insert(p); if(p.getCircleId()!=null)circleService.syncPostCount(p.getCircleId()); return p;}
+   if(!validImage(r.getImage()))throw new IllegalArgumentException("图片未上传成功，请重新选择图片");
+   AuditResult textAudit=auditService.checkText(r.getTitle()+"\n"+r.getContent(),"post",r.getUserId());
+   auditService.rejectIfNeeded(textAudit);
+   Post p=new Post(); p.setUserId(r.getUserId());p.setTitle(r.getTitle());p.setContent(r.getContent());p.setImage(r.getImage());p.setTag(learnCategory!=null&&!learnCategory.isEmpty()?"学习":r.getTag());p.setLearnCategory(learnCategory==null||learnCategory.isEmpty()?null:learnCategory);p.setLocation(r.getLocation());
+   if(r.getCircleId()!=null&&r.getCircleId()>0){circleService.brief(r.getCircleId());p.setCircleId(r.getCircleId());}
+   if(learnCategory!=null&&!learnCategory.isEmpty()){
+     if(Boolean.TRUE.equals(r.getCrossSchool()))throw new IllegalArgumentException("学习交流仅在所选学校可见");
+     Long selectedSchoolId=learnSchoolId(r.getSchoolId(),r.getUserId());
+     if(selectedSchoolId==null||campusMapper.publicSchools().stream().noneMatch(row->row.get("id") instanceof Number&&selectedSchoolId.equals(((Number)row.get("id")).longValue())))throw new IllegalArgumentException("请先选择有效学校");
+     p.setSchoolId(selectedSchoolId);
+   }else if(Boolean.TRUE.equals(r.getCrossSchool())){p.setSchoolId(null);}else{p.setSchoolId(userSchoolId(r.getUserId()));}
+   String auditStatus=auditService.initialStatus(textAudit,r.getImage()!=null&&!r.getImage().isBlank());
+   LocalDateTime now=LocalDateTime.now();
+   p.setAuditStatus(auditStatus);p.setAuditReason(textAudit.reason());p.setAuditAt("passed".equals(auditStatus)?now:null);
+   p.setLikeCount(0);p.setCommentCount(0);p.setStatus("passed".equals(auditStatus)?1:0);p.setCreatedAt(now);p.setUpdatedAt(now);
+   postMapper.insert(p);
+   auditService.logTextResult("post",p.getId(),r.getUserId(),r.getTitle()+"\n"+r.getContent(),textAudit);
+   if(p.getImage()!=null&&!p.getImage().isBlank())auditService.scheduleImagesAfterCommit(List.of(p.getImage()),"post",p.getId(),r.getUserId());
+   if(p.getCircleId()!=null)circleService.syncPostCount(p.getCircleId());
+   return p;
+ }
  @Transactional public Map<String,Object> toggleLike(Long id,Long uid){LambdaQueryWrapper<PostLike> q=new LambdaQueryWrapper<PostLike>().eq(PostLike::getPostId,id).eq(PostLike::getUserId,uid);PostLike old=likeMapper.selectOne(q); boolean liked;if(old==null){PostLike x=new PostLike();x.setPostId(id);x.setUserId(uid);x.setCreatedAt(LocalDateTime.now());likeMapper.insert(x);postMapper.update(null,new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Post>().eq(Post::getId,id).setSql("like_count = like_count + 1"));liked=true;}else{likeMapper.delete(q);postMapper.update(null,new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Post>().eq(Post::getId,id).setSql("like_count = GREATEST(like_count - 1, 0)"));liked=false;}if(liked){Post post=postMapper.selectById(id);if(post!=null&&!post.getUserId().equals(uid))campusMapper.notifyUser(post.getUserId(),"收到新的赞","有同学赞了你的帖子："+post.getTitle(),"like",id);}return Map.of("liked",liked);}
- @Transactional public Comment addComment(Long id,CommentRequest r){Comment c=new Comment();c.setPostId(id);c.setUserId(r.getUserId());c.setContent(r.getContent());c.setCreatedAt(LocalDateTime.now());commentMapper.insert(c);postMapper.update(null,new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Post>().eq(Post::getId,id).setSql("comment_count = comment_count + 1"));Post post=postMapper.selectById(id);if(post!=null&&!post.getUserId().equals(r.getUserId()))campusMapper.notifyUser(post.getUserId(),"收到新的评论",r.getContent(),"comment",id);return c;}
+ @Transactional public Comment addComment(Long id,CommentRequest r){AuditResult textAudit=auditService.checkText(r.getContent(),"comment",r.getUserId());auditService.rejectIfNeeded(textAudit);Comment c=new Comment();c.setPostId(id);c.setUserId(r.getUserId());c.setContent(r.getContent());c.setAuditStatus(textAudit.reviewing()?"reviewing":"passed");c.setAuditReason(textAudit.reason());c.setAuditAt(textAudit.reviewing()?null:LocalDateTime.now());c.setCreatedAt(LocalDateTime.now());commentMapper.insert(c);auditService.logTextResult("comment",c.getId(),r.getUserId(),r.getContent(),textAudit);if(!textAudit.reviewing()){postMapper.update(null,new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Post>().eq(Post::getId,id).setSql("comment_count = comment_count + 1"));Post post=postMapper.selectById(id);if(post!=null&&!post.getUserId().equals(r.getUserId()))campusMapper.notifyUser(post.getUserId(),"收到新的评论",r.getContent(),"comment",id);}return c;}
  public List<Map<String,Object>> comments(Long id){
-   List<Comment> cs=commentMapper.selectList(new LambdaQueryWrapper<Comment>().eq(Comment::getPostId,id).orderByAsc(Comment::getCreatedAt));
+   List<Comment> cs=commentMapper.selectList(new LambdaQueryWrapper<Comment>().eq(Comment::getPostId,id).eq(Comment::getAuditStatus,"passed").orderByAsc(Comment::getCreatedAt));
    List<Long> uids=new ArrayList<>(); for(Comment c:cs){uids.add(c.getUserId());}
    Map<Long,User> users=new HashMap<>();
    if(!uids.isEmpty()){for(User u:userMapper.selectBatchIds(uids)){users.put(u.getId(),u);}}

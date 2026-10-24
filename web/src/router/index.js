@@ -19,7 +19,8 @@ const routes = [
     component: () => import('../layouts/AdminLayout.vue'),
     redirect: '/dashboard',
     children: [
-      { path: 'dashboard', name: 'dashboard', component: () => import('../views/Dashboard.vue'), meta: { title: '数据看板', icon: '◉' } },
+      { path: 'audit', name: 'Audit', component: () => import('../views/Audit.vue'), meta: { title: '内容审核', icon: '✓', superOnly: false } },
+      { path: 'dashboard', name: 'dashboard', component: () => import('../views/Dashboard.vue'), meta: { title: '数据看板', icon: '◍' } },
       { path: 'schools', name: 'schools', component: () => import('../views/Schools.vue'), meta: { title: '学校管理', icon: '⌂', superOnly: true } },
       { path: 'admins', name: 'admins', component: () => import('../views/Admins.vue'), meta: { title: '管理员', icon: '⚙', superOnly: true } },
       { path: 'users', name: 'users', component: () => import('../views/Users.vue'), meta: { title: '用户管理', icon: '♙' } },

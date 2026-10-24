@@ -18,6 +18,9 @@ public class Post {
     private Integer commentCount;
     private Integer viewCount;
     private Integer status;
+    private String auditStatus;
+    private String auditReason;
+    private LocalDateTime auditAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

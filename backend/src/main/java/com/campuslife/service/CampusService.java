@@ -14,6 +14,7 @@ import java.util.*;
 @Service @RequiredArgsConstructor
 public class CampusService {
  private final CampusMapper mapper; private final UserMapper users;
+ private final AuditService auditService;
  private static long number(Object x){return x instanceof Boolean b?(b?1:0):x instanceof Number n?n.longValue():0;}
  private User user(Long id){if(id==null||id<1)throw new IllegalArgumentException("用户参数无效");User u=users.selectById(id);if(u==null)throw new IllegalArgumentException("用户不存在");return u;}
  private void pair(Long userId,Long peerId){user(userId);user(peerId);if(userId.equals(peerId))throw new IllegalArgumentException("不能与自己聊天");}
@@ -26,7 +27,7 @@ public class CampusService {
    Collections.reverse(rows);for(Map<String,Object> row:rows)row.put("mine",number(row.get("senderId"))==userId);
    return Map.of("list",rows,"hasMore",hasMore,"muted",pref!=null&&number(pref.get("muted"))>0);
  }
- @Transactional public Map<String,Object> send(Long peerId,SendMessageRequest r){pair(r.getUserId(),peerId);Map<String,Object> row=new LinkedHashMap<>();row.put("senderId",r.getUserId());row.put("receiverId",peerId);row.put("content",r.getContent().trim());row.put("clientId",r.getClientId());mapper.send(row);Map<String,Object> out=mapper.message(number(row.get("id")));if(number(out.get("receiverId"))!=peerId||!Objects.equals(out.get("content"),r.getContent().trim()))throw new IllegalArgumentException("消息请求标识已被其他内容使用");out.put("mine",true);return out;}
+ @Transactional public Map<String,Object> send(Long peerId,SendMessageRequest r){pair(r.getUserId(),peerId);String content=r.getContent().trim();var audit=auditService.checkText(content,"chat",r.getUserId());auditService.rejectIfNeeded(audit);Map<String,Object> row=new LinkedHashMap<>();row.put("senderId",r.getUserId());row.put("receiverId",peerId);row.put("content",content);row.put("clientId",r.getClientId());row.put("auditStatus",audit.reviewing()?"reviewing":"passed");row.put("auditReason",audit.reason());row.put("auditAt",audit.reviewing()?null:LocalDateTime.now());mapper.send(row);Map<String,Object> out=mapper.message(number(row.get("id")));if(number(out.get("receiverId"))!=peerId||!Objects.equals(out.get("content"),content))throw new IllegalArgumentException("消息请求标识已被其他内容使用");auditService.logTextResult("chat",number(row.get("id")),r.getUserId(),content,audit);out.put("mine",true);return out;}
  public void readChat(Long userId,Long peerId,Long upToId){pair(userId,peerId);if(upToId==null||upToId<1)throw new IllegalArgumentException("消息游标无效");mapper.readChat(userId,peerId,upToId);}
  @Transactional public void readAll(Long userId){user(userId);mapper.readAllChats(userId);mapper.readNotifications(userId);}
  @Transactional public void clear(Long userId,Long peerId){pair(userId,peerId);long last=mapper.latestId(userId,peerId);mapper.clear(userId,peerId,last);if(last>0)mapper.readChat(userId,peerId,last);}

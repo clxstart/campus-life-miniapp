@@ -8,6 +8,9 @@ public class Comment {
     private Long postId;
     private Long userId;
     private String content;
+    private String auditStatus;
+    private String auditReason;
+    private LocalDateTime auditAt;
     @JsonFormat(pattern="yyyy-MM-dd HH:mm")
     private LocalDateTime createdAt;
 }

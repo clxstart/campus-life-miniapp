@@ -1,7 +1,7 @@
 const api = require('../../utils/api')
 const { getNavigationMetrics } = require('../../utils/navigation')
 const popup = require('../../utils/ui-popup-helper')
-const { SKINS, DEFAULT_SKIN, findSkin } = require('./pet-skins.js')
+const { SKINS, DEFAULT_SKIN, findSkin, pathForState } = require('./pet-skins.js')
 
 const SKIN_KEY = 'pet_skin_id'
 
@@ -26,7 +26,7 @@ Page({
     let saved = DEFAULT_SKIN
     try { saved = wx.getStorageSync(SKIN_KEY) || DEFAULT_SKIN } catch (e) {}
     const skin = findSkin(saved)
-    this.setData({ currentSkin: skin.id, skinPath: skin.path })
+    this.setData({ currentSkin: skin.id, skinPath: pathForState(skin, 'idle') })
   },
 
   onShow() {
@@ -50,12 +50,14 @@ Page({
     try {
       const data = await api.getPet(api.CURRENT_USER_ID)
       if (!this._alive || seq !== this._seq) return
+      const skin = findSkin(this.data.currentSkin)
       this.setData({
         pet: data,
         points: data.points,
         loading: false,
         offline: !!data.offline,
-        animState: data.state
+        animState: data.state,
+        skinPath: pathForState(skin, data.state)
       })
     } catch (error) {
       if (!this._alive || seq !== this._seq) return
@@ -78,14 +80,20 @@ Page({
   pickSkin(e) {
     const id = e.currentTarget.dataset.id
     const skin = findSkin(id)
-    this.setData({ currentSkin: skin.id, skinPath: skin.path, skinPickerVisible: false })
+    this.setData({ currentSkin: skin.id, skinPath: pathForState(skin, this.data.animState), skinPickerVisible: false })
     try { wx.setStorageSync(SKIN_KEY, skin.id) } catch (err) {}
     popup.toast(this, `已换成${skin.name}`, { tone: 'success' })
   },
 
   // ---------- 动效切换 ----------
   playAnim(state) {
-    if (this.data.animState !== state) this.setData({ animState: state })
+    const skin = findSkin(this.data.currentSkin)
+    const patch = {}
+    if (this.data.animState !== state) patch.animState = state
+    // 有状态图的皮肤（如橘猫）按状态换图
+    const nextPath = pathForState(skin, state)
+    if (nextPath && nextPath !== this.data.skinPath) patch.skinPath = nextPath
+    if (Object.keys(patch).length) this.setData(patch)
   },
 
   stopHappyTimer() {

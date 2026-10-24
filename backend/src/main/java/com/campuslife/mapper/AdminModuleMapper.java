@@ -202,15 +202,16 @@ import java.util.Map;
     long countCircles(@Param("schoolId") Long schoolId, @Param("keyword") String keyword);
 
     @Insert("""
-        INSERT INTO circle(name, slug, category, description, cover, theme, hot, sort, school_id)
-        VALUES(#{name}, #{slug}, #{category}, #{description}, #{cover}, #{theme}, #{hot}, #{sort}, #{schoolId})
+        INSERT INTO circle(name, slug, category, description, cover, theme, hot, sort, school_id, status, audit_status, audit_reason, audit_at)
+        VALUES(#{name}, #{slug}, #{category}, #{description}, #{cover}, #{theme}, #{hot}, #{sort}, #{schoolId}, #{status}, #{auditStatus}, #{auditReason}, #{auditAt})
         """)
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insertCircle(Map<String,Object> row);
 
     @Update("""
         UPDATE circle SET name = #{name}, category = #{category}, description = #{description},
-               cover = #{cover}, theme = #{theme}, hot = #{hot}, sort = #{sort}, status = #{status}
+               cover = #{cover}, theme = #{theme}, hot = #{hot}, sort = #{sort}, status = #{status},
+               audit_status = #{auditStatus}, audit_reason = #{auditReason}, audit_at = #{auditAt}
         WHERE id = #{id}
         """)
     int updateCircle(Map<String,Object> row);

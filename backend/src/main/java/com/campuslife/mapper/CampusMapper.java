@@ -26,12 +26,12 @@ public interface CampusMapper {
                m.type, m.content AS preview, m.created_at AS createdAt,
                COALESCE(p.muted,0) AS muted,
                (SELECT COUNT(*) FROM chat_message z WHERE z.sender_id=u.id AND z.receiver_id=#{userId}
-                AND z.read_at IS NULL AND z.id>COALESCE(p.cleared_before,0)) AS unread
+                AND z.read_at IS NULL AND z.audit_status='passed' AND z.id>COALESCE(p.cleared_before,0)) AS unread
         FROM `user` u
         LEFT JOIN chat_preference p ON p.user_id=#{userId} AND p.peer_id=u.id
         JOIN chat_message m ON m.id=(SELECT MAX(x.id) FROM chat_message x
           WHERE ((x.sender_id=#{userId} AND x.receiver_id=u.id) OR (x.sender_id=u.id AND x.receiver_id=#{userId}))
-          AND x.id>COALESCE(p.cleared_before,0))
+          AND x.audit_status='passed' AND x.id>COALESCE(p.cleared_before,0))
         WHERE u.id<>#{userId} ORDER BY m.id DESC
         """)
     List<Map<String,Object>> conversations(@Param("userId") Long userId);
@@ -46,7 +46,7 @@ public interface CampusMapper {
         SELECT id, sender_id AS senderId, receiver_id AS receiverId, type, content, image, created_at AS createdAt
         FROM chat_message
         WHERE ((sender_id=#{userId} AND receiver_id=#{peerId}) OR (sender_id=#{peerId} AND receiver_id=#{userId}))
-        AND id>#{clearedBefore}
+        AND audit_status='passed' AND id>#{clearedBefore}
         <if test="beforeId != null">AND id &lt; #{beforeId}</if>
         ORDER BY id DESC LIMIT #{limit}
         </script>
@@ -55,8 +55,8 @@ public interface CampusMapper {
         @Param("clearedBefore") long clearedBefore, @Param("beforeId") Long beforeId, @Param("limit") int limit);
 
     @Insert("""
-        INSERT INTO chat_message(sender_id,receiver_id,type,content,client_id)
-        VALUES(#{senderId},#{receiverId},'text',#{content},#{clientId})
+        INSERT INTO chat_message(sender_id,receiver_id,type,content,client_id,audit_status,audit_reason,audit_at)
+        VALUES(#{senderId},#{receiverId},'text',#{content},#{clientId},#{auditStatus},#{auditReason},#{auditAt})
         ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)
         """)
     @Options(useGeneratedKeys=true,keyProperty="id",keyColumn="id")
