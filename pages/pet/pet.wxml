@@ -9,9 +9,10 @@
   <view wx:if="{{loading}}" class="state">正在召唤宠物…</view>
 
   <block wx:else>
-    <!-- 动画区 -->
+    <!-- 形象区：开源 emoji 素材 + CSS 动效 -->
     <view class="stage">
-      <canvas type="2d" id="pet-canvas" class="pet-canvas"></canvas>
+      <image class="pet-img anim-{{animState}}" src="{{skinPath}}" mode="aspectFit" />
+      <view class="skin-btn" catchtap="openSkinPicker">换形象</view>
     </view>
 
     <!-- 名字与等级 -->
@@ -58,6 +59,30 @@
       </view>
     </view>
   </block>
+
+  <!-- 形象选择面板 -->
+  <view wx:if="{{skinPickerVisible}}" class="sheet-mask" catchtap="closeSkinPicker">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-head">
+        <text class="sheet-title">选择宠物形象</text>
+        <text class="sheet-close" catchtap="closeSkinPicker">✕</text>
+      </view>
+      <view class="sheet-tip">素材来自开源 emoji 库，可商用</view>
+      <scroll-view class="skin-grid" scroll-y>
+        <view
+          wx:for="{{skins}}"
+          wx:key="id"
+          class="skin-item {{item.id === currentSkin ? 'active' : ''}}"
+          data-id="{{item.id}}"
+          catchtap="pickSkin"
+        >
+          <image class="skin-thumb" src="{{item.path}}" mode="aspectFit" />
+          <text class="skin-name">{{item.name}}</text>
+          <text class="skin-pack">{{item.pack}}</text>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
 
   <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose"/>
 </view>

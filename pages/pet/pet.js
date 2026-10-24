@@ -1,16 +1,9 @@
-const lottie = require('../../libs/lottie.min.js')
 const api = require('../../utils/api')
 const { getNavigationMetrics } = require('../../utils/navigation')
 const popup = require('../../utils/ui-popup-helper')
+const { SKINS, DEFAULT_SKIN, findSkin } = require('./pet-skins.js')
 
-// 状态 → 动画文件映射
-const ANIMS = {
-  idle: () => require('./pet-idle.json'),
-  happy: () => require('./pet-happy.json'),
-  hungry: () => require('./pet-hungry.json'),
-  sleep: () => require('./pet-sleep.json'),
-  levelup: () => require('./pet-levelup.json')
-}
+const SKIN_KEY = 'pet_skin_id'
 
 Page({
   data: {
@@ -19,99 +12,36 @@ Page({
     points: 0,
     loading: true,
     offline: false,
+    animState: 'idle',
+    skinPath: findSkin(DEFAULT_SKIN).path,
+    currentSkin: DEFAULT_SKIN,
+    skins: SKINS,
+    skinPickerVisible: false,
     uiPopup: null
   },
 
   onLoad() {
     this._alive = true
-    this._currentAnim = null
-  },
-
-  onReady() {
-    this.initLottie()
+    // 恢复上次选择的形象
+    let saved = DEFAULT_SKIN
+    try { saved = wx.getStorageSync(SKIN_KEY) || DEFAULT_SKIN } catch (e) {}
+    const skin = findSkin(saved)
+    this.setData({ currentSkin: skin.id, skinPath: skin.path })
   },
 
   onShow() {
     this.loadPet()
   },
 
-  onHide() {
-    if (this.ani) this.ani.pause()
-    this.stopHappyTimer()
-  },
+  onHide() { this.stopHappyTimer() },
 
   onUnload() {
     this._alive = false
     this.stopHappyTimer()
-    if (this.ani) {
-      try { this.ani.destroy() } catch (e) {}
-      this.ani = null
-    }
   },
 
   onPullDownRefresh() {
     this.loadPet().finally(() => wx.stopPullDownRefresh())
-  },
-
-  // ---------- Lottie 初始化 ----------
-  initLottie() {
-    const query = wx.createSelectorQuery().in(this)
-    query.select('#pet-canvas')
-      .fields({ node: true, size: true })
-      .exec((res) => {
-        if (!this._alive) return
-        if (!res || !res[0] || !res[0].node) {
-          console.error('[pet] canvas 节点获取失败')
-          return
-        }
-        const canvas = res[0].node
-        const ctx = canvas.getContext('2d')
-
-        // 处理设备像素比，否则高分屏动画模糊
-        const dpr = (wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()).pixelRatio || 2
-        canvas.width = res[0].width * dpr
-        canvas.height = res[0].height * dpr
-        ctx.scale(dpr, dpr)
-
-        this._canvas = canvas
-        this._ctx = ctx
-        lottie.setup(canvas)
-        this._lottieReady = true
-
-        // 数据已到就按状态播；数据没到先播 idle
-        if (this.data.pet) this.playAnim(this.data.pet.state)
-        else this.playAnim('idle')
-      })
-  },
-
-  // ---------- 动画切换 ----------
-  playAnim(state) {
-    if (!this._lottieReady) return
-    if (this._currentAnim === state && this.ani) return
-    const loader = ANIMS[state] || ANIMS.idle
-    let data
-    try { data = loader() } catch (e) { data = ANIMS.idle() }
-    if (this.ani) { try { this.ani.destroy() } catch (e) {} }
-    lottie.setup(this._canvas)
-    this.ani = lottie.loadAnimation({
-      loop: state !== 'levelup',
-      autoplay: true,
-      animationData: data,
-      rendererSettings: { context: this._ctx }
-    })
-    this._currentAnim = state
-
-    // levelup 只播一次，播完回 idle
-    if (state === 'levelup') {
-      this.stopHappyTimer()
-      this._happyTimer = setTimeout(() => {
-        if (this._alive && this.data.pet) this.playAnim(this.data.pet.state || 'idle')
-      }, 1800)
-    }
-  },
-
-  stopHappyTimer() {
-    if (this._happyTimer) { clearTimeout(this._happyTimer); this._happyTimer = null }
   },
 
   // ---------- 数据加载 ----------
@@ -120,13 +50,46 @@ Page({
     try {
       const data = await api.getPet(api.CURRENT_USER_ID)
       if (!this._alive || seq !== this._seq) return
-      this.setData({ pet: data, points: data.points, loading: false, offline: !!data.offline })
-      this.playAnim(data.state)
+      this.setData({
+        pet: data,
+        points: data.points,
+        loading: false,
+        offline: !!data.offline,
+        animState: data.state
+      })
     } catch (error) {
       if (!this._alive || seq !== this._seq) return
       this.setData({ loading: false, offline: !!error.server })
       if (error.server) popup.toast(this, error.message || '加载失败', { tone: 'error' })
     }
+  },
+
+  // ---------- 形象切换 ----------
+  openSkinPicker() {
+    this.setData({ skinPickerVisible: true })
+  },
+
+  closeSkinPicker() {
+    this.setData({ skinPickerVisible: false })
+  },
+
+  noop() {},
+
+  pickSkin(e) {
+    const id = e.currentTarget.dataset.id
+    const skin = findSkin(id)
+    this.setData({ currentSkin: skin.id, skinPath: skin.path, skinPickerVisible: false })
+    try { wx.setStorageSync(SKIN_KEY, skin.id) } catch (err) {}
+    popup.toast(this, `已换成${skin.name}`, { tone: 'success' })
+  },
+
+  // ---------- 动效切换 ----------
+  playAnim(state) {
+    if (this.data.animState !== state) this.setData({ animState: state })
+  },
+
+  stopHappyTimer() {
+    if (this._happyTimer) { clearTimeout(this._happyTimer); this._happyTimer = null }
   },
 
   // ---------- 互动 ----------
@@ -176,13 +139,16 @@ Page({
     } finally { this._busy = false }
   },
 
-  // 应用互动结果：更新数据 + 播 happy/levelup
   applyResult(data, toastText) {
     const leveled = data.level > (this.data.pet ? this.data.pet.level : 0)
     this.setData({ pet: data, points: data.points })
     if (leveled) {
       popup.toast(this, `升到 Lv.${data.level} 了！`, { tone: 'success' })
       this.playAnim('levelup')
+      this.stopHappyTimer()
+      this._happyTimer = setTimeout(() => {
+        if (this._alive && this.data.pet) this.playAnim(this.data.pet.state || 'idle')
+      }, 1800)
     } else {
       popup.toast(this, toastText, { tone: 'success' })
       this.playAnim('happy')
@@ -193,6 +159,5 @@ Page({
     }
   },
 
-  // ---------- 导航 ----------
   goBack() { wx.navigateBack() }
 })

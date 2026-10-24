@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+  body { margin:0; padding:24px; background:#f7f9fb; font-family:-apple-system,"PingFang SC",sans-serif; }
+  h2 { font-size:16px; margin:0 0 12px; color:#18212b; }
+  .row { display:flex; gap:20px; margin-bottom:28px; }
+  .card { background:#fff; border-radius:20px; padding:20px; text-align:center; box-shadow:0 4px 16px rgba(36,62,96,.06); }
+  .card img { width:96px; height:96px; display:block; margin:0 auto 10px; }
+  .name { font-size:12px; color:#737e88; }
+  .big img { width:150px; height:150px; }
+  .anim { animation: breathe 2.6s ease-in-out infinite; }
+  @keyframes breathe { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+</style></head><body>
+<h2>三种开源机器人（放大 + 呼吸动画预览）</h2>
+<div class="row big">
+  <div class="card"><img class="anim" src="twemoji-robot.svg"><div class="name">Twemoji · CC-BY 4.0</div></div>
+  <div class="card"><img class="anim" src="noto-robot.svg"><div class="name">Noto · Apache 2.0</div></div>
+  <div class="card"><img class="anim" src="openmoji-robot.svg"><div class="name">OpenMoji · CC BY-SA 4.0</div></div>
+</div>
+<h2>其他宠物（可选）</h2>
+<div class="row">
+  <div class="card"><img src="twemoji-cat-face.svg"><div class="name">Twemoji 猫</div></div>
+  <div class="card"><img src="noto-cat-face.svg"><div class="name">Noto 猫</div></div>
+  <div class="card"><img src="twemoji-dog-face.svg"><div class="name">Twemoji 狗</div></div>
+  <div class="card"><img src="noto-bear.svg"><div class="name">Noto 熊</div></div>
+  <div class="card"><img src="twemoji-alien.svg"><div class="name">Twemoji 外星人</div></div>
+</div>
+</body></html>

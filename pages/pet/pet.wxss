@@ -21,17 +21,61 @@ page { background: #f7f9fb; }
   font-weight: 600;
 }
 
-/* 动画舞台 */
+/* 形象区 */
 .stage {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 30rpx 24rpx 0;
-  padding: 40rpx 0;
-  border-radius: 28rpx;
+  height: 420rpx;
+  margin: 28rpx 24rpx 0;
+  border-radius: 32rpx;
   background: linear-gradient(180deg, #eaf2ff 0%, #f7f9fb 100%);
+  overflow: hidden;
 }
-.pet-canvas { width: 480rpx; height: 480rpx; }
+.pet-img {
+  width: 260rpx;
+  height: 260rpx;
+}
+.skin-btn {
+  position: absolute;
+  right: 20rpx;
+  top: 20rpx;
+  padding: 10rpx 22rpx;
+  border-radius: 22rpx;
+  background: rgba(255, 255, 255, .85);
+  color: #3476f6;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+/* 动效：不同状态不同节奏 */
+.anim-idle    { animation: petBreathe 3.2s ease-in-out infinite; }
+.anim-happy   { animation: petBounce 0.55s ease-in-out infinite; }
+.anim-hungry  { animation: petSway 2.4s ease-in-out infinite; }
+.anim-sleep   { animation: petSleep 4.5s ease-in-out infinite; }
+.anim-levelup { animation: petJump 0.7s ease-in-out infinite; }
+
+@keyframes petBreathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.07); }
+}
+@keyframes petBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  40%      { transform: translateY(-20rpx) scale(1.08); }
+}
+@keyframes petSway {
+  0%, 100% { transform: rotate(-5deg) scale(0.98); }
+  50%      { transform: rotate(5deg) scale(1.02); }
+}
+@keyframes petSleep {
+  0%, 100% { transform: scale(0.96); opacity: .78; }
+  50%      { transform: scale(1.0); opacity: 1; }
+}
+@keyframes petJump {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-34rpx) scale(1.12); }
+}
 
 /* 名字与等级 */
 .pet-head {
@@ -39,7 +83,7 @@ page { background: #f7f9fb; }
   align-items: baseline;
   justify-content: center;
   gap: 14rpx;
-  margin-top: 6rpx;
+  margin-top: 18rpx;
 }
 .pet-name { font-size: 36rpx; font-weight: 700; }
 .pet-level {
@@ -96,5 +140,54 @@ page { background: #f7f9fb; }
 .action-name { margin-top: 10rpx; font-size: 26rpx; font-weight: 600; }
 .action-cost { margin-top: 6rpx; font-size: 19rpx; color: #737e88; }
 
-/* 加载/空状态 */
+/* 形象选择面板 */
+.sheet-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(16, 24, 36, .45);
+  display: flex;
+  align-items: flex-end;
+}
+.sheet {
+  width: 100%;
+  max-height: 76vh;
+  padding: 28rpx 24rpx 40rpx;
+  border-radius: 32rpx 32rpx 0 0;
+  background: #fff;
+}
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sheet-title { font-size: 32rpx; font-weight: 700; }
+.sheet-close { padding: 0 10rpx; font-size: 34rpx; color: #9aa4ad; }
+.sheet-tip { margin-top: 8rpx; font-size: 20rpx; color: #9aa4ad; }
+
+.skin-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  max-height: 56vh;
+  margin-top: 22rpx;
+}
+.skin-item {
+  width: calc((100% - 48rpx) / 4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16rpx 6rpx 12rpx;
+  border-radius: 20rpx;
+  background: #f7f9fb;
+  border: 2rpx solid transparent;
+}
+.skin-item.active {
+  border-color: #3476f6;
+  background: #eef4ff;
+}
+.skin-thumb { width: 92rpx; height: 92rpx; }
+.skin-name { margin-top: 8rpx; font-size: 19rpx; font-weight: 600; text-align: center; }
+.skin-pack { margin-top: 2rpx; font-size: 16rpx; color: #9aa4ad; }
+
 .state { padding: 220rpx 0; text-align: center; color: #9aa4ad; font-size: 26rpx; }
