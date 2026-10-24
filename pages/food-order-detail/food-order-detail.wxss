@@ -1,19 +1,22 @@
-.detail-page{min-height:100vh;background:#f6f8fb;padding-bottom:50rpx}
-.nav{display:flex;align-items:center;padding-left:34rpx;background:#f6f8fb}
-.nav-title{flex:1;text-align:center;font-size:31rpx;font-weight:700;color:#18232d}
-.back{width:56rpx;color:#56645b;font-size:42rpx}
-.nav-action{width:100rpx;text-align:right;color:#8a968e;font-size:17rpx}
-.status-panel{margin:20rpx 28rpx;padding:36rpx 24rpx;text-align:center;border-radius:16rpx;background:#eaf5ec;color:#2f7046}
-.status-mark{display:block;font-size:30rpx}
-.status-title{display:block;margin-top:10rpx;font-size:31rpx;font-weight:700}
-.status-note{display:block;margin-top:8rpx;font-size:20rpx;color:#6f8976}
-.detail-card{margin:18rpx 28rpx;padding:24rpx;border:1rpx solid #e5ebe6;border-radius:16rpx;background:#fff}
-.shop-name{display:block;margin-bottom:18rpx;font-size:28rpx;font-weight:700;color:#24342b}
-.item-row,.total-row{display:flex;justify-content:space-between;gap:18rpx;padding:13rpx 0;color:#65736a;font-size:22rpx}
-.total-row{margin-top:10rpx;border-top:1rpx solid #edf0ed;padding-top:20rpx;color:#24342b;font-weight:700}
-.total{font-size:27rpx}
-.address-card{display:flex;flex-direction:column;gap:12rpx;font-size:22rpx;line-height:1.6}
-.label{color:#87938a;font-size:19rpx}
-.remark{color:#65736a}
-.state{padding:150rpx 36rpx;text-align:center;color:#7c8980;font-size:22rpx}
-.state-title{display:block;margin-bottom:12rpx;color:#26362c;font-size:29rpx;font-weight:700}
+@import '../../utils/food.wxss';
+.track-page{min-height:100vh;padding-bottom:60rpx;background:#F7F9FC}
+.track-nav{display:flex;align-items:center;height:92rpx;padding:0 28rpx;color:#1A2330;font-size:30rpx;font-weight:700}
+.track-nav .back{width:68rpx;font-size:54rpx;font-weight:400}
+.nav-action{margin-left:auto;color:#249B70;font-size:23rpx;font-weight:500}
+.track-state{padding:100rpx 32rpx;text-align:center;color:#718078;font-size:26rpx}
+.error{display:block;color:#C95F50;margin-bottom:20rpx}
+.refresh{color:#249B70}
+.status-block{display:flex;flex-direction:column;align-items:center;padding:44rpx 28rpx 40rpx;background:#EAF6EE}
+.status-mark{display:grid;place-items:center;width:72rpx;height:72rpx;border-radius:50%;background:#249B70;color:#fff;font-size:40rpx}
+.status-title{margin-top:18rpx;color:#193D32;font-size:34rpx;font-weight:700}
+.status-hint{margin-top:8rpx;color:#5F8972;font-size:23rpx;text-align:center}
+.section{margin:22rpx 24rpx 0;padding:28rpx;background:#fff;border-radius:18rpx}
+.section-title{display:block;margin-bottom:20rpx;color:#1A2330;font-size:27rpx;font-weight:700}
+.info-row,.fee-row{display:flex;justify-content:space-between;gap:24rpx;padding:13rpx 0;font-size:23rpx}
+.label{flex:none;color:#8A9690}
+.value{color:#2B3540;text-align:right;word-break:break-word}
+.rider-row{display:flex;align-items:center;justify-content:space-between;margin-top:8rpx;padding:18rpx 0 0;border-top:1rpx solid #EEF2EF}
+.rider-name{margin-left:18rpx;color:#1A2330;font-size:24rpx;font-weight:600}
+.items{display:block;color:#45534D;font-size:24rpx;line-height:1.7}
+.fee-row{margin-top:18rpx;padding-top:18rpx;border-top:1rpx solid #EEF2EF;color:#65736B}
+.offline-note{margin:24rpx;text-align:center;color:#98A2AC;font-size:21rpx}

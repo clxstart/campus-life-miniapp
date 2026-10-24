@@ -38,7 +38,7 @@ Page({
     if (Number(this.data.fees.missing) > 0) { popup.toast(this, '未达到起送金额，请返回加购', { tone: 'warn' }); return }
     this.setData({ submitting: true })
     try {
-      const order = await api.createFoodOrder({ shopId: this.data.shop.id, items: this.data.items.map(item => ({ goodsId: item.goodsId, count: item.count })), address: this.data.address.detail, remark: this.data.remark.trim() })
+      const order = await api.createFoodOrder({ shopId: this.data.shop.id, items: this.data.items.map(item => ({ goodsId: item.goodsId, count: item.count })), address: this.data.address.detail, contactName: this.data.address.contact || '', contactPhone: this.data.address.phone || '', remark: this.data.remark.trim() })
       if (!this._alive) return
       if (order.offline) return this.finish(order)
       const orderId = order.orderId || order.id
@@ -70,7 +70,14 @@ Page({
     this.setData({ submitted: true, submitting: false })
     try { wx.removeStorageSync('pending_order') } catch (error) {}
     popup.toast(this, result && result.offline ? '下单成功（离线演示）' : '支付成功，订单已提交', { tone: 'success' })
-    this._backTimer = setTimeout(() => { if (!this._alive) return; const pages = getCurrentPages(); const index = pages.findIndex(p => p.route === 'pages/food-list/food-list'); if (index >= 0 && index < pages.length - 1) wx.navigateBack({ delta: pages.length - 1 - index }); else wx.redirectTo({ url: '/pages/food-list/food-list' }) }, 1600)
+    // 支付成功后进入订单详情，用户能看到「待商家接单」和后续骑手进度
+    const orderId = result && (result.orderId || result.id)
+    this._backTimer = setTimeout(() => {
+      if (!this._alive) return
+      if (orderId) return wx.redirectTo({ url: '/pages/food-order-detail/food-order-detail?id=' + encodeURIComponent(orderId) })
+      const pages = getCurrentPages(); const index = pages.findIndex(p => p.route === 'pages/food-list/food-list')
+      if (index >= 0 && index < pages.length - 1) wx.navigateBack({ delta: pages.length - 1 - index }); else wx.redirectTo({ url: '/pages/food-list/food-list' })
+    }, 1600)
   },
   goBack() { const pages = getCurrentPages(); if (pages.length > 1) wx.navigateBack(); else wx.reLaunch({ url: '/pages/index/index' }) },
   onPopupConfirm(e) { this._popupConfirm && this._popupConfirm({ detail: e.detail }) },

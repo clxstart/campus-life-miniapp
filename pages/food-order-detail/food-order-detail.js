@@ -1,67 +1,51 @@
 const api = require('../../utils/api')
-const { getNavigationMetrics } = require('../../utils/navigation')
-const { money } = require('../../utils/food')
-const popup = require('../../utils/ui-popup-helper')
+
+const STATUS = {
+  created: ['待支付', '订单已创建，等待支付确认'],
+  paid: ['待商家接单', '支付已确认，等待店铺接单'],
+  accepted: ['等待骑手', '商家已接单，等待骑手接单'],
+  delivering: ['骑手已接单', '骑手已接单，正在赶来取餐'],
+  picked: ['正在配送', '骑手已取餐，正在配送'],
+  completed: ['已送达', '订单已完成，祝你用餐愉快'],
+  cancelled: ['已取消', '订单已取消'],
+  refunded: ['已退款', '订单款项已退回']
+}
 
 Page({
-  data: { ...getNavigationMetrics(), order: null, loading: true, error: '', uiPopup: null },
-
-  async onLoad(options) {
+  data: { orderId: '', order: null, statusTitle: '', statusHint: '', itemSummary: '', loading: true, error: '', offline: false },
+  onLoad(options) {
+    this.orderId = decodeURIComponent(options.id || '')
     this._alive = true
-    this._authReady = false
-    this._orderId = Number(options.id)
-    if (!Number.isSafeInteger(this._orderId) || this._orderId < 1) {
-      this.setData({ loading: false, error: '订单不存在' })
-      return
-    }
-    await api.ensureLogin()
-    if (!this._alive) return
-    this._authReady = true
-    await this.loadOrder(false)
-    this.startPolling()
+    this.loadOrder()
   },
-
-  onShow() { if (this._alive && this._authReady && this._orderId) this.startPolling() },
-  onHide() { this.stopPolling() },
-  onUnload() { this._alive = false; this.stopPolling() },
-
-  async loadOrder(notify = true) {
+  onShow() {
+    if (this._alive && this.data.order && !this.terminal(this.data.order.status)) this.schedulePoll()
+  },
+  onHide() { this.clearPoll() },
+  onUnload() { this._alive = false; this.clearPoll() },
+  terminal(status) { return ['completed', 'cancelled', 'refunded'].includes(status) },
+  clearPoll() { if (this._pollTimer) clearTimeout(this._pollTimer); this._pollTimer = null },
+  schedulePoll() {
+    this.clearPoll()
+    if (!this._alive || !this.data.order || this.terminal(this.data.order.status)) return
+    this._pollTimer = setTimeout(() => this.loadOrder(true), 3000)
+  },
+  async loadOrder(silent = false) {
+    if (!this.orderId) { this.setData({ loading: false, error: '订单编号无效' }); return }
     try {
-      const raw = await api.getFoodOrderDetail(this._orderId)
+      const order = await api.getFoodOrder(this.orderId)
       if (!this._alive) return
-      const previous = this.data.order?.status
-      const items = (raw.items || []).map(item => ({ ...item, priceText: money(item.price), lineTotal: money(Number(item.price) * Number(item.count)) }))
-      const order = { ...raw, items, totalText: money(raw.total), statusText: this.statusText(raw.status), createdText: this.formatDate(raw.createdAt) }
-      this.setData({ order, loading: false, error: '' })
-      if (notify && previous && previous !== raw.status) popup.toast(this, order.statusText, { tone: 'success' })
+      const [statusTitle, statusHint] = STATUS[order.status] || ['订单处理中', '订单状态正在更新']
+      let items = []
+      try { items = JSON.parse(order.items || '[]') } catch (error) {}
+      this.setData({ order, statusTitle, statusHint, itemSummary: items.map(item => `${item.name}×${item.count}`).join('、'), loading: false, error: '', offline: !!order.offline })
+      this.schedulePoll()
     } catch (error) {
-      if (this._alive && !this.data.order) this.setData({ loading: false, error: error.message || '订单加载失败' })
+      if (!this._alive) return
+      this.setData({ loading: false, error: error.message || '订单信息加载失败' })
+      if (silent) this.schedulePoll()
     }
   },
-
-  startPolling() {
-    if (this._timer || !this._alive) return
-    this._timer = setInterval(() => { if (this._alive) this.loadOrder(true) }, 3000)
-  },
-  stopPolling() { if (this._timer) { clearInterval(this._timer); this._timer = null } },
-
-  statusText(status) {
-    return ({ unpaid: '待支付', pending_payment: '待支付', created: '待支付', paid: '待接单', accepted: '商家已接单', delivering: '配送中', completed: '已完成', cancelled: '已取消', refunded: '已退款' })[status] || '状态更新中'
-  },
-  formatDate(value) {
-    if (!value) return ''
-    const date = new Date(value)
-    return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('zh-CN', { hour12: false })
-  },
-
-  goBack() {
-    const pages = getCurrentPages()
-    if (pages.length > 1) wx.navigateBack()
-    else wx.redirectTo({ url: '/pages/food-orders/food-orders' })
-  },
-  onPopupConfirm(event) { this._popupConfirm && this._popupConfirm({ detail: event.detail }) },
-  onPopupCancel() { this._popupCancel && this._popupCancel() },
-  onPopupAction(event) { this._popupAction && this._popupAction({ detail: event.detail }) },
-  onPopupInput(event) { this.setData({ 'uiPopup.inputValue': event.detail.value }); this._popupInput && this._popupInput({ detail: event.detail }) },
-  onPopupClose() { popup.hide(this) }
+  refresh() { this.loadOrder() },
+  goBack() { wx.navigateBack({ delta: 1 }) }
 })

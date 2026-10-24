@@ -6,7 +6,9 @@ import { extname, join, normalize } from 'node:path'
 
 // 小程序的静态资源目录（数据库里的 /assets/xxx 都指向这里）
 const ASSETS_ROOT = fileURLToPath(new URL('../assets', import.meta.url))
-const API_TARGET = process.env.CAMPUS_API_PROXY_TARGET || 'http://127.0.0.1:8080'
+const API_TARGET = process.env.CAMPUS_API_PROXY_TARGET || process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:8080'
+// WebSocket 代理（圈子群聊）：ws 协议需单独声明
+const WS_TARGET = API_TARGET.replace(/^http/, 'ws')
 
 const MIME = {
   '.webp': 'image/webp',
@@ -75,7 +77,9 @@ export default defineConfig({
     // 后端接口代理：管理端与 API 同源，避免开发期 CORS 与 cookie 问题
     proxy: {
       '/api': { target: API_TARGET, changeOrigin: true },
-      '/uploads': { target: API_TARGET, changeOrigin: true }
+      '/uploads': { target: API_TARGET, changeOrigin: true },
+      // 圈子群聊 WebSocket（task-16）
+      '/ws': { target: WS_TARGET, ws: true, changeOrigin: true }
     }
   }
 })

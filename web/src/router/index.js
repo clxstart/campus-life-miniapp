@@ -31,6 +31,7 @@ const routes = [
       { path: 'orders', name: 'Orders', component: () => import('../views/Orders.vue'), meta: { title: '订单管理', icon: '☰', superOnly: false } },
       { path: 'payments', name: 'Payments', component: () => import('../views/Payments.vue'), meta: { title: '支付流水', icon: '¥', superOnly: false } },
       { path: 'merchant-audit', name: 'merchant-audit', component: () => import('../views/MerchantAudit.vue'), meta: { title: '商家入驻审核', icon: '⊞' } },
+      { path: 'riders', name: 'riders', component: () => import('../views/Riders.vue'), meta: { title: '骑手管理', icon: '♧' } },
       { path: 'idol', name: 'idol', component: () => import('../views/Idol.vue'), meta: { title: '校园评选', icon: '★', superOnly: true } },
       { path: 'academics', name: 'academics', component: () => import('../views/Academics.vue'), meta: { title: '教务管理', icon: '▤' } },
       { path: 'business', name: 'business', component: () => import('../views/Business.vue'), meta: { title: '业务管理', icon: '▦' } },
@@ -40,6 +41,17 @@ const routes = [
       { path: 'logs', name: 'logs', component: () => import('../views/Logs.vue'), meta: { title: '操作日志', icon: '❐' } }
     ]
   },
+  {
+    path: '/rider',
+    component: () => import('../layouts/RiderLayout.vue'),
+    meta: { riderOnly: true },
+    children: [
+      { path: '', name: 'rider-home', component: () => import('../views/rider/Home.vue'), meta: { title: '工作台' } },
+      { path: 'pool', name: 'rider-pool', component: () => import('../views/rider/Pool.vue'), meta: { title: '待抢订单' } },
+      { path: 'mine', name: 'rider-mine', component: () => import('../views/rider/Mine.vue'), meta: { title: '我的配送' } },
+      { path: 'history', name: 'rider-history', component: () => import('../views/rider/History.vue'), meta: { title: '配送记录' } }
+    ]
+  },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' }
 ]
 
@@ -47,12 +59,17 @@ const router = createRouter({ history: createWebHashHistory(), routes })
 router.beforeEach((to) => {
   const authed = !!getToken()
   const role = getProfile()?.role
-  const home = role === 'merchant' ? '/merchant' : '/dashboard'
-  if (to.name === 'login' && authed) return home
-  if (to.meta.public) return true
-  if (!to.meta.public && !authed) return { path: '/login', query: { redirect: to.fullPath } }
+  // 三种登录身份各有自己的首页：商家 /merchant，骑手 /rider，管理员 /dashboard
+  const home = role === 'rider' ? '/rider' : role === 'merchant' ? '/merchant' : '/dashboard'
+  if (to.meta.public) {
+    return authed ? { path: home } : true
+  }
+  if (!authed) return { path: '/login', query: { redirect: to.fullPath } }
+  // 商家只能进 /merchant，骑手只能进 /rider，管理员不能进这两块
   if (role === 'merchant' && !to.path.startsWith('/merchant')) return '/merchant'
-  if (role !== 'merchant' && to.path.startsWith('/merchant')) return '/dashboard'
+  if (role !== 'merchant' && to.path.startsWith('/merchant')) return home
+  if (role === 'rider' && !to.path.startsWith('/rider')) return '/rider'
+  if (role !== 'rider' && to.path.startsWith('/rider')) return home
   return true
 })
 export default router

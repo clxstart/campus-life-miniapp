@@ -94,3 +94,17 @@ export const merchantApi = {
   rejectOrder: (id, reason) => http.post(`/merchant/orders/${id}/reject`, { reason }),
   completeOrder: (id) => http.post(`/merchant/orders/${id}/complete`)
 }
+
+export const riderApi = {
+  stats: () => http.get('/rider/stats'),
+  pool: () => http.get('/rider/pool'),
+  mine: () => http.get('/rider/orders/mine'),
+  grab: (id) => http.post(`/rider/orders/${id}/grab`),
+  pick: (id) => http.post(`/rider/orders/${id}/pick`),
+  deliver: (id) => http.post(`/rider/orders/${id}/deliver`),
+  history: (params) => http.get('/rider/orders/history', { params }),
+  riders: () => http.get('/admin/riders'),
+  createRider: (payload) => http.post('/admin/riders', payload),
+  setRiderStatus: (id, status) => http.post(`/admin/riders/${id}/status`, { status }),
+  resetRiderPassword: (id, password) => http.post(`/admin/riders/${id}/reset-password`, { password })
+}

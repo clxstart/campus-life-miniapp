@@ -340,7 +340,14 @@ function cacheFoodAddresses(userId, rows) { try { wx.setStorageSync('food_addres
       return wait({ id: orderId, orderId, payStatus: 'unknown', status: 'unknown', offline: true })
     })
   }
-  Object.assign(module.exports, { CURRENT_USER_ID, getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail, payOrder, getOrderDetail })
+  // task-15 骑手端：订单详情（含本地演示订单兜底）
+  function getFoodOrder(orderId) {
+    if (String(orderId).startsWith('local-')) {
+      return wait({ id: orderId, status: 'paid', shopName: '演示订单', address: '', items: '[]', deliveryFee: 0, offline: true })
+    }
+    return request(`/orders/${encodeURIComponent(orderId)}?userId=${currentUserId()}`, 'GET')
+  }
+  Object.assign(module.exports, { CURRENT_USER_ID, getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail, payOrder, getOrderDetail, getFoodOrder })
 
 // 模块二至四：只在断网时使用本地兜底；后端返回的拒单/校验错误必须直接透传。
 

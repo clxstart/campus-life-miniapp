@@ -12,7 +12,11 @@ public class AdminUser {
     private String realName;
     private String role;
     private Long schoolId;
+    // task-14 商家：shopId 绑定所管理的店铺
     private Long shopId;
+    // task-15 骑手：phone 联系方式，riderStatus 接单状态（idle/busy）
+    private String phone;
+    private String riderStatus;
     private Integer status;
     private Integer failCount;
     private LocalDateTime lockedUntil;

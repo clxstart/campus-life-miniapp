@@ -10,6 +10,7 @@ import com.campuslife.mapper.ModuleMapper;
 import com.campuslife.mapper.ShopGoodsMapper;
 import com.campuslife.mapper.ShopMapper;
 import com.campuslife.mapper.UserMapper;
+import com.campuslife.mapper.UserAddressMapper;
 import com.campuslife.mapper.UserOrderMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,6 +36,7 @@ public class BizService {
     private final ShopGoodsMapper goodsMapper;
     private final UserOrderMapper orderMapper;
     private final UserMapper userMapper;
+    private final UserAddressMapper userAddressMapper;
     private final ModuleMapper moduleMapper;
     // 下单成功后累加店铺真实订单数，供首页「今日推荐」按真实热度排序
     private final com.campuslife.mapper.RecommendMapper recommendMapper;
@@ -386,7 +388,21 @@ public class BizService {
         BigDecimal total = subtotal.subtract(discount).add(PACKING_FEE).add(shop.getDeliveryFee()).setScale(2);
         if (total.compareTo(new BigDecimal("99999999.99")) > 0) throw new IllegalArgumentException("订单金额超出限制");
         UserOrder order = new UserOrder();
-        order.setUserId(r.getUserId()); order.setShopId(shop.getId()); order.setItems(snapshotJson(snapshots)); order.setAddress(r.getAddress().trim()); order.setRemark(r.getRemark() == null ? "" : r.getRemark().trim()); order.setSubtotal(subtotal); order.setPackingFee(PACKING_FEE); order.setDeliveryFee(shop.getDeliveryFee()); order.setDiscountAmount(discount); order.setTotal(total); order.setStatus(OrderStatus.CREATED.value()); order.setPayAmountCents(total.movePointRight(2).setScale(0).intValueExact()); order.setPayStatus("unpaid"); order.setOutTradeNo("CL" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + UUID.randomUUID().toString().replace("-", "").substring(0, 10)); order.setCreatedAt(LocalDateTime.now());
+        // task-14: 收货人姓名/电话快照——优先用请求传入，回退到用户地址簿
+        var address = userAddressMapper.selectOne(new LambdaQueryWrapper<com.campuslife.entity.UserAddress>()
+            .eq(com.campuslife.entity.UserAddress::getUserId, r.getUserId())
+            .eq(com.campuslife.entity.UserAddress::getDetail, r.getAddress().trim())
+            .last("LIMIT 1"));
+        order.setUserId(r.getUserId()); order.setShopId(shop.getId()); order.setItems(snapshotJson(snapshots)); order.setAddress(r.getAddress().trim());
+        order.setContactName(r.getContactName() == null || r.getContactName().isBlank() ? (address == null ? "" : address.getContact()) : r.getContactName().trim());
+        order.setContactPhone(r.getContactPhone() == null || r.getContactPhone().isBlank() ? (address == null ? "" : address.getPhone()) : r.getContactPhone().trim());
+        order.setRemark(r.getRemark() == null ? "" : r.getRemark().trim()); order.setSubtotal(subtotal); order.setPackingFee(PACKING_FEE); order.setDeliveryFee(shop.getDeliveryFee()); order.setDiscountAmount(discount); order.setTotal(total);
+        // task-12: 支付字段在下单时一并初始化，支付回调只更新这几列
+        order.setStatus(OrderStatus.CREATED.value());
+        order.setPayAmountCents(total.movePointRight(2).setScale(0).intValueExact());
+        order.setPayStatus("unpaid");
+        order.setOutTradeNo("CL" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + UUID.randomUUID().toString().replace("-", "").substring(0, 10));
+        order.setCreatedAt(LocalDateTime.now());
         orderMapper.insert(order);
         // 真实热度：下单成功才累加店铺订单数（与订单写入同一事务）
         recommendMapper.increaseShopOrder(shop.getId());

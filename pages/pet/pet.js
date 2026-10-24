@@ -159,5 +159,12 @@ Page({
     }
   },
 
+  // ---------- 弹窗事件（ui-popup 组件要求页面实现，否则 visible 不会复位）----------
+  onPopupClose() { popup.hide(this) },
+  onPopupCancel() { popup.hide(this) },
+  onPopupConfirm() { popup.hide(this) },
+  onPopupAction() { popup.hide(this) },
+  onPopupInput() {},
+
   goBack() { wx.navigateBack() }
 })

@@ -1,11 +1,24 @@
-<view class="detail-page">
-  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px"><view class="back" catchtap="goBack">‹</view><view class="nav-title">订单详情</view><view class="nav-action">每 3 秒更新</view></view>
+<view class="track-page">
+  <view class="track-nav"><view class="back" bindtap="goBack">‹</view><text>订单详情</text><view class="nav-action" bindtap="refresh">刷新</view></view>
   <offline-banner />
-  <view wx:if="{{loading}}" class="state">正在加载订单…</view>
-  <view wx:elif="{{error}}" class="state"><text class="state-title">{{error}}</text><view bindtap="goBack">返回订单列表</view></view>
+  <view wx:if="{{loading}}" class="track-state">正在获取订单状态…</view>
+  <view wx:elif="{{error}}" class="track-state"><text class="error">{{error}}</text><view class="refresh" bindtap="refresh">重新加载</view></view>
   <block wx:elif="{{order}}">
-    <view class="status-panel"><text class="status-mark">●</text><text class="status-title">{{order.statusText}}</text><text class="status-note">订单号 #{{order.id}}</text><text class="status-note">{{order.createdText}}</text></view>
-    <view class="detail-card"><text class="shop-name">{{order.shopName}}</text><view wx:for="{{order.items}}" wx:key="goodsId" class="item-row"><text>{{item.name}} × {{item.count}}</text><text>¥{{item.lineTotal}}</text></view><view class="total-row"><text>实付款</text><text class="total">¥{{order.totalText}}</text></view></view>
-    <view class="detail-card address-card"><text class="label">配送地址</text><text>{{order.address}}</text><text wx:if="{{order.remark}}" class="remark">备注：{{order.remark}}</text></view>
+    <view class="status-block">
+      <view class="status-mark">{{order.status==='completed'?'✓':'·'}}</view>
+      <text class="status-title">{{statusTitle}}</text>
+      <text class="status-hint">{{statusHint}}</text>
+    </view>
+    <view class="section">
+      <text class="section-title">配送信息</text>
+      <view class="info-row"><text class="label">订单编号</text><text class="value">#{{order.id}}</text></view>
+      <view class="info-row"><text class="label">取餐店铺</text><text class="value">{{order.shopName}}</text></view>
+      <view class="info-row"><text class="label">店铺地址</text><text class="value">{{order.shopAddress||'店铺地址待补充'}}</text></view>
+      <view class="info-row"><text class="label">送达地址</text><text class="value">{{order.address}}</text></view>
+      <view wx:if="{{order.contactName}}" class="info-row"><text class="label">收件人</text><text class="value">{{order.contactName}} {{order.contactPhone}}</text></view>
+      <view wx:if="{{order.riderName}}" class="rider-row"><view><text class="label">配送骑手</text><text class="rider-name">{{order.riderName}}</text></view><text class="value">{{order.riderPhone}}</text></view>
+    </view>
+    <view class="section"><text class="section-title">订单商品</text><text class="items">{{itemSummary||'暂无商品明细'}}</text><view class="fee-row"><text>配送费</text><text>¥{{order.deliveryFee}}</text></view></view>
+    <view wx:if="{{offline}}" class="offline-note">当前为离线演示订单</view>
   </block>
 </view>
