@@ -1,0 +1,52 @@
+<!-- 派遣页：可展开任务卡 + 进行中状态 + 到期领取 -->
+<view class="cp-page cp-page--flush dispatch">
+  <view style="height:{{statusBarHeight}}px;"></view>
+
+  <view class="dp-head">
+    <text class="cp-page-title">派小云出去走走</text>
+    <text class="cp-hint dp-sub">它出门后你可以先忙别的，回来再领奖励</text>
+  </view>
+
+  <!-- 宠物状态 -->
+  <pet-stage
+    appearance="{{appearance}}"
+    motion="{{petMotion}}"
+    size="{{190}}"
+    compact="{{true}}"
+  />
+
+  <!-- 进行中提示 -->
+  <view class="dp-status" wx:if="{{current}}">
+    <view class="dp-status-row">
+      <text class="dp-status-title">{{current.title}}</text>
+      <text class="dp-status-tag dp-status-tag--{{current.status}}">{{statusText}}</text>
+    </view>
+    <text class="cp-hint dp-status-hint" wx:if="{{current.status === 'running'}}">
+      预计 {{current.durationMin}} 分钟，剩余 {{remainText}}
+    </text>
+    <text class="cp-hint dp-status-hint" wx:elif="{{current.status === 'claimable'}}">
+      小云已经回来了，去领取奖励吧
+    </text>
+    <text class="cp-hint dp-status-hint" wx:else>
+      已领取 {{current.reward}} 积分
+    </text>
+  </view>
+
+  <!-- 任务列表 -->
+  <view class="dp-list">
+    <task-card
+      wx:for="{{taskList}}"
+      wx:key="code"
+      task="{{item}}"
+      status="{{item._status}}"
+      remain-seconds="{{item._remain}}"
+      bind:start="onStart"
+      bind:claim="onClaim"
+      bind:due="onDue"
+    />
+  </view>
+
+  <text class="cp-hint dp-foot">累计完成 {{claimedCount}} 次派遣</text>
+
+  <t-toast id="t-toast" />
+</view>

@@ -1,0 +1,68 @@
+<!-- 衣柜页：上部真实宠物预览，下部按类别展示物品 -->
+<view class="cp-page cp-page--flush wardrobe">
+  <view style="height:{{statusBarHeight}}px;"></view>
+
+  <view class="wd-head">
+    <view class="wd-head-left">
+      <text class="cp-page-title">小云的衣柜</text>
+      <text class="cp-hint wd-sub">装备后上面立刻能看到</text>
+    </view>
+    <view class="wd-points">
+      <text class="wd-points-num">{{balance}}</text>
+      <text class="wd-points-unit">积分</text>
+    </view>
+  </view>
+
+  <!-- 预览：真实宠物 -->
+  <pet-stage
+    appearance="{{appearance}}"
+    motion="{{previewMotion}}"
+    size="{{210}}"
+    compact="{{true}}"
+    bind:pettap="onPetTap"
+  />
+
+  <!-- 分类 -->
+  <view class="wd-tabs">
+    <view
+      wx:for="{{categories}}"
+      wx:key="key"
+      class="wd-tab {{tab === item.key ? 'wd-tab--on' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="onTab"
+    >
+      <text class="wd-tab-text">{{item.name}}</text>
+      <text class="wd-tab-count">{{item.count}}</text>
+    </view>
+  </view>
+
+  <!-- 物品列表 -->
+  <view class="wd-list">
+    <block wx:if="{{list.length > 0}}">
+      <wardrobe-item
+        wx:for="{{list}}"
+        wx:key="id"
+        item="{{item}}"
+        appearance="{{appearance}}"
+        bind:buy="onBuy"
+        bind:equip="onEquip"
+        bind:unequip="onUnequip"
+      />
+    </block>
+    <view class="cp-empty" wx:else>
+      <text>这个分类还没有物品</text>
+    </view>
+  </view>
+
+  <!-- 兑换确认（TDesign Dialog） -->
+  <t-dialog
+    visible="{{buyVisible}}"
+    title="兑换{{buying.name}}"
+    content="将消耗 {{buying.price}} 积分，当前有 {{balance}} 积分。确认兑换吗？"
+    confirm-btn="确认兑换"
+    cancel-btn="再想想"
+    bind:confirm="onBuyConfirm"
+    bind:cancel="onBuyCancel"
+  />
+  <t-toast id="t-toast" />
+</view>

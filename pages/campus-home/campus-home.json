@@ -1,0 +1,8 @@
+{
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "pet-avatar": "/components/pet-avatar/index",
+    "pet-bubble": "/components/pet-bubble/index",
+    "t-toast": "tdesign-miniprogram/toast/toast"
+  }
+}

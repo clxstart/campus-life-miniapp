@@ -1,0 +1,40 @@
+@import "../../styles/theme.wxss";
+@import "../../styles/common.wxss";
+
+.appear {
+  display: flex;
+  flex-direction: column;
+}
+
+.appear-head {
+  padding: 20rpx 0 22rpx;
+}
+
+.appear-sub {
+  display: block;
+  margin-top: 8rpx;
+}
+
+/* 编辑面板：贴底，与舞台之间用边框分隔 */
+.appear-panel {
+  margin-top: var(--sp-gap);
+  background: var(--c-card);
+  border: var(--bw) solid var(--c-line);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+}
+
+.appear-actions {
+  display: flex;
+  gap: var(--sp-col);
+  padding: 20rpx var(--sp-card) 0;
+  border-top: var(--bw) solid var(--c-line);
+  margin-top: 16rpx;
+  padding-top: 20rpx;
+}
+
+/* 保存为主操作，占更大比例 */
+.appear-save {
+  flex: 1;
+}

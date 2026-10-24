@@ -13,6 +13,10 @@
       {
         "type": "folder",
         "value": "tests"
+      },
+      {
+        "type": "folder",
+        "value": "web"
       }
     ]
   },
@@ -25,7 +29,14 @@
     "coverView": true,
     "showShadowRootInWxmlPanel": true,
     "useCompilerPlugins": false,
-    "minifyWXML": true
+    "minifyWXML": true,
+    "packNpmManually": true,
+    "packNpmRelationList": [
+      {
+        "packageJsonPath": "./package.json",
+        "miniprogramNpmDistDir": "./"
+      }
+    ]
   },
   "compileType": "miniprogram",
   "libVersion": "3.5.8",

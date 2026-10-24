@@ -5,5 +5,8 @@
   "description": "校园生活小程序（含校园搭子 AI 宠物模块）",
   "dependencies": {
     "tdesign-miniprogram": "1.17.0"
+  },
+  "devDependencies": {
+    "miniprogram-automator": "0.13.0"
   }
 }

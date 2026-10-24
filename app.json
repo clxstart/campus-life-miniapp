@@ -31,7 +31,13 @@
     "pages/activities/activities",
     "pages/search/search",
     "pages/campus-offer/campus-offer",
-    "pages/pet/pet"
+    "pages/pet/pet",
+    "pages/adopt/adopt",
+    "pages/appearance/appearance",
+    "pages/wardrobe/wardrobe",
+    "pages/dispatch/dispatch",
+    "pages/companion/companion",
+    "pages/campus-home/campus-home"
   ],
   "window": {
     "navigationStyle": "custom",

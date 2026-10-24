@@ -1,0 +1,94 @@
+@import "../../styles/theme.wxss";
+@import "../../styles/common.wxss";
+
+.wardrobe {
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+}
+
+/* ===== 头部 ===== */
+.wd-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 20rpx 0 22rpx;
+  gap: 16rpx;
+}
+
+.wd-head-left { min-width: 0; }
+
+.wd-sub {
+  display: block;
+  margin-top: 6rpx;
+}
+
+/* 积分：醒目但不抢主色 */
+.wd-points {
+  display: flex;
+  align-items: baseline;
+  gap: 6rpx;
+  flex-shrink: 0;
+  background: var(--c-card);
+  border: var(--bw) solid var(--c-line);
+  border-radius: var(--radius-pill);
+  padding: 10rpx 22rpx;
+}
+
+.wd-points-num {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--c-accent);
+}
+
+.wd-points-unit {
+  font-size: 22rpx;
+  color: var(--c-text-sub);
+}
+
+/* ===== 分类标签 ===== */
+.wd-tabs {
+  display: flex;
+  gap: 14rpx;
+  margin: var(--sp-gap) 0 var(--sp-gap);
+  overflow-x: auto;
+}
+
+.wd-tab {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+  padding: 12rpx 26rpx;
+  border-radius: var(--radius-pill);
+  border: var(--bw) solid var(--c-line);
+  background: var(--c-card);
+}
+
+.wd-tab--on {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+}
+
+.wd-tab-text {
+  font-size: 26rpx;
+  color: var(--c-text-sub);
+}
+
+.wd-tab--on .wd-tab-text {
+  color: var(--c-on-primary);
+  font-weight: 600;
+}
+
+.wd-tab-count {
+  font-size: 20rpx;
+  color: var(--c-text-sub);
+  opacity: 0.75;
+}
+
+.wd-tab--on .wd-tab-count {
+  color: var(--c-on-primary);
+  opacity: 0.8;
+}
+
+.wd-list {
+  margin-top: 4rpx;
+}

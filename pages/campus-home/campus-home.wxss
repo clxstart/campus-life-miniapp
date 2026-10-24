@@ -1,0 +1,251 @@
+@import "../../styles/theme.wxss";
+@import "../../styles/common.wxss";
+
+.campus {
+  padding-bottom: 0;
+}
+
+/* ===== 顶部 ===== */
+.cm-head {
+  padding: 20rpx 0 24rpx;
+}
+
+.cm-greet {
+  display: block;
+  margin-top: 8rpx;
+}
+
+/* ===== 宠物小院 ===== */
+.cm-yard {
+  display: block;
+}
+
+.cm-yard-top {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.cm-yard-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cm-yard-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.cm-level {
+  font-size: 20rpx;
+  padding: 2rpx 12rpx;
+  border-radius: var(--radius-pill);
+  background: var(--c-soft);
+  color: var(--c-primary);
+  line-height: 1.7;
+}
+
+.cm-yard-arrow {
+  font-size: 36rpx;
+  color: var(--c-text-sub);
+  flex-shrink: 0;
+}
+
+/* 经验条 */
+.cm-exp {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-top: 18rpx;
+}
+
+.cm-exp-bar {
+  flex: 1;
+  height: 12rpx;
+  border-radius: var(--radius-pill);
+  background: #EDEAE0;
+  overflow: hidden;
+}
+
+.cm-exp-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--c-primary);
+  transition: width 260ms ease;
+}
+
+.cm-exp-text {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: var(--c-text-sub);
+}
+
+/* 小院操作 */
+.cm-yard-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-col);
+  margin-top: 20rpx;
+}
+
+.cm-yard-btn {
+  height: 68rpx;
+  line-height: 68rpx;
+  text-align: center;
+  font-size: 26rpx;
+  border-radius: var(--radius-pill);
+  background: var(--c-bg);
+  border: var(--bw) solid var(--c-line);
+  color: var(--c-text-sub);
+}
+
+.cm-yard-btn--primary {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+  color: var(--c-on-primary);
+  font-weight: 600;
+}
+
+/* ===== 快捷入口 ===== */
+.cm-quick {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-col);
+  margin-top: var(--sp-gap);
+}
+
+.cm-quick-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 22rpx 8rpx;
+  background: var(--c-card);
+  border: var(--bw) solid var(--c-line);
+  border-radius: 22rpx;
+}
+
+.cm-quick-icon {
+  width: 56rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--c-soft);
+  color: var(--c-primary);
+  font-size: 28rpx;
+}
+
+.cm-quick-label {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: var(--c-text-sub);
+}
+
+/* ===== 校园内容 ===== */
+.cm-section {
+  margin-top: var(--sp-gap);
+}
+
+.cm-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.cm-feed-item {
+  display: block;
+}
+
+.cm-feed-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.cm-feed-tag {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  padding: 2rpx 12rpx;
+  border-radius: var(--radius-pill);
+  background: var(--c-soft);
+  color: var(--c-primary);
+  line-height: 1.7;
+}
+
+.cm-feed-title {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cm-feed-summary {
+  display: block;
+  margin-top: 8rpx;
+}
+
+.cm-feed-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12rpx;
+}
+
+/* ===== 悬浮宠物入口 ===== */
+.cm-float {
+  position: fixed;
+  right: 28rpx;
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  background: var(--c-card);
+  border: 2rpx solid var(--c-line);
+  box-shadow: 0 8rpx 22rpx rgba(32, 61, 52, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+/* 收起态：缩小半透明，不挡内容 */
+.cm-float--collapsed {
+  transform: scale(0.66);
+  opacity: 0.72;
+}
+
+.cm-float-badge {
+  position: absolute;
+  right: 6rpx;
+  top: 6rpx;
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: var(--c-accent);
+  border: 2rpx solid var(--c-card);
+}
+
+.cm-float-bubble {
+  position: fixed;
+  right: 152rpx;
+  max-width: 340rpx;
+  padding: 14rpx 22rpx;
+  background: var(--c-card);
+  border: var(--bw) solid var(--c-line);
+  border-radius: 18rpx;
+  box-shadow: 0 4rpx 14rpx rgba(32, 61, 52, 0.08);
+  z-index: 19;
+}
+
+.cm-float-bubble-text {
+  font-size: var(--fs-hint);
+  color: var(--c-text);
+  line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cm-float, .cm-exp-fill { transition: none; }
+}

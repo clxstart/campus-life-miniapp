@@ -1,0 +1,51 @@
+<!-- 捏脸页：上部预览舞台，下部编辑面板 -->
+<view class="cp-page cp-page--flush appear">
+  <view style="height:{{statusBarHeight}}px;"></view>
+
+  <view class="appear-head">
+    <text class="cp-page-title">捏一只你的</text>
+    <text class="cp-hint appear-sub">改哪个部位，上面就变哪个</text>
+  </view>
+
+  <!-- 预览舞台 -->
+  <pet-stage
+    appearance="{{appearance}}"
+    motion="{{previewMotion}}"
+    size="{{230}}"
+    reduce-motion="{{reduceMotion}}"
+    bind:pettap="onPetTap"
+  />
+
+  <!-- 编辑面板 -->
+  <view class="appear-panel">
+    <appearance-editor
+      appearance="{{appearance}}"
+      bind:pick="onPick"
+    />
+
+    <!-- 底部操作：随机 / 重置 / 保存（保存为主要） -->
+    <view class="appear-actions">
+      <t-button theme="default" size="medium" bind:tap="onRandom">随机一下</t-button>
+      <t-button theme="default" size="medium" bind:tap="onReset">重置</t-button>
+      <t-button
+        theme="primary"
+        size="medium"
+        loading="{{saving}}"
+        disabled="{{saving || !dirty}}"
+        bind:tap="onSave"
+        class="appear-save"
+      >保存外观</t-button>
+    </view>
+  </view>
+
+  <t-dialog
+    visible="{{resetVisible}}"
+    title="重置外观"
+    content="会恢复成默认的样子，确定吗？"
+    confirm-btn="重置"
+    cancel-btn="再想想"
+    bind:confirm="onResetConfirm"
+    bind:cancel="onResetCancel"
+  />
+  <t-toast id="t-toast" />
+</view>

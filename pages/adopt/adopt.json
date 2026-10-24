@@ -1,0 +1,9 @@
+{
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "pet-avatar": "/components/pet-avatar/index",
+    "pet-stage": "/components/pet-stage/index",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-popup": "tdesign-miniprogram/popup/popup"
+  }
+}

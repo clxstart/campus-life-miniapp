@@ -1,0 +1,166 @@
+@import "../../styles/theme.wxss";
+@import "../../styles/common.wxss";
+
+.adopt {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+}
+
+/* ===== 顶部 ===== */
+.adopt-head {
+  padding: 20rpx 0 26rpx;
+}
+
+.adopt-title {
+  display: block;
+  margin-top: 8rpx;
+}
+
+.adopt-sub {
+  display: block;
+  margin-top: 12rpx;
+}
+
+/* ===== 场景 ===== */
+.adopt-stage {
+  position: relative;
+}
+
+.adopt-bubble {
+  background: var(--c-card);
+  border: var(--bw) solid var(--c-line);
+  border-radius: 999rpx;
+  padding: 10rpx 24rpx;
+  display: inline-block;
+}
+
+.adopt-bubble-text {
+  font-size: var(--fs-hint);
+  color: var(--c-text-sub);
+}
+
+/* ===== 候选行 ===== */
+.egg-row {
+  display: flex;
+  gap: var(--sp-col);
+  margin-top: var(--sp-gap);
+}
+
+.egg {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14rpx 8rpx 12rpx;
+  background: var(--c-card);
+  border: var(--bw) solid var(--c-line);
+  border-radius: 22rpx;
+  transition: border-color 140ms ease;
+}
+
+.egg--on {
+  border: 2rpx solid var(--c-primary);
+  background: var(--c-soft);
+}
+
+.egg-name {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: var(--c-text-sub);
+}
+
+.egg--on .egg-name {
+  color: var(--c-primary);
+  font-weight: 600;
+}
+
+.egg-check {
+  position: absolute;
+  right: 10rpx;
+  top: 6rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: var(--c-primary);
+}
+
+/* ===== 底部 ===== */
+.adopt-foot {
+  margin-top: var(--sp-gap);
+}
+
+.adopt-card {
+  display: block;
+}
+
+.adopt-desc {
+  display: block;
+  margin-top: 8rpx;
+}
+
+.persona-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+  margin-top: 20rpx;
+}
+
+.persona {
+  position: relative;
+  padding: 12rpx 26rpx;
+  border-radius: var(--radius-pill);
+  border: var(--bw) solid var(--c-line);
+  background: var(--c-bg);
+}
+
+.persona-text {
+  font-size: 26rpx;
+  color: var(--c-text-sub);
+}
+
+.persona.cp-selected .persona-text {
+  color: var(--c-primary);
+  font-weight: 600;
+}
+
+.persona-check {
+  margin-left: 8rpx;
+  font-size: 20rpx;
+  color: var(--c-primary);
+  font-weight: 700;
+}
+
+.adopt-btn {
+  margin-top: var(--sp-gap);
+}
+
+.adopt-tip {
+  display: block;
+  text-align: center;
+  margin-top: 16rpx;
+}
+
+/* ===== 破壳弹层 ===== */
+.hatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40rpx 48rpx 36rpx;
+  background: var(--c-bg);
+  border-radius: var(--radius-card);
+  min-width: 480rpx;
+}
+
+.hatch-canvas {
+  width: 220px;
+  height: 220px;
+  display: block;
+}
+
+.hatch-title {
+  margin: 16rpx 0 24rpx;
+  font-size: var(--fs-card-title);
+  font-weight: 600;
+  color: var(--c-text);
+}
