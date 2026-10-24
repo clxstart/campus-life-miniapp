@@ -1,0 +1,6 @@
+{
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "offline-banner": "/components/offline-banner/index"
+  }
+}

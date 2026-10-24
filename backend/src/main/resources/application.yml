@@ -29,6 +29,13 @@ campus:
   wx:
     appid: ''
     secret: ''
+  wxpay:
+    enabled: false
+    merchant-id: ''
+    merchant-serial-number: ''
+    private-key-path: ''
+    api-v3-key: ''
+    refund-notify-url: ''
   upload:
     dir: uploads
     public-prefix: /uploads

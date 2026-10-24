@@ -15,7 +15,7 @@ Page({
   search(e){this.setData({keyword:e.detail.value});this.filterShops()},
   clearSearch(){this.setData({keyword:''});this.filterShops()},
   filterShops(){const keyword=this.data.keyword.trim().toLowerCase();this.setData({shops:(this._shops||[]).filter(s=>s.name.toLowerCase().includes(keyword))})},
-  openShop(e){wx.navigateTo({url:'/pages/food-shop/food-shop?id='+e.currentTarget.dataset.id})},
+  openShop(e){const shop=(this._shops||[]).find(row=>Number(row.id)===Number(e.currentTarget.dataset.id));if(shop&&!shop.isOpen){popup.toast(this,'这家店正在休息');return}wx.navigateTo({url:'/pages/food-shop/food-shop?id='+e.currentTarget.dataset.id})},
 
   goBack(){const pages=getCurrentPages();if(pages.length>1){wx.navigateBack()}else{wx.reLaunch({url:'/pages/index/index'})}},
   // helper 接收带 detail 的事件；输入同步到页面，避免确认时取到旧值。

@@ -24,6 +24,8 @@
 .shop-tags{display:flex;flex-wrap:wrap;gap:10rpx;margin-top:14rpx}
 .eta{padding:5rpx 10rpx;background:#EDF4FF;border-radius:9rpx;color:#3476F6;font-size:19rpx}
 .shop-arrow{position:absolute;top:24rpx;right:18rpx;color:#C1CEC7;font-size:32rpx}
+.shop-closed{filter:grayscale(.72);opacity:.76}
+.rest-badge{padding:5rpx 10rpx;background:#edf0ee;border-radius:9rpx;color:#6e7a72;font-size:19rpx}
 .list-footer{text-align:center;padding:24rpx 0;color:#98A2AC;font-size:21rpx}
 
 /* 本校/全部切换：分段控件 */

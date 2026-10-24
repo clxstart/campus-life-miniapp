@@ -323,13 +323,15 @@ module.exports = { BASE_URL, request, searchPosts, searchAll, getConversations, 
 // 外卖：读取接口均离线兜底；写入接口仅在网络失败时演示，保留服务端拒单消息。
 function localFoodAddresses(userId) { try { const rows=wx.getStorageSync('food_addresses_'+userId); return Array.isArray(rows)?rows:(userId===CURRENT_USER_ID?mock.foodAddresses:[]) } catch(error) { return userId===CURRENT_USER_ID?mock.foodAddresses:[] } }
 function cacheFoodAddresses(userId, rows) { try { wx.setStorageSync('food_addresses_'+userId,rows) } catch(error) {} }
-function getFoodShops(category='', schoolScope='local', schoolId=null) {
+  function getFoodShops(category='', schoolScope='local', schoolId=null) {
   const school = schoolId ? `&schoolId=${encodeURIComponent(schoolId)}` : ''
-  return request(`/shops?category=${encodeURIComponent(category)}&schoolScope=${encodeURIComponent(schoolScope)}${school}&userId=${CURRENT_USER_ID}`, 'GET').catch(() => wait(mock.foodShops.filter(s => !category || s.category===category)))
-}
-function getFoodMenu(id) { return request(`/shops/${id}/menu`, 'GET').catch(() => wait(mock.foodMenus[id] || [])) }
-function createFoodOrder(payload) { return request('/orders', 'POST', {...payload,userId:CURRENT_USER_ID}).catch(error => { if (error.server) throw error; return wait(mock.makeFoodOrder(payload)) }) }
-Object.assign(module.exports, { CURRENT_USER_ID, getFoodShops, getFoodMenu, createFoodOrder })
+    return request(`/food/shops?category=${encodeURIComponent(category)}&schoolScope=${encodeURIComponent(schoolScope)}${school}&userId=${CURRENT_USER_ID}`, 'GET').then(rows => (rows || []).map(s => ({ ...s, isOpen: Boolean(s.isOpen) }))).catch(error => { if (error.server) throw error; return wait(mock.foodShops.filter(s => !category || s.category===category).map(s => ({ ...s, isOpen: true }))) })
+  }
+  function getFoodMenu(id) { return request(`/food/shops/${id}/menu`, 'GET').catch(error => { if (error.server) throw error; return wait(mock.foodMenus[id] || []) }) }
+  function createFoodOrder(payload) { return request('/orders', 'POST', {...payload,userId:currentUserId()}).catch(error => { if (error.server) throw error; return wait(mock.makeFoodOrder(payload)) }) }
+  function getFoodOrders(page=1,size=20) { return request(`/orders?page=${page}&size=${size}`, 'GET').catch(error => { if (error.server) throw error; return wait({list:[],total:0,page,size,offline:true}) }) }
+  function getFoodOrderDetail(id) { return request(`/orders/${encodeURIComponent(id)}`, 'GET') }
+  Object.assign(module.exports, { CURRENT_USER_ID, getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail })
 
 // 模块二至四：只在断网时使用本地兜底；后端返回的拒单/校验错误必须直接透传。
 

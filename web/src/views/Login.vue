@@ -76,7 +76,7 @@ async function submit() {
   loading.value = true
   try {
     await auth.login(form.username, form.password)
-    router.replace(route.query.redirect || '/dashboard')
+    router.replace(auth.profile?.role === 'merchant' ? '/merchant' : (route.query.redirect || '/dashboard'))
   } catch (e) {
     error.value = e.message || '登录失败'
   } finally {

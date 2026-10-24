@@ -39,6 +39,7 @@ public class AdminAuthController {
         out.put("id", request.getAttribute(AdminInterceptor.ADMIN_ID));
         out.put("role", request.getAttribute(AdminInterceptor.ADMIN_ROLE));
         out.put("schoolId", request.getAttribute(AdminInterceptor.ADMIN_SCHOOL));
+        out.put("shopId", request.getAttribute(AdminInterceptor.MERCHANT_SHOP));
         out.put("realName", request.getAttribute(AdminInterceptor.ADMIN_NAME));
         return ApiResponse.ok(out);
     }

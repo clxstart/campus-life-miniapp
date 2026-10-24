@@ -21,6 +21,8 @@
     "pages/food-list/food-list",
     "pages/food-shop/food-shop",
     "pages/food-order/food-order",
+    "pages/food-orders/food-orders",
+    "pages/food-order-detail/food-order-detail",
     "pages/market-list/market-list",
     "pages/market-detail/market-detail",
     "pages/market-publish/market-publish",

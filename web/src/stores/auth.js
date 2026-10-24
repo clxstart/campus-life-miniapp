@@ -13,7 +13,7 @@ export const useAuthStore = defineStore('auth', {
     isSuper: (state) => state.profile?.role === 'super',
     isLoggedIn: (state) => !!state.profile,
     displayName: (state) => state.profile?.realName || state.profile?.username || '',
-    roleLabel: (state) => (state.profile?.role === 'super' ? '超级管理员' : '学校管理员')
+    roleLabel: (state) => ({ super: '超级管理员', school: '学校管理员', merchant: '商家' }[state.profile?.role] || '账号')
   },
 
   actions: {

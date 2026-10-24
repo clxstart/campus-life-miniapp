@@ -47,6 +47,7 @@ import http from '../api'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
+  uploadPath: { type: String, default: '/admin/upload' },
   // 提示文案，如「建议 512x512，正方形」
   hint: { type: String, default: '' }
 })
@@ -94,8 +95,7 @@ async function onFileChange(event) {
   try {
     const form = new FormData()
     form.append('file', file)
-    // 必须走管理端鉴权接口 /api/admin/upload，不能用公开的 /api/upload
-    const data = await http.post('/admin/upload', form, {
+    const data = await http.post(props.uploadPath, form, {
       headers: { 'content-type': 'multipart/form-data' }
     })
     const url = data && (data.url || data.path)
