@@ -5,6 +5,14 @@ const { SKINS, DEFAULT_SKIN, findSkin, pathForState } = require('./pet-skins.js'
 
 const SKIN_KEY = 'pet_skin_id'
 
+// 点击触发的 4 个表情动效（第 1 只 idle 是常驻，不在此列）
+const EFFECTS = [
+  { key: 'happy',  cls: 'fx-pop',   dur: 1300 },
+  { key: 'hungry', cls: 'fx-tremble', dur: 1200 },
+  { key: 'sleep',  cls: 'fx-doze',  dur: 1600 },
+  { key: 'levelup',cls: 'fx-burst', dur: 1500 }
+]
+
 Page({
   data: {
     ...getNavigationMetrics(),
@@ -13,6 +21,10 @@ Page({
     loading: true,
     offline: false,
     animState: 'idle',
+    basePath: '',
+    effectPath: '',
+    effectClass: '',
+    blink: false,
     skinPath: findSkin(DEFAULT_SKIN).path,
     currentSkin: DEFAULT_SKIN,
     skins: SKINS,
@@ -22,26 +34,90 @@ Page({
 
   onLoad() {
     this._alive = true
-    // 恢复上次选择的形象
     let saved = DEFAULT_SKIN
     try { saved = wx.getStorageSync(SKIN_KEY) || DEFAULT_SKIN } catch (e) {}
-    const skin = findSkin(saved)
-    this.setData({ currentSkin: skin.id, skinPath: pathForState(skin, 'idle') })
+    this.applySkin(findSkin(saved))
   },
 
   onShow() {
     this.loadPet()
+    this.startBlinkLoop()
   },
 
-  onHide() { this.stopHappyTimer() },
+  onHide() {
+    this.stopHappyTimer()
+    this.stopBlinkLoop()
+  },
 
   onUnload() {
     this._alive = false
     this.stopHappyTimer()
+    this.stopBlinkLoop()
   },
 
   onPullDownRefresh() {
     this.loadPet().finally(() => wx.stopPullDownRefresh())
+  },
+
+  // ---------- 形象 ----------
+  applySkin(skin) {
+    const base = pathForState(skin, 'idle')
+    this.setData({
+      currentSkin: skin.id,
+      basePath: base,
+      skinPath: base
+    })
+  },
+
+  // ---------- 常驻眨眼（模拟眼睛动）----------
+  startBlinkLoop() {
+    this.stopBlinkLoop()
+    const loop = () => {
+      if (!this._alive) return
+      // 2.5~5.5 秒随机眨眼
+      this._blinkTimer = setTimeout(() => {
+        if (!this._alive) return
+        this.setData({ blink: true })
+        setTimeout(() => {
+          if (this._alive) this.setData({ blink: false })
+        }, 160)
+        loop()
+      }, 2500 + Math.random() * 3000)
+    }
+    loop()
+  },
+
+  stopBlinkLoop() {
+    if (this._blinkTimer) { clearTimeout(this._blinkTimer); this._blinkTimer = null }
+    if (this._blinkOffTimer) { clearTimeout(this._blinkOffTimer); this._blinkOffTimer = null }
+  },
+
+  // ---------- 点击触发表情动效 ----------
+  tapPet() {
+    if (this._fxPlaying) return
+    const skin = findSkin(this.data.currentSkin)
+    if (!skin.states) {
+      // 没有多状态图的形象，只做一次轻弹
+      this.setData({ effectClass: 'fx-pop' })
+      this._fxPlaying = true
+      this._fxTimer = setTimeout(() => {
+        this._fxPlaying = false
+        if (this._alive) this.setData({ effectClass: '' })
+      }, 900)
+      return
+    }
+
+    const pick = EFFECTS[Math.floor(Math.random() * EFFECTS.length)]
+    const path = skin.states[pick.key]
+    if (!path) return
+
+    this._fxPlaying = true
+    this.setData({ effectPath: path, effectClass: pick.cls })
+    if (this._fxTimer) clearTimeout(this._fxTimer)
+    this._fxTimer = setTimeout(() => {
+      this._fxPlaying = false
+      if (this._alive) this.setData({ effectPath: '', effectClass: '' })
+    }, pick.dur)
   },
 
   // ---------- 数据加载 ----------
@@ -50,14 +126,12 @@ Page({
     try {
       const data = await api.getPet(api.CURRENT_USER_ID)
       if (!this._alive || seq !== this._seq) return
-      const skin = findSkin(this.data.currentSkin)
       this.setData({
         pet: data,
         points: data.points,
         loading: false,
         offline: !!data.offline,
-        animState: data.state,
-        skinPath: pathForState(skin, data.state)
+        animState: data.state
       })
     } catch (error) {
       if (!this._alive || seq !== this._seq) return
@@ -67,40 +141,24 @@ Page({
   },
 
   // ---------- 形象切换 ----------
-  openSkinPicker() {
-    this.setData({ skinPickerVisible: true })
-  },
-
-  closeSkinPicker() {
-    this.setData({ skinPickerVisible: false })
-  },
-
+  openSkinPicker() { this.setData({ skinPickerVisible: true }) },
+  closeSkinPicker() { this.setData({ skinPickerVisible: false }) },
   noop() {},
 
   pickSkin(e) {
     const id = e.currentTarget.dataset.id
     const skin = findSkin(id)
-    this.setData({ currentSkin: skin.id, skinPath: pathForState(skin, this.data.animState), skinPickerVisible: false })
+    this.applySkin(skin)
+    this.setData({ skinPickerVisible: false })
     try { wx.setStorageSync(SKIN_KEY, skin.id) } catch (err) {}
     popup.toast(this, `已换成${skin.name}`, { tone: 'success' })
   },
 
-  // ---------- 动效切换 ----------
-  playAnim(state) {
-    const skin = findSkin(this.data.currentSkin)
-    const patch = {}
-    if (this.data.animState !== state) patch.animState = state
-    // 有状态图的皮肤（如橘猫）按状态换图
-    const nextPath = pathForState(skin, state)
-    if (nextPath && nextPath !== this.data.skinPath) patch.skinPath = nextPath
-    if (Object.keys(patch).length) this.setData(patch)
-  },
-
+  // ---------- 互动 ----------
   stopHappyTimer() {
     if (this._happyTimer) { clearTimeout(this._happyTimer); this._happyTimer = null }
   },
 
-  // ---------- 互动 ----------
   async feed() {
     const pet = this.data.pet
     if (!pet || this._busy) return
@@ -152,22 +210,25 @@ Page({
     this.setData({ pet: data, points: data.points })
     if (leveled) {
       popup.toast(this, `升到 Lv.${data.level} 了！`, { tone: 'success' })
-      this.playAnim('levelup')
-      this.stopHappyTimer()
-      this._happyTimer = setTimeout(() => {
-        if (this._alive && this.data.pet) this.playAnim(this.data.pet.state || 'idle')
-      }, 1800)
+      this.playEffect('levelup', 'fx-burst', 1500)
     } else {
       popup.toast(this, toastText, { tone: 'success' })
-      this.playAnim('happy')
-      this.stopHappyTimer()
-      this._happyTimer = setTimeout(() => {
-        if (this._alive && this.data.pet) this.playAnim(this.data.pet.state || 'idle')
-      }, 3000)
+      this.playEffect('happy', 'fx-pop', 1300)
     }
   },
 
-  // ---------- 弹窗事件（ui-popup 组件要求页面实现，否则 visible 不会复位）----------
+  // 播一次指定表情动效
+  playEffect(key, cls, dur) {
+    const skin = findSkin(this.data.currentSkin)
+    if (!skin.states || !skin.states[key]) return
+    this.setData({ effectPath: skin.states[key], effectClass: cls })
+    if (this._fxTimer) clearTimeout(this._fxTimer)
+    this._fxTimer = setTimeout(() => {
+      if (this._alive) this.setData({ effectPath: '', effectClass: '' })
+    }, dur)
+  },
+
+  // ---------- 弹窗事件 ----------
   onPopupClose() { popup.hide(this) },
   onPopupCancel() { popup.hide(this) },
   onPopupConfirm() { popup.hide(this) },

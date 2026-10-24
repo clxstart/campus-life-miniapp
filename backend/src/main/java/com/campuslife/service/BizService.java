@@ -202,7 +202,7 @@ public class BizService {
             }
         }
         AuditResult textAudit = auditService.checkText(title + "\n" + description, "goods", userId);
-        auditService.rejectIfNeeded(textAudit);
+        auditService.rejectWithLog(textAudit, "goods", userId, title + "\n" + description);
         String imagesJson;
         try {
             imagesJson = json.writeValueAsString(images);
@@ -271,7 +271,7 @@ public class BizService {
         String description = text(body.get("description")).trim();
         if (description.length() > 200) throw new IllegalArgumentException("描述不能超过200字");
         AuditResult textAudit = auditService.checkText(title + "\n" + description, "job", userId);
-        auditService.rejectIfNeeded(textAudit);
+        auditService.rejectWithLog(textAudit, "job", userId, title + "\n" + description);
         Map<String, Object> params = new LinkedHashMap<>();
         String auditStatus = auditService.initialStatus(textAudit, false);
         params.put("userId", userId); params.put("title", title); params.put("daySalary", daySalary);

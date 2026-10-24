@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.houbb.sensitive.word.bs.SensitiveWordBs;
 import com.github.houbb.sensitive.word.support.allow.WordAllows;
-import com.github.houbb.sensitive.word.support.deny.WordDenys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +45,7 @@ public class AuditService {
     private final UserMapper userMapper;
     private final CampusMapper campusMapper;
     private final UploadService uploadService;
+    private final org.springframework.transaction.PlatformTransactionManager transactionManager;
     @Qualifier("auditExecutor") private final Executor auditExecutor;
     private final AtomicReference<SensitiveWordBs> words = new AtomicReference<>();
 
@@ -59,21 +59,58 @@ public class AuditService {
         reloadWords();
     }
 
+    /**
+     * 常见误判白名单。
+     *
+     * 内置词典里有不少单字/双字词（如「靠」），会误伤「靠窗」「依靠」「靠背」这类正常校园表达。
+     * 这里只放「确实会被误判、且本身无违规含义」的常用词，不放任何可能被滥用的词。
+     */
+    private static final List<String> COMMON_ALLOW = List.of(
+        // 与内置单字敏感词冲突的日常词
+        "靠窗", "靠背", "靠近", "依靠", "可靠", "靠山", "靠着", "靠谱",
+        // 校园场景高频词
+        "兼职", "信息", "上课", "下课", "上课时间", "自习", "作业", "考试", "复习",
+        "宿舍", "食堂", "图书馆", "老师", "同学", "课程", "选修", "成绩",
+        // 交易/配送场景
+        "押金退还", "退款", "退押金", "预约", "预订单", "代取", "代拿", "代购",
+        // 其他易误伤
+        "方便", "便利", "包邮", "包邮区", "包月", "包年"
+    );
+
+    /**
+     * 数据库词表不可用时的兜底词表，与 module-audit.sql 里的种子数据保持一致。
+     * 覆盖校园最常见的两类风险：兼职诈骗、学术不端。
+     */
+    private static final List<String> FALLBACK_WORDS = List.of(
+        "刷单", "押金", "保证金", "先交钱", "垫付", "返利", "日赚", "月入过万",
+        "代写", "代考", "代课", "包过", "内部渠道", "包录取",
+        "兼职日结高薪", "无需经验高薪", "加微信私聊", "加QQ",
+        "刷信誉", "点赞返现", "任务佣金", "垫付返现"
+    );
+
     public synchronized void reloadWords() {
         List<String> list;
         try {
             list = auditMapper.enabledWords();
         } catch (Exception error) {
-            log.warn("Sensitive-word table unavailable; using the library dictionary until it is installed", error);
+            log.warn("Sensitive-word table unavailable; falling back to built-in safety words", error);
             list = List.of();
         }
         List<String> configured = list == null ? List.of() : list.stream()
             .filter(Objects::nonNull).map(String::trim).filter(value -> !value.isEmpty()).distinct().toList();
+
+        // 只使用数据库里配置的词表（+ 下面的 FALLBACK_WORDS 兜底），不加载 WordDenys.system()。
+        // 原因：system() 内置词典含大量单字（如「靠」），会误伤「靠窗」「依靠」等正常校园表达；
+        // 而本项目的审核重点是「校园诈骗/学术不端」，词表完全由业务方维护更可控。
+        List<String> deny = new ArrayList<>(configured);
+        if (deny.isEmpty()) deny.addAll(FALLBACK_WORDS);
+
         SensitiveWordBs engine = SensitiveWordBs.newInstance()
-            .wordAllow(WordAllows.chains(WordAllows.system(), () -> List.of("兼职", "信息")))
-            .wordDeny(WordDenys.chains(WordDenys.system(), () -> configured))
+            .wordAllow(WordAllows.chains(WordAllows.system(), () -> COMMON_ALLOW))
+            .wordDeny(() -> deny)
             .ignoreCase(true).ignoreWidth(true).ignoreNumStyle(true).init();
         words.set(engine);
+        log.info("Sensitive-word engine loaded with {} deny words, {} allow words", deny.size(), COMMON_ALLOW.size());
     }
 
     public AuditResult checkText(String text, String targetType) {
@@ -132,6 +169,29 @@ public class AuditService {
 
     public void rejectIfNeeded(AuditResult result) {
         if (!result.pass()) throw new AuditRejectedException(result.reason());
+    }
+
+    /**
+     * 抛出拒绝前先把这次拦截写进 audit_log，否则被拒内容在库里没有任何痕迹，
+     * 后台「内容审核」页看不到拦了什么，也无法证明审核确实在工作。
+     *
+     * 用 TransactionTemplate 单开事务而不是 @Transactional 注解：本方法是业务方法内部
+     * 直接调用的（同类自调用不走 Spring 代理），注解不会生效，日志仍会被业务回滚带走。
+     */
+    public void rejectWithLog(AuditResult result, String targetType, Long userId, String text) {
+        if (result.pass()) return;
+        try {
+            // 必须用 REQUIRES_NEW：默认 REQUIRED 会加入外层业务事务，
+            // 业务方法随后抛出 AuditRejectedException 回滚时，日志会被一起撤掉。
+            org.springframework.transaction.support.TransactionTemplate fresh =
+                new org.springframework.transaction.support.TransactionTemplate(transactionManager);
+            fresh.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            fresh.executeWithoutResult(status -> writeRejectLog(targetType, userId, text, result.words()));
+            log.info("Reject audit log persisted: type={} words={}", targetType, result.words());
+        } catch (Exception error) {
+            log.warn("Failed to persist reject audit log for {}", targetType, error);
+        }
+        throw new AuditRejectedException(result.reason());
     }
 
     public String initialStatus(AuditResult result, boolean hasImages) {
@@ -391,6 +451,15 @@ public class AuditService {
         try { encoded = JSON.writeValueAsString(matched == null ? List.of() : matched); }
         catch (Exception error) { encoded = "[]"; }
         auditMapper.log(requireType(type), id, userId, snippet, source, result, encoded);
+    }
+
+    /** 被拦下的内容还没有入库，没有 target_id，用 0 占位并靠 snippet 记录原文。 */
+    private void writeRejectLog(String type, Long userId, String text, List<String> matched) {
+        String snippet = text == null ? "" : text.substring(0, Math.min(200, text.length()));
+        String encoded;
+        try { encoded = JSON.writeValueAsString(matched == null ? List.of() : matched); }
+        catch (Exception error) { encoded = "[]"; }
+        auditMapper.log(requireType(type), 0L, userId, snippet, "local", "reject", encoded);
     }
 
     private static String validateWord(String word, String category) {

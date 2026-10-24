@@ -97,7 +97,9 @@ public interface AuditMapper {
           (SELECT COUNT(*) FROM goods WHERE audit_status='rejected' AND (#{schoolId} IS NULL OR school_id=#{schoolId})) +
           (SELECT COUNT(*) FROM job WHERE audit_status='rejected' AND (#{schoolId} IS NULL OR school_id=#{schoolId})) +
           (SELECT COUNT(*) FROM chat_message m JOIN `user` u ON u.id=m.sender_id WHERE m.audit_status='rejected' AND (#{schoolId} IS NULL OR u.school_id=#{schoolId})) +
-          (SELECT COUNT(*) FROM circle WHERE audit_status='rejected' AND (#{schoolId} IS NULL OR school_id=#{schoolId})) AS rejected
+          (SELECT COUNT(*) FROM circle WHERE audit_status='rejected' AND (#{schoolId} IS NULL OR school_id=#{schoolId})) AS rejected,
+          -- 发布入口被敏感词直接拦下、从未入库的内容，单独统计（后台展示「累计拦截」）
+          (SELECT COUNT(*) FROM audit_log WHERE result='reject') AS blocked
         """)
     Map<String,Object> stats(@Param("schoolId") Long schoolId);
 

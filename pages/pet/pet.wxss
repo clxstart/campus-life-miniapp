@@ -27,15 +27,19 @@ page { background: #f7f9fb; }
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 420rpx;
+  height: 540rpx;
   margin: 28rpx 24rpx 0;
   border-radius: 32rpx;
   background: linear-gradient(180deg, #eaf2ff 0%, #f7f9fb 100%);
-  overflow: hidden;
+  /* 不用 overflow:hidden，避免放大动画时被裁切 */
 }
 .pet-img {
-  width: 260rpx;
-  height: 260rpx;
+  position: absolute;
+  width: 440rpx;
+  height: 440rpx;
+  transform-origin: 50% 78%;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 .skin-btn {
   position: absolute;
@@ -49,32 +53,84 @@ page { background: #f7f9fb; }
   font-weight: 600;
 }
 
-/* 动效：不同状态不同节奏 */
-.anim-idle    { animation: petBreathe 3.2s ease-in-out infinite; }
-.anim-happy   { animation: petBounce 0.55s ease-in-out infinite; }
-.anim-hungry  { animation: petSway 2.4s ease-in-out infinite; }
-.anim-sleep   { animation: petSleep 4.5s ease-in-out infinite; }
-.anim-levelup { animation: petJump 0.7s ease-in-out infinite; }
+/* ============ 底图：常驻呼吸 + 轻微摇头（模拟头动）============ */
+.pet-img.base {
+  animation: baseIdle 4s ease-in-out infinite;
+}
+@keyframes baseIdle {
+  0%   { transform: translate3d(0,0,0)     rotate(-1.6deg) scale(1); }
+  25%  { transform: translate3d(0,-6rpx,0) rotate(0deg)     scale(1.015); }
+  50%  { transform: translate3d(0,0,0)     rotate(1.6deg)   scale(1); }
+  75%  { transform: translate3d(0,-6rpx,0) rotate(0deg)     scale(1.015); }
+  100% { transform: translate3d(0,0,0)     rotate(-1.6deg)  scale(1); }
+}
 
-@keyframes petBreathe {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.07); }
+/* 眨眼：整图纵向轻压（模拟眼睛闭合） */
+.pet-img.base.blinking {
+  animation: baseIdle 4s ease-in-out infinite, blinkAnim .16s ease-in-out;
 }
-@keyframes petBounce {
-  0%, 100% { transform: translateY(0) scale(1); }
-  40%      { transform: translateY(-20rpx) scale(1.08); }
+@keyframes blinkAnim {
+  0%   { transform: scaleY(1); }
+  50%  { transform: scaleY(.86) translateY(4rpx); }
+  100% { transform: scaleY(1); }
 }
-@keyframes petSway {
-  0%, 100% { transform: rotate(-5deg) scale(0.98); }
-  50%      { transform: rotate(5deg) scale(1.02); }
+
+/* ============ 动效层：叠在底图上 ============ */
+.pet-img.effect { animation-fill-mode: both; }
+
+/* 开心：蹦一下 + 弹跳 */
+.pet-img.effect.fx-pop {
+  animation: fxPop 1.3s cubic-bezier(.34,1.56,.64,1) both;
 }
-@keyframes petSleep {
-  0%, 100% { transform: scale(0.96); opacity: .78; }
-  50%      { transform: scale(1.0); opacity: 1; }
+@keyframes fxPop {
+  0%   { transform: translate3d(0,0,0) scale(1);         opacity: 0; }
+  12%  { transform: translate3d(0,0,0) scale(1);         opacity: 1; }
+  35%  { transform: translate3d(0,-42rpx,0) scale(1.09); opacity: 1; }
+  55%  { transform: translate3d(0,0,0) scale(.97);       opacity: 1; }
+  72%  { transform: translate3d(0,-16rpx,0) scale(1.03); opacity: 1; }
+  100% { transform: translate3d(0,0,0) scale(1);         opacity: 0; }
 }
-@keyframes petJump {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50%      { transform: translateY(-34rpx) scale(1.12); }
+
+/* 委屈：左右发抖 */
+.pet-img.effect.fx-tremble {
+  animation: fxTremble 1.2s ease-in-out both;
+}
+@keyframes fxTremble {
+  0%   { transform: translate3d(0,0,0) rotate(0deg);        opacity: 0; }
+  10%  { opacity: 1; }
+  20%  { transform: translate3d(-7rpx,0,0) rotate(-2deg); }
+  35%  { transform: translate3d(7rpx,0,0)  rotate(2deg); }
+  50%  { transform: translate3d(-6rpx,0,0) rotate(-1.6deg); }
+  65%  { transform: translate3d(6rpx,0,0)  rotate(1.6deg); }
+  80%  { transform: translate3d(-3rpx,0,0) rotate(-1deg); }
+  90%  { opacity: 1; }
+  100% { transform: translate3d(0,0,0) rotate(0deg);        opacity: 0; }
+}
+
+/* 困倦：缓慢下沉 + 淡出 */
+.pet-img.effect.fx-doze {
+  animation: fxDoze 1.6s ease-in-out both;
+}
+@keyframes fxDoze {
+  0%   { transform: translate3d(0,0,0) scale(1);                     opacity: 0; }
+  15%  { opacity: 1; }
+  45%  { transform: translate3d(0,14rpx,0) scale(.94) rotate(-3deg); opacity: 1; }
+  70%  { transform: translate3d(0,18rpx,0) scale(.92) rotate(-4deg); opacity: 1; }
+  88%  { opacity: 1; }
+  100% { transform: translate3d(0,22rpx,0) scale(.9) rotate(-4deg);  opacity: 0; }
+}
+
+/* 升级：放大爆闪 + 上浮 */
+.pet-img.effect.fx-burst {
+  animation: fxBurst 1.5s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes fxBurst {
+  0%   { transform: translate3d(0,0,0) scale(.6);        opacity: 0; }
+  18%  { transform: translate3d(0,0,0) scale(1.16);      opacity: 1; }
+  32%  { transform: translate3d(0,-10rpx,0) scale(1.02); opacity: 1; }
+  55%  { transform: translate3d(0,-26rpx,0) scale(1.1);  opacity: 1; }
+  80%  { transform: translate3d(0,-34rpx,0) scale(1.05); opacity: .85; }
+  100% { transform: translate3d(0,-42rpx,0) scale(1);    opacity: 0; }
 }
 
 /* 名字与等级 */

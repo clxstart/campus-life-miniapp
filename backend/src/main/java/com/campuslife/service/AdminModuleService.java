@@ -468,7 +468,7 @@ public class AdminModuleService {
         if (name.isEmpty() || name.length() > 32) throw new IllegalArgumentException("圈子名称须为1至32字");
         String description = trim(body.get("description"));
         var textAudit = auditService.checkText(name + "\n" + description, "circle");
-        auditService.rejectIfNeeded(textAudit);
+        auditService.rejectWithLog(textAudit, "circle", null, name + "\n" + description);
         String slug = trim(body.get("slug"));
         if (slug.isEmpty()) slug = "c" + System.currentTimeMillis();
         if (!slug.matches("^[a-zA-Z0-9_-]{1,32}$")) throw new IllegalArgumentException("标识只能是字母数字下划线短横线");
@@ -500,7 +500,7 @@ public class AdminModuleService {
         if (name.isEmpty() || name.length() > 32) throw new IllegalArgumentException("圈子名称须为1至32字");
         String description = trim(body.get("description"));
         var textAudit = auditService.checkText(name + "\n" + description, "circle");
-        auditService.rejectIfNeeded(textAudit);
+        auditService.rejectWithLog(textAudit, "circle", null, name + "\n" + description);
         row.put("id", id);
         row.put("name", name);
         row.put("category", trim(body.get("category")).isEmpty() ? "兴趣" : trim(body.get("category")));
