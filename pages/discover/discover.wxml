@@ -70,6 +70,7 @@
           <text class="circle-name">{{item.name}}</text>
           <text class="circle-category">{{item.category}}</text>
         </view>
+        <view wx:if="{{item.lastMessage}}" class="circle-last-message">{{item.lastMessage}}</view>
         <text class="circle-desc">{{item.description}}</text>
         <view class="circle-meta">
           <text>{{item.memberText}} 成员</text>
@@ -82,6 +83,7 @@
         catchtap="toggleJoin"
         data-id="{{item.id}}"
       >{{item.joined ? '已加入' : '＋ 加入'}}</view>
+      <view wx:if="{{item.unreadCount > 0}}" class="circle-unread-badge">{{item.unreadCount > 99 ? '99+' : item.unreadCount}}</view>
     </view>
   </view>
   <bottom-nav active="discover" />

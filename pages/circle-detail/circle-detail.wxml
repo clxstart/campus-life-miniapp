@@ -37,7 +37,10 @@
 
     <view class="cd-toolbar">
       <text class="cd-section">圈内动态</text>
-      <view class="cd-compose" bindtap="openCompose">＋ 发帖</view>
+      <view class="cd-toolbar-actions">
+        <view class="cd-chat-entry" bindtap="openChat">群聊<text wx:if="{{circle.unreadCount > 0}}" class="cd-chat-badge">{{circle.unreadCount > 99 ? '99+' : circle.unreadCount}}</text></view>
+        <view class="cd-compose" bindtap="openCompose">＋ 发帖</view>
+      </view>
     </view>
 
     <view class="cd-loading" wx:if="{{loading}}">正在加载…</view>

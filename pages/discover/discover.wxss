@@ -451,6 +451,7 @@
 
 /* ===== 圈子卡片：沿用 feed-card 的圆角/阴影/留白语言 ===== */
 .circle-card {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 20rpx;
@@ -460,6 +461,9 @@
   background: #ffffff;
   box-shadow: 0 8rpx 24rpx rgba(80, 125, 175, 0.09);
 }
+
+.circle-last-message{max-width:360rpx;margin-top:6rpx;color:#6c7b88;font-size:21rpx;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.circle-unread-badge{position:absolute;top:18rpx;right:18rpx;min-width:30rpx;height:30rpx;padding:0 7rpx;border-radius:999rpx;background:#ff6475;color:#fff;font-size:18rpx;line-height:30rpx;text-align:center}
 
 .circle-cover {
   flex: none;
