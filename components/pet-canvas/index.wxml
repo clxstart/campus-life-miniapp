@@ -1,0 +1,7 @@
+<canvas
+  type="2d"
+  id="pet-canvas"
+  class="pet-canvas"
+  style="width:{{size}}px;height:{{size}}px;"
+  bindtouchstart="onTouchStart"
+></canvas>

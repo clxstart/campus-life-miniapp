@@ -1,0 +1,4 @@
+.pet-canvas {
+  display: block;
+  background: transparent;
+}

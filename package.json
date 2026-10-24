@@ -1,0 +1,9 @@
+{
+  "name": "campus-life-miniapp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "校园生活小程序（含校园搭子 AI 宠物模块）",
+  "dependencies": {
+    "tdesign-miniprogram": "1.17.0"
+  }
+}

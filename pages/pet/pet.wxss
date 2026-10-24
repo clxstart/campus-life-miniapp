@@ -33,12 +33,19 @@ page { background: #f7f9fb; }
   background: linear-gradient(180deg, #eaf2ff 0%, #f7f9fb 100%);
   /* 不用 overflow:hidden，避免放大动画时被裁切 */
 }
-.pet-img {
+/* 图层：外层负责呼吸/摇头/表情动效，内层负责眨眼，互不抢 transform */
+.pet-layer {
   position: absolute;
   width: 440rpx;
   height: 440rpx;
   transform-origin: 50% 78%;
   will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+.pet-img {
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 78%;
   backface-visibility: hidden;
 }
 .skin-btn {
@@ -53,8 +60,8 @@ page { background: #f7f9fb; }
   font-weight: 600;
 }
 
-/* ============ 底图：常驻呼吸 + 轻微摇头（模拟头动）============ */
-.pet-img.base {
+/* ============ 底图外层：常驻呼吸 + 轻微摇头 ============ */
+.pet-layer.base-layer {
   animation: baseIdle 4s ease-in-out infinite;
 }
 @keyframes baseIdle {
@@ -65,21 +72,22 @@ page { background: #f7f9fb; }
   100% { transform: translate3d(0,0,0)     rotate(-1.6deg)  scale(1); }
 }
 
-/* 眨眼：整图纵向轻压（模拟眼睛闭合） */
-.pet-img.base.blinking {
-  animation: baseIdle 4s ease-in-out infinite, blinkAnim .16s ease-in-out;
+/* 眨眼：只压内层，与呼吸动画不冲突，柔和不抽动 */
+.pet-img.blinking {
+  animation: blinkAnim .22s ease-in-out;
 }
 @keyframes blinkAnim {
-  0%   { transform: scaleY(1); }
-  50%  { transform: scaleY(.86) translateY(4rpx); }
-  100% { transform: scaleY(1); }
+  0%   { transform: scaleY(1)   translateY(0); }
+  45%  { transform: scaleY(.90) translateY(3rpx); }
+  55%  { transform: scaleY(.90) translateY(3rpx); }
+  100% { transform: scaleY(1)   translateY(0); }
 }
 
 /* ============ 动效层：叠在底图上 ============ */
-.pet-img.effect { animation-fill-mode: both; }
+.pet-layer.effect-layer { animation-fill-mode: both; }
 
 /* 开心：蹦一下 + 弹跳 */
-.pet-img.effect.fx-pop {
+.pet-layer.effect-layer.fx-pop {
   animation: fxPop 1.3s cubic-bezier(.34,1.56,.64,1) both;
 }
 @keyframes fxPop {
@@ -92,7 +100,7 @@ page { background: #f7f9fb; }
 }
 
 /* 委屈：左右发抖 */
-.pet-img.effect.fx-tremble {
+.pet-layer.effect-layer.fx-tremble {
   animation: fxTremble 1.2s ease-in-out both;
 }
 @keyframes fxTremble {
@@ -108,7 +116,7 @@ page { background: #f7f9fb; }
 }
 
 /* 困倦：缓慢下沉 + 淡出 */
-.pet-img.effect.fx-doze {
+.pet-layer.effect-layer.fx-doze {
   animation: fxDoze 1.6s ease-in-out both;
 }
 @keyframes fxDoze {
@@ -121,7 +129,7 @@ page { background: #f7f9fb; }
 }
 
 /* 升级：放大爆闪 + 上浮 */
-.pet-img.effect.fx-burst {
+.pet-layer.effect-layer.fx-burst {
   animation: fxBurst 1.5s cubic-bezier(.22,1,.36,1) both;
 }
 @keyframes fxBurst {

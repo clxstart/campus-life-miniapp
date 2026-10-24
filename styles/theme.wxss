@@ -1,0 +1,40 @@
+/* 校园搭子 · 主题变量
+ * 风格：温暖的校园陪伴手账，轻量养成感
+ * 所有配色只在这里定义，页面与组件一律引用变量，不写死色值。
+ */
+page {
+  /* ===== 基础色板 ===== */
+  --c-bg: #F7F3EA;            /* 页面背景：奶油色 */
+  --c-card: #FFFCF5;          /* 卡片底色 */
+  --c-primary: #2F6555;       /* 主按钮、主要选中态：森林绿 */
+  --c-text: #203D34;          /* 标题和正文 */
+  --c-text-sub: #586A60;      /* 次级文字 */
+  --c-accent: #BD5134;        /* 围巾、重要点缀：陶土橙 */
+  --c-soft: #E0EADC;          /* 浅绿色场景和标签 */
+  --c-line: #DEDCCD;          /* 分割线、卡片边框 */
+
+  /* ===== 主按钮反色文字（森林绿底用卡片底色字） ===== */
+  --c-on-primary: #FFFCF5;
+
+  /* ===== 尺寸基准 ===== */
+  --sp-page: 32rpx;           /* 页面左右留白 */
+  --sp-card: 28rpx;           /* 卡片内边距 */
+  --sp-gap: 24rpx;            /* 相邻卡片间距 */
+  --sp-col: 20rpx;            /* 两列内容间距 */
+  --radius-card: 28rpx;       /* 卡片圆角 */
+  --radius-pill: 999rpx;      /* 胶囊 */
+  --h-button: 88rpx;          /* 主按钮高度 */
+  --bw: 1rpx;                 /* 边框宽度 */
+
+  /* ===== 字号 ===== */
+  --fs-page-title: 40rpx;
+  --fs-card-title: 32rpx;
+  --fs-body: 28rpx;
+  --fs-hint: 24rpx;
+
+  /* ===== 安全区 ===== */
+  --safe-bottom: env(safe-area-inset-bottom);
+
+  background: var(--c-bg);
+  color: var(--c-text);
+}
