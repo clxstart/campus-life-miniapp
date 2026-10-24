@@ -9,10 +9,14 @@
   <view wx:if="{{loading}}" class="state">正在召唤宠物…</view>
 
   <block wx:else>
-    <!-- 形象区：底图常驻（呼吸+摇头+眨眼），点击叠一层表情动效 -->
+    <!-- 形象区：外层跑呼吸+摇头，内层跑眨眼，两层 transform 不冲突 -->
     <view class="stage" bindtap="tapPet">
-      <image class="pet-img base {{blink ? 'blinking' : ''}}" src="{{basePath}}" mode="aspectFit" />
-      <image wx:if="{{effectPath}}" class="pet-img effect {{effectClass}}" src="{{effectPath}}" mode="aspectFit" />
+      <view class="pet-layer base-layer">
+        <image class="pet-img {{blink ? 'blinking' : ''}}" src="{{basePath}}" mode="aspectFit" />
+      </view>
+      <view wx:if="{{effectPath}}" class="pet-layer effect-layer {{effectClass}}">
+        <image class="pet-img" src="{{effectPath}}" mode="aspectFit" />
+      </view>
       <view class="skin-btn" catchtap="openSkinPicker">换形象</view>
     </view>
 
