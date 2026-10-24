@@ -5,6 +5,7 @@ import com.campuslife.dto.CreateOrderRequest;
 import com.campuslife.entity.Shop;
 import com.campuslife.service.BizService;
 import com.campuslife.service.MerchantService;
+import com.campuslife.service.PayService;
 import com.campuslife.config.AuthInterceptor;
 import com.campuslife.config.UnauthorizedException;
 import jakarta.validation.Valid;
@@ -28,6 +29,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class BizController {
     private final BizService service;
     private final MerchantService merchantService;
+    private final PayService payService;
 
     @GetMapping({"/shops", "/food/shops"})
     public ApiResponse<List<Map<String,Object>>> shops(@RequestParam(defaultValue = "") String category,
@@ -54,8 +56,16 @@ public class BizController {
     }
 
     @GetMapping("/orders/{id}")
-    public ApiResponse<Map<String,Object>> myOrder(@PathVariable Long id, HttpServletRequest request) {
-        return ApiResponse.ok(merchantService.userOrder(id, authenticatedUserId(request)));
+    public ApiResponse<Map<String,Object>> myOrder(@PathVariable Long id,
+                                                   @RequestParam(required = false) Long userId,
+                                                   HttpServletRequest request) {
+        Long authedId = authenticatedUserId(request);
+        // 小程序两种调用方式都支持：token 鉴权；若显式传了 userId 则要求与 token 一致（防越权）
+        if (userId != null && !userId.equals(authedId)) throw new UnauthorizedException("不能查看其他用户的订单");
+        // 统一走 PayService.detail：字段最全（支付/退款记录 + 骑手配送信息），小程序订单详情页依赖它
+        Map<String, Object> detail = payService.detail(id);
+        if (!authedId.equals(detail.get("userId"))) throw new UnauthorizedException("无权查看该订单");
+        return ApiResponse.ok(detail);
     }
 
     private static Long authenticatedUserId(HttpServletRequest request) {

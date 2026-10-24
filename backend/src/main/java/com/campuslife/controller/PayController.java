@@ -31,12 +31,7 @@ public class PayController {
         return ResponseEntity.ok(ok ? "{\"code\":\"SUCCESS\",\"message\":\"成功\"}" : "{\"code\":\"FAIL\",\"message\":\"验签失败\"}");
     }
 
-    @GetMapping("/orders/{id}")
-    public ApiResponse<Map<String, Object>> detail(@PathVariable Long id, HttpServletRequest request) {
-        Map<String, Object> detail = payService.detail(id);
-        Long userId = requestUserId(request); if (userId != null && !userId.equals(detail.get("userId"))) throw new IllegalArgumentException("无权查看该订单");
-        return ApiResponse.ok(detail);
-    }
+    // 订单详情统一由 BizController#myOrder 提供（GET /api/orders/{id}），这里不再重复映射，避免 Ambiguous mapping。
 
     @PostMapping("/orders/{id}/cancel")
     public ApiResponse<Map<String, Object>> cancel(@PathVariable Long id, @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) { return ApiResponse.ok(payService.cancel(id, requestUserId(request), body == null ? "" : String.valueOf(body.getOrDefault("reason", "")))); }

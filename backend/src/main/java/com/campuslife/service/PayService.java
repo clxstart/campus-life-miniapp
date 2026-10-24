@@ -179,6 +179,10 @@ public class PayService {
         out.put("userName", user == null ? "" : user.getNickname()); out.put("shopName", shop == null ? "" : shop.getName());
         out.put("paymentRecords", paymentRecordMapper.selectList(new LambdaQueryWrapper<PaymentRecord>().eq(PaymentRecord::getOrderId, order.getId()).orderByDesc(PaymentRecord::getId)));
         out.put("refundRecords", refundRecordMapper.selectList(new LambdaQueryWrapper<RefundRecord>().eq(RefundRecord::getOrderId, order.getId()).orderByDesc(RefundRecord::getId)));
+        // task-15 骑手端：小程序订单详情页要展示配送进度与骑手联系方式
+        out.put("contactName", order.getContactName()); out.put("contactPhone", order.getContactPhone());
+        out.put("riderId", order.getRiderId()); out.put("riderName", order.getRiderName());
+        out.put("acceptedAt", order.getAcceptedAt()); out.put("pickedAt", order.getPickedAt()); out.put("deliveredAt", order.getDeliveredAt());
         return out;
     }
 
