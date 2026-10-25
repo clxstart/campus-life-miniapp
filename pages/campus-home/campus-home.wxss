@@ -254,19 +254,17 @@
   .cm-float, .cm-exp-fill { transition: none; }
 }
 
-/* ===== 宠物卡片展开态 ===== */
-.cm-yard--expanded {
-  padding-bottom: var(--sp-card);
-}
+/* ===== 宠物卡片：常驻大图互动 ===== */
 
-/* 展开后的大图舞台 */
+/* 大图舞台（常驻，不切换） */
 .cm-stage {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 20rpx 0 12rpx;
+  padding: 16rpx 0 8rpx;
+  margin-bottom: 16rpx;
   background: linear-gradient(
     180deg,
     var(--c-bg) 0%,

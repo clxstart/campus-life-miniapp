@@ -46,8 +46,6 @@ Page({
     expNext: 100,
     expPercent: 0,
     moodText: '今天心情不错',
-    /** 是否展开大图互动 */
-    expanded: false,
     petMotion: 'idle',
     currentAction: 'idle',
     tip: TIPS.idle,
@@ -137,19 +135,7 @@ Page({
     }
   },
 
-  // ===== 宠物互动（原地展开，不跳页） =====
-  onToggleExpand() {
-    const next = !this.data.expanded
-    this.setData({
-      expanded: next,
-      // 展开时把悬浮球收起，避免两个动画实例同时跑
-      floatCollapsed: next,
-      petMotion: next ? 'idle' : 'idle',
-      currentAction: next ? 'idle' : this.data.currentAction,
-      tip: next ? TIPS.idle : this.data.tip
-    })
-  },
-
+  // ===== 宠物互动（常驻大图，与首页内容同屏） =====
   /** 点宠物本体：播开心 */
   onPetTap() {
     this.setData({ petMotion: 'happy', currentAction: 'happy', tip: '被你摸到了，很开心' })
