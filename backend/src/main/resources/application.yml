@@ -1,11 +1,27 @@
 server:
   port: 8080
+  # 生产环境建议：Tomcat 最大线程数（默认 200 够用，高并发可调至 300）
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    accept-count: 200
+    max-connections: 8192
 spring:
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/campus_life?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false
     username: root
     password: chang090011
     driver-class-name: com.mysql.cj.jdbc.Driver
+    # 连接池：默认 10 个撑不住 1000 同时在线，按 4C4G 机器调到 25
+    # 计算依据：单请求占用时长约 20ms，25 连接 ≈ 1250 QPS 上限
+    hikari:
+      maximum-pool-size: 25
+      minimum-idle: 5
+      connection-timeout: 10000      # 获取连接超时 10s
+      idle-timeout: 600000           # 空闲连接 10 分钟回收
+      max-lifetime: 1800000          # 连接最长存活 30 分钟（小于 MySQL wait_timeout）
+      connection-test-query: SELECT 1
   jackson:
     time-zone: Asia/Shanghai
   servlet:
