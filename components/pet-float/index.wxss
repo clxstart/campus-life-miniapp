@@ -1,33 +1,43 @@
-/* pet-float：全局悬浮宠物 */
+/* pet-float：可拖动的全局悬浮宠物 */
 
-.pf {
+/* 拖动区域铺满视口，但本身不拦截事件（pointer-events: none）
+   只有宠物本体（movable-view）可点可拖 */
+.pf-area {
   position: fixed;
-  right: 24rpx;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 90;
+  pointer-events: none;
+  background: transparent;
+}
+
+/* 可拖动的小球 */
+.pf-view {
   width: 136rpx;
   height: 136rpx;
-  z-index: 90;
+  /* 只有它接收事件 */
+  pointer-events: auto;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* 容器：只做定位，不画背景，宠物直接浮在页面内容上 */
+/* 容器：透明，宠物直接浮在页面上 */
 .pf-ball {
   position: relative;
   width: 136rpx;
   height: 136rpx;
   background: transparent;
-  border: none;
-  box-shadow: none;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  /* 允许阴影溢出到容器外 */
   overflow: visible;
   animation: pf-breathe 3.4s ease-in-out infinite;
 }
 
-/* 脚下投影：放在宠物实际落脚位置下方（宠物图底部有透明留白，故需下探） */
+/* 脚下投影 */
 .pf-shadow {
   position: absolute;
   left: 50%;
@@ -42,34 +52,28 @@
   animation: pf-shadow 3.4s ease-in-out infinite;
 }
 
-/* 阴影与呼吸联动：浮起时收小变淡 */
 @keyframes pf-shadow {
   0%, 100% { transform: scale(1); opacity: 1; }
   50%      { transform: scale(0.85); opacity: 0.65; }
 }
 
-/* 宠物本体：用较强投影衬托轮廓（不加白圈） */
+/* 宠物本体：投影衬托轮廓，不用白圈 */
 .pf-pet {
   position: relative;
   z-index: 1;
-  /* 投影贴身一圈，让浅色猫在任何背景上都有清晰边界 */
   filter:
     drop-shadow(0 0 2rpx rgba(32, 61, 52, 0.30))
     drop-shadow(0 4rpx 6rpx rgba(32, 61, 52, 0.26))
     drop-shadow(0 10rpx 18rpx rgba(32, 61, 52, 0.18));
 }
 
-/* 只剩轻微上浮的呼吸感，不带任何白圈 */
+/* 呼吸：轻微上浮 */
 @keyframes pf-breathe {
   0%, 100% { transform: scale(1) translateY(0); }
   50%      { transform: scale(1.04) translateY(-6rpx); }
 }
 
-.pf:active .pf-ball {
-  transform: scale(0.94);
-}
-
-/* 红点：去掉白边，直接是实心小圆 */
+/* 红点 */
 .pf-badge {
   position: absolute;
   right: 8rpx;
@@ -79,19 +83,20 @@
   border-radius: 50%;
   background: var(--c-accent, #BD5134);
   box-shadow: 0 2rpx 6rpx rgba(189, 81, 52, 0.35);
+  z-index: 2;
 }
 
-/* 气泡 */
+/* 气泡：跟随宠物位置（left/top 由 JS 计算） */
 .pf-bubble {
   position: fixed;
-  right: 164rpx;
-  max-width: 320rpx;
+  max-width: 300rpx;
   padding: 14rpx 22rpx;
   background: var(--c-card, #FFFCF5);
   border: 1rpx solid var(--c-line, #DEDCCD);
   border-radius: 18rpx;
   box-shadow: 0 6rpx 18rpx rgba(32, 61, 52, 0.12);
-  z-index: 89;
+  z-index: 91;
+  pointer-events: none;
 }
 
 .pf-bubble-text {
@@ -101,5 +106,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pf-ball { animation: none; }
+  .pf-ball, .pf-shadow { animation: none; }
 }

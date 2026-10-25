@@ -1,28 +1,38 @@
 <!-- pet-float：全局悬浮宠物
-     所有页面右下角常驻，点击冒泡互动，不跳页 -->
-<view
-  class="pf"
-  style="bottom: calc({{bottom}}rpx + env(safe-area-inset-bottom));"
-  catchtap="onTap"
-  catchtouchmove="onMove"
->
-  <view class="pf-ball">
-    <view class="pf-shadow"></view>
-    <view class="pf-pet">
-      <pet-avatar
-        appearance="{{appearance}}"
-        size="{{60}}"
-        auto="{{!reduceMotion}}"
-      />
+     全屏可拖动（movable-area 铺满视口 + movable-view 自由移动）
+     松手后记住位置，切页面也保留；轻点冒泡，拖动时不误触 -->
+<movable-area class="pf-area" style="height:{{areaHeight}}px;">
+  <movable-view
+    class="pf-view"
+    direction="all"
+    inertia="{{false}}"
+    x="{{x}}"
+    y="{{y}}"
+    damping="{{30}}"
+    friction="{{2}}"
+    out-of-bounds="{{false}}"
+    bindchange="onDragChange"
+    bindtouchend="onDragEnd"
+    bindtap="onTap"
+  >
+    <view class="pf-ball">
+      <view class="pf-shadow"></view>
+      <view class="pf-pet">
+        <pet-avatar
+          appearance="{{appearance}}"
+          size="{{60}}"
+          auto="{{!reduceMotion}}"
+        />
+      </view>
     </view>
-  </view>
-  <view class="pf-badge" wx:if="{{hasNews}}"></view>
-</view>
+    <view class="pf-badge" wx:if="{{hasNews}}"></view>
+  </movable-view>
+</movable-area>
 
-<!-- 气泡：贴在宠物左上方 -->
+<!-- 气泡：跟随宠物位置 -->
 <view
   class="pf-bubble"
-  style="bottom: calc({{bottom + 74}}rpx + env(safe-area-inset-bottom));"
+  style="left:{{bubbleLeft}}px;top:{{bubbleTop}}px;"
   wx:if="{{bubbleText}}"
 >
   <text class="pf-bubble-text">{{bubbleText}}</text>
