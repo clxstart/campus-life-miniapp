@@ -9,9 +9,10 @@
     <text class="cp-page-title cm-greet">{{greeting}}</text>
   </view>
 
-  <!-- 宠物小院 -->
-  <view class="cp-card cm-yard" bindtap="onOpenPet">
-    <view class="cm-yard-top">
+  <!-- 宠物小院：点击原地展开为大图互动，不跳转页面 -->
+  <view class="cp-card cm-yard {{expanded ? 'cm-yard--expanded' : ''}}" catchtap="onToggleExpand">
+    <!-- 收起态：一行概要 -->
+    <view class="cm-yard-top" wx:if="{{!expanded}}">
       <pet-avatar appearance="{{appearance}}" size="{{72}}" />
       <view class="cm-yard-info">
         <view class="cm-yard-name-row">
@@ -23,7 +24,33 @@
       <text class="cm-yard-arrow">›</text>
     </view>
 
-    <!-- 经验条 -->
+    <!-- 展开态：大图舞台 + 动作选择 -->
+    <block wx:if="{{expanded}}">
+      <view class="cm-stage">
+        <pet-canvas
+          appearance="{{appearance}}"
+          motion="{{petMotion}}"
+          size="{{210}}"
+          bind:pettap="onPetTap"
+        />
+        <text class="cm-stage-tip">{{tip}}</text>
+      </view>
+
+      <view class="cm-actions">
+        <view
+          wx:for="{{actions}}"
+          wx:key="key"
+          class="cm-action {{currentAction === item.key ? 'cp-selected' : ''}}"
+          data-key="{{item.key}}"
+          catchtap="onAction"
+        >
+          <text class="cm-action-icon">{{item.icon}}</text>
+          <text class="cm-action-name">{{item.name}}</text>
+        </view>
+      </view>
+    </block>
+
+    <!-- 经验条（两种状态下都显示） -->
     <view class="cm-exp">
       <view class="cm-exp-bar">
         <view class="cm-exp-fill" style="width:{{expPercent}}%;"></view>
@@ -31,8 +58,9 @@
       <text class="cm-exp-text">{{petExp}} / {{expNext}}</text>
     </view>
 
+    <!-- 功能按钮 -->
     <view class="cm-yard-actions">
-      <view class="cm-yard-btn" catchtap="onGoAppearance">互动</view>
+      <view class="cm-yard-btn" catchtap="onToggleExpand">{{expanded ? '收起' : '互动'}}</view>
       <view class="cm-yard-btn" catchtap="onGoWardrobe">收藏</view>
       <view class="cm-yard-btn" catchtap="onGoDispatch">派遣</view>
       <view class="cm-yard-btn cm-yard-btn--primary" catchtap="onGoChat">聊天</view>

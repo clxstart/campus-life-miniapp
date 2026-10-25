@@ -253,3 +253,68 @@
 @media (prefers-reduced-motion: reduce) {
   .cm-float, .cm-exp-fill { transition: none; }
 }
+
+/* ===== 宠物卡片展开态 ===== */
+.cm-yard--expanded {
+  padding-bottom: var(--sp-card);
+}
+
+/* 展开后的大图舞台 */
+.cm-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx 0 12rpx;
+  background: linear-gradient(
+    180deg,
+    var(--c-bg) 0%,
+    var(--c-soft) 45%,
+    #EFE1C6 100%
+  );
+  border-radius: 22rpx;
+  overflow: hidden;
+}
+
+.cm-stage-tip {
+  margin-top: 6rpx;
+  font-size: var(--fs-hint);
+  color: var(--c-text-sub);
+}
+
+/* 动作选择 */
+.cm-actions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10rpx;
+  margin-top: 18rpx;
+}
+
+.cm-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14rpx 2rpx 10rpx;
+  border: var(--bw) solid var(--c-line);
+  border-radius: 18rpx;
+  background: var(--c-bg);
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.cm-action-icon {
+  font-size: 26rpx;
+  color: var(--c-primary);
+  line-height: 1.2;
+}
+
+.cm-action-name {
+  margin-top: 6rpx;
+  font-size: 20rpx;
+  color: var(--c-text-sub);
+}
+
+.cm-action.cp-selected .cm-action-name {
+  color: var(--c-primary);
+  font-weight: 600;
+}

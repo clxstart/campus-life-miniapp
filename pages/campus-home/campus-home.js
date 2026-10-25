@@ -3,8 +3,11 @@
  *
  * 关键约束：
  * - 小院与悬浮宠物**共享同一份外观数据**，不各自维护
- * - 两处都用 pet-avatar（静态单帧），不同时跑两个动画实例
+ * - 悬浮入口与展开态不同时跑动画（展开时收起悬浮球）
  * - 悬浮入口避开底部导航与安全区
+ *
+ * 交互设计：点宠物卡片**原地展开**大图互动，不跳转页面
+ * （之前是 navigateTo 到互动页，用户会觉得“跳一下”）
  */
 const petApi = require('../../utils/pet-api')
 const { normalizeAppearance, DEFAULT_APPEARANCE } = require('../../utils/pet-appearance')
@@ -12,6 +15,23 @@ const { request } = require('../../utils/api')
 const Toast = require('tdesign-miniprogram/toast/index')
 
 const GREETINGS = ['早上好', '上午好', '中午好', '下午好', '晚上好']
+
+/** 与引擎动作一一对应 */
+const ACTIONS = [
+  { key: 'idle',      name: '待机', icon: '◡' },
+  { key: 'happy',     name: '开心', icon: '◠' },
+  { key: 'sad',       name: '委屈', icon: '⌒' },
+  { key: 'sleepy',    name: '困了', icon: '☾' },
+  { key: 'celebrate', name: '庆祝', icon: '✦' }
+]
+
+const TIPS = {
+  idle: '它在发呆，偶尔眨眨眼',
+  happy: '尾巴摇起来了',
+  sad: '它有点小情绪',
+  sleepy: '打了个哈欠',
+  celebrate: '跳起来了！'
+}
 
 Page({
   data: {
@@ -26,6 +46,12 @@ Page({
     expNext: 100,
     expPercent: 0,
     moodText: '今天心情不错',
+    /** 是否展开大图互动 */
+    expanded: false,
+    petMotion: 'idle',
+    currentAction: 'idle',
+    tip: TIPS.idle,
+    actions: ACTIONS,
     quickEntries: [
       { key: 'market', label: '找二手', icon: '◫' },
       { key: 'activity', label: '看活动', icon: '✦' },
@@ -58,7 +84,10 @@ Page({
   },
 
   onHide() { this._clearBubble() },
-  onUnload() { this._clearBubble() },
+  onUnload() {
+    this._clearBubble()
+    if (this._actionTimer) { clearTimeout(this._actionTimer); this._actionTimer = null }
+  },
 
   /** 本地信息：学校、校区 */
   _readLocal() {
@@ -108,9 +137,43 @@ Page({
     }
   },
 
-  // ===== 互动 =====
+  // ===== 宠物互动（原地展开，不跳页） =====
+  onToggleExpand() {
+    const next = !this.data.expanded
+    this.setData({
+      expanded: next,
+      // 展开时把悬浮球收起，避免两个动画实例同时跑
+      floatCollapsed: next,
+      petMotion: next ? 'idle' : 'idle',
+      currentAction: next ? 'idle' : this.data.currentAction,
+      tip: next ? TIPS.idle : this.data.tip
+    })
+  },
+
+  /** 点宠物本体：播开心 */
+  onPetTap() {
+    this.setData({ petMotion: 'happy', currentAction: 'happy', tip: '被你摸到了，很开心' })
+    this._restoreAction()
+  },
+
+  /** 选动作 */
+  onAction(e) {
+    const key = e.currentTarget.dataset.key
+    if (!ACTIONS.some(a => a.key === key)) return
+    this.setData({ petMotion: key, currentAction: key, tip: TIPS[key] || '' })
+    if (key !== 'idle') this._restoreAction()
+  },
+
+  /** 动作播完回到待机 */
+  _restoreAction() {
+    if (this._actionTimer) clearTimeout(this._actionTimer)
+    this._actionTimer = setTimeout(() => {
+      this.setData({ petMotion: 'idle', currentAction: 'idle', tip: TIPS.idle })
+    }, 4200)
+  },
+
+  // ===== 悬浮宠物 =====
   onFloatTap() {
-    // 收起状态点一下展开；展开状态进聊天
     if (this.data.floatCollapsed) {
       this.setData({ floatCollapsed: false })
       return
@@ -124,8 +187,7 @@ Page({
     this.setData({ floatCollapsed: !this.data.floatCollapsed })
   },
 
-  onOpenPet() { this.onGoAppearance() },
-  onGoAppearance() { wx.navigateTo({ url: '/pages/appearance/appearance' }) },
+  // ===== 跳转 =====
   onGoWardrobe() { wx.navigateTo({ url: '/pages/wardrobe/wardrobe' }) },
   onGoDispatch() { wx.navigateTo({ url: '/pages/dispatch/dispatch' }) },
   onGoChat() { wx.navigateTo({ url: '/pages/companion/companion' }) },
