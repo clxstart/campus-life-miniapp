@@ -33,6 +33,15 @@ const TIPS = {
   celebrate: '跳起来了！'
 }
 
+/** 悬浮宠物被点时说的一句话 */
+const FLOAT_LINES = [
+  '要不要去食堂看看？',
+  '今天也一起加油呀',
+  '记得喝水哦',
+  '我在这儿等你',
+  '点我聊天，我有很多话想说'
+]
+
 Page({
   data: {
     statusBarHeight: 20,
@@ -57,9 +66,9 @@ Page({
       { key: 'task', label: '今日任务', icon: '✓' }
     ],
     feed: [],
-    floatCollapsed: false,
-    floatBottom: 180,
-    floatSize: 96,
+    floatBottom: 200,
+    /* 悬浮球外径 132rpx，内部宠物略小，留出白边呼吸感 */
+    floatSize: 92,
     bubbleText: '',
     hasBubble: false
   },
@@ -158,20 +167,13 @@ Page({
     }, 4200)
   },
 
-  // ===== 悬浮宠物 =====
+  // ===== 悬浮宠物（常驻右下角） =====
+  /** 点悬浮宠物：只冒泡 + 让它开心一下，不跳页 */
   onFloatTap() {
-    if (this.data.floatCollapsed) {
-      this.setData({ floatCollapsed: false })
-      return
-    }
-    this.onGoChat()
+    this._say(FLOAT_LINES[Math.floor(Math.random() * FLOAT_LINES.length)])
   },
 
   onFloatMove() { /* 预留：拖动时禁止页面滚动穿透 */ },
-
-  onToggleFloat() {
-    this.setData({ floatCollapsed: !this.data.floatCollapsed })
-  },
 
   // ===== 跳转 =====
   onGoWardrobe() { wx.navigateTo({ url: '/pages/wardrobe/wardrobe' }) },
@@ -195,19 +197,19 @@ Page({
     if (id) wx.navigateTo({ url: `/pages/post-detail/post-detail?id=${id}` })
   },
 
-  /** 陪伴气泡：偶尔冒一句，不常驻 */
+  /** 进场时自动冒一句（延迟一点，避免刚进来就弹） */
   _greetBubble() {
-    const lines = [
-      '今天也一起加油呀',
-      '要不要去食堂看看？',
-      '记得喝水哦',
-      '我在这儿等你'
-    ]
-    const text = lines[Math.floor(Math.random() * lines.length)]
     this._bubbleTimer = setTimeout(() => {
-      this.setData({ bubbleText: text, hasBubble: true })
-      this._bubbleHide = setTimeout(() => this._clearBubble(), 4200)
-    }, 1200)
+      this._say(FLOAT_LINES[0])
+    }, 1500)
+  },
+
+  /** 让悬浮宠物说一句话，几秒后自动收起 */
+  _say(text) {
+    if (!text) return
+    if (this._bubbleHide) { clearTimeout(this._bubbleHide); this._bubbleHide = null }
+    this.setData({ bubbleText: text, hasBubble: true })
+    this._bubbleHide = setTimeout(() => this._clearBubble(), 3800)
   },
 
   _clearBubble() {

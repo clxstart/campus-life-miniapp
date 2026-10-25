@@ -198,27 +198,44 @@
   margin-top: 12rpx;
 }
 
-/* ===== 悬浮宠物入口 ===== */
+/* ===== 悬浮宠物（常驻右下角） ===== */
 .cm-float {
   position: fixed;
-  right: 28rpx;
-  width: 112rpx;
-  height: 112rpx;
+  /* 留足安全边距，避免贴边被裁切 */
+  right: 32rpx;
+  width: 132rpx;
+  height: 132rpx;
   border-radius: 50%;
   background: var(--c-card);
-  border: 2rpx solid var(--c-line);
-  box-shadow: 0 8rpx 22rpx rgba(32, 61, 52, 0.12);
+  /* 白色描边 + 强阴影，明确脱离页面层级 */
+  border: 4rpx solid #FFFFFF;
+  box-shadow:
+    0 12rpx 32rpx rgba(32, 61, 52, 0.24),
+    0 2rpx 8rpx rgba(32, 61, 52, 0.10);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 20;
-  transition: transform 180ms ease, opacity 180ms ease;
+  /* 裁切内部，保证始终是完整的圆，不向外溢出 */
+  overflow: hidden;
+  /* 边框计入尺寸，避免 4rpx 白边把内容挤出 */
+  box-sizing: border-box;
+  z-index: 30;
+  animation: float-breathe 3.4s ease-in-out infinite;
 }
 
-/* 收起态：缩小半透明，不挡内容 */
-.cm-float--collapsed {
-  transform: scale(0.66);
-  opacity: 0.72;
+@keyframes float-breathe {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+    box-shadow: 0 12rpx 32rpx rgba(32, 61, 52, 0.22), 0 2rpx 8rpx rgba(32, 61, 52, 0.10);
+  }
+  50% {
+    transform: scale(1.05) translateY(-4rpx);
+    box-shadow: 0 16rpx 38rpx rgba(32, 61, 52, 0.26), 0 2rpx 8rpx rgba(32, 61, 52, 0.10);
+  }
+}
+
+.cm-float:active {
+  transform: scale(0.94);
 }
 
 .cm-float-badge {
