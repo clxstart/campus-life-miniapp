@@ -41,8 +41,8 @@ Component({
     areaHeight: 600,
     x: 0,
     y: 0,
-    /** 拖动中：用于暂停宠物动画，减少渲染压力 */
-    dragging: false
+    /** 拖动中：用于暂停宠物动画、隐藏阴影 */
+    dragging: false,
   },
 
   lifetimes: {
@@ -109,20 +109,26 @@ Component({
       this.setData({ areaHeight: winH, x, y })
     },
 
+
     /**
      * 拖动中
      *
-     * 性能要点（这是修复「跳帧」的关键）：
+     * 性能要点（修复「跳帧」的关键）：
      * movable-view 自己维护位置，拖动过程中**不需要**把 x/y 回写 data。
-     * 之前每帧一次 setData({x,y}) 会触发跨线程通信 + 视图层重排版，
-     * 是跳帧的主因。现在只在实例变量里记坐标，松手才落盘。
+     * 每帧一次 setData 会触发跨线程通信 + 视图层重排版。
+     *
+     * 阴影处理：拖动一开始就隐藏阴影。
+     * 阴影若跟着猫走，会像拖着一坨灰；留原地又会闪。
+     * 干脆拖动期间不显示，松手后再在新位置出现。
      */
     onDragChange(e) {
       if (!e.detail || e.detail.source !== 'touch') return
       const { x, y } = e.detail
 
-      // 首次移动才进入 dragging 态（暂停 Canvas 动画），此后不再 setData
-      if (!this.data.dragging) this.setData({ dragging: true })
+      // 首次移动：进入 dragging 态（暂停动画 + 隐藏阴影），此后不再 setData
+      if (!this.data.dragging) {
+        this.setData({ dragging: true })
+      }
 
       if (!this._moved &&
           (Math.abs(x - this.data.x) > DRAG_THRESHOLD || Math.abs(y - this.data.y) > DRAG_THRESHOLD)) {
@@ -133,12 +139,12 @@ Component({
       this._curY = y
     },
 
-    /** 松手：一次性回写坐标 + 恢复动画 + 保存位置 */
+    /** 松手：回写坐标 + 恢复动画 + 在新位置显示阴影 + 落盘 */
     onDragEnd() {
       const finalX = this._curX != null ? this._curX : this.data.x
       const finalY = this._curY != null ? this._curY : this.data.y
 
-      // 只在这里同步一次 data，保证下次进入时位置正确
+      // 只在这里同步一次 data
       this.setData({ x: finalX, y: finalY, dragging: false })
 
       try {

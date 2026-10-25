@@ -1,5 +1,5 @@
 <!-- pet-float：全局悬浮宠物
-     全屏可拖动（movable-area 铺满视口 + movable-view 自由移动）
+     全屏可拖动：小猫跟着手指走（无阴影跟随，避免拖出拖影）
      松手后记住位置，切页面也保留；轻点冒泡，拖动时不误触 -->
 <movable-area class="pf-area" style="height:{{areaHeight}}px;">
   <movable-view
@@ -16,8 +16,7 @@
     bindtap="onTap"
   >
     <view class="pf-ball">
-      <view class="pf-shadow"></view>
-      <view class="pf-pet">
+      <view class="pf-pet {{dragging ? 'pf-pet--dragging' : ''}}">
         <pet-avatar
           appearance="{{appearance}}"
           size="{{60}}"

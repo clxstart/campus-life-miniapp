@@ -1,7 +1,8 @@
 /* pet-float：可拖动的全局悬浮宠物 */
 
 /* 拖动区域铺满视口，但本身不拦截事件（pointer-events: none）
-   只有宠物本体（movable-view）可点可拖 */
+   只有宠物本体（movable-view）可点可拖。
+   position: relative 作为阴影绝对定位的基准。 */
 .pf-area {
   position: fixed;
   top: 0;
@@ -11,6 +12,7 @@
   z-index: 90;
   pointer-events: none;
   background: transparent;
+  overflow: hidden;
 }
 
 /* 可拖动的小球 */
@@ -41,26 +43,19 @@
   overflow: visible;
 }
 
-/* 脚下投影：静态，承担全部轮廓/落地感（不用 filter，拖动零开销） */
-.pf-shadow {
-  position: absolute;
-  left: 50%;
-  bottom: -8rpx;
-  width: 72rpx;
-  height: 16rpx;
-  margin-left: -36rpx;
-  border-radius: 50%;
-  background: rgba(32, 61, 52, 0.22);
-  box-shadow: 0 0 16rpx 10rpx rgba(32, 61, 52, 0.16);
-  z-index: 0;
-}
 
-/* 宠物本体：单层投影（三层 filter 在拖动时太重） */
+/* 宠物本体
+   静止时用一层轻投影衬托轮廓；拖动时（pf-pet--dragging）去掉，
+   避免按轮廓逐帧重算 filter 造成卡顿。 */
 .pf-pet {
   position: relative;
   z-index: 1;
-  /* 不用 filter: drop-shadow —— 它要按图形轮廓逐帧重算，拖动时开销很高。
-     轮廓感改由下方 .pf-shadow 的静态投影提供 */
+  filter: drop-shadow(0 3rpx 6rpx rgba(32, 61, 52, 0.22));
+}
+
+/* 拖动中关闭 filter，保证跟手 */
+.pf-pet--dragging {
+  filter: none;
 }
 
 /* 红点 */
