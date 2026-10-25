@@ -22,3 +22,5 @@
     <view wx:if="{{offline}}" class="offline-note">当前为离线演示订单</view>
   </block>
 </view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

@@ -79,3 +79,5 @@
   <t-toast id="t-toast" />
 </view>
 
+<!-- 全局悬浮宠物（抬高避开输入框） -->
+<pet-float bottom="200" />

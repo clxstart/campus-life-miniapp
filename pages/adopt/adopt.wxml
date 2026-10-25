@@ -96,4 +96,5 @@
     </view>
   </t-popup>
 </view>
-
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

@@ -5,6 +5,7 @@
     "pet-canvas": "/components/pet-canvas/index",
     "pet-bubble": "/components/pet-bubble/index",
     "t-toast": "tdesign-miniprogram/toast/toast",
-    "nav-bar": "/components/nav-bar/index"
+    "nav-bar": "/components/nav-bar/index",
+    "pet-float": "/components/pet-float/index"
   }
 }

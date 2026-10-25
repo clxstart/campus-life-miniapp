@@ -109,31 +109,7 @@
 
   <view style="height:200rpx;"></view>
 
-  <!-- 悬浮宠物入口：可收起，避开导航与安全区 -->
-  <!-- 悬浮宠物：常驻右下角，不可收起；点击只互动不跳转 -->
-  <view
-    class="cm-float"
-    style="bottom: calc({{floatBottom}}rpx + env(safe-area-inset-bottom));"
-    catchtap="onFloatTap"
-    catchtouchmove="onFloatMove"
-  >
-    <pet-avatar
-      appearance="{{appearance}}"
-      size="{{floatSize}}"
-      auto="{{!reduceMotion}}"
-    />
-    <!-- 未读/提醒小红点 -->
-    <view class="cm-float-badge" wx:if="{{hasBubble}}"></view>
-  </view>
-
-  <!-- 陪伴气泡（贴在悬浮宠物旁，自动消失） -->
-  <view
-    class="cm-float-bubble"
-    style="bottom: calc({{floatBottom + 60}}rpx + env(safe-area-inset-bottom));"
-    wx:if="{{bubbleText}}"
-  >
-    <text class="cm-float-bubble-text">{{bubbleText}}</text>
-  </view>
+  <!-- 悬浮宠物统一由全局组件 pet-float 提供（与其它页面一致） -->
 
   <t-toast id="t-toast" />
 </view>

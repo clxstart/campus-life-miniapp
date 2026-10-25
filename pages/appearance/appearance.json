@@ -3,6 +3,7 @@
   "usingComponents": {
     "nav-bar": "/components/nav-bar/index",
     "pet-stage": "/components/pet-stage/index",
-    "t-toast": "tdesign-miniprogram/toast/toast"
+    "t-toast": "tdesign-miniprogram/toast/toast",
+    "pet-float": "/components/pet-float/index"
   }
 }

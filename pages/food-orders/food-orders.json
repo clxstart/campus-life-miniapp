@@ -2,6 +2,7 @@
   "navigationStyle": "custom",
   "enablePullDownRefresh": true,
   "usingComponents": {
-    "offline-banner": "/components/offline-banner/index"
+    "offline-banner": "/components/offline-banner/index",
+    "pet-float": "/components/pet-float/index"
   }
 }

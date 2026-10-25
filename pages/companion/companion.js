@@ -4,6 +4,7 @@
  * 状态要求：发送中 / 失败可重试 / 无结果 / Mock 演示 都要有清楚表现
  */
 const petApi = require('../../utils/pet-api')
+const petProfile = require('../../utils/pet-profile')
 const petChat = require('../../utils/pet-chat')
 const { normalizeAppearance, DEFAULT_APPEARANCE } = require('../../utils/pet-appearance')
 const Toast = require('tdesign-miniprogram/toast/index')
@@ -37,7 +38,7 @@ Page({
         petApi.getAppearance(this._userId),
         petApi.getPet(this._userId).catch(() => null)
       ])
-      if (ap) this.setData({ appearance: normalizeAppearance(ap) })
+      if (ap) { const n = normalizeAppearance(ap); this.setData({ appearance: n }); petProfile.writeAppearance(n) }
       if (pet && pet.name) this.setData({ petName: pet.name })
     } catch (error) { /* 静默：聊天页外观失败不影响使用 */ }
   },

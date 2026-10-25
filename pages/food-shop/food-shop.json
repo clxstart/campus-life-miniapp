@@ -4,6 +4,7 @@
   "backgroundColor": "#F7F9FC",
   "navigationBarTitleText": "店铺点餐",
   "usingComponents": {
-    "ui-popup": "/components/ui-popup/index"
+    "ui-popup": "/components/ui-popup/index",
+    "pet-float": "/components/pet-float/index"
   }
 }

@@ -12,3 +12,5 @@
   <view class="submit-dock"><button class="submit-button" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">{{submitting ? '正在分享…' : '发布到' + current.label}}</button></view>
   <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" editable="{{uiPopup.editable}}" placeholder="{{uiPopup.placeholder}}" inputValue="{{uiPopup.inputValue}}" actions="{{uiPopup.actions}}" show-cancel="{{uiPopup.showCancel}}" confirm-text="{{uiPopup.confirmText}}" cancel-text="{{uiPopup.cancelText}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose" />
 </view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

@@ -7,6 +7,7 @@
  * - 关闭小程序不丢进度（进度存在 pet_dispatch 表）
  */
 const petApi = require('../../utils/pet-api')
+const petProfile = require('../../utils/pet-profile')
 const { normalizeAppearance, DEFAULT_APPEARANCE } = require('../../utils/pet-appearance')
 const Toast = require('tdesign-miniprogram/toast/index')
 
@@ -48,7 +49,7 @@ Page({
         petApi.getAppearance(this._userId),
         petApi.getDispatch(this._userId)
       ])
-      if (ap) this.setData({ appearance: normalizeAppearance(ap) })
+      if (ap) { const n = normalizeAppearance(ap); this.setData({ appearance: n }); petProfile.writeAppearance(n) }
 
       const current = st && st.current ? st.current : null
       const tasks = ((st && st.taskList) || []).map(t => {

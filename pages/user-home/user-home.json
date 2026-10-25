@@ -1,5 +1,8 @@
 {
   "navigationBarTitleText": "个人主页",
   "navigationBarBackgroundColor": "#f6f8fb",
-  "navigationBarTextStyle": "black"
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "pet-float": "/components/pet-float/index"
+  }
 }

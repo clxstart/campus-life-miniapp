@@ -18,3 +18,5 @@
   <view class="fab" bindtap="openPublish"><text>＋</text><label>发布</label></view>
   <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose"/>
 </view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

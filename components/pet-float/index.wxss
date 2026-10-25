@@ -1,0 +1,81 @@
+/* pet-float：全局悬浮宠物 */
+
+.pf {
+  position: fixed;
+  right: 24rpx;
+  width: 124rpx;
+  height: 124rpx;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 圆球：白边 + 强阴影，确保在任何页面背景上都清晰 */
+.pf-ball {
+  width: 124rpx;
+  height: 124rpx;
+  border-radius: 50%;
+  background: var(--c-card, #FFFCF5);
+  border: 4rpx solid #FFFFFF;
+  box-shadow:
+    0 12rpx 30rpx rgba(32, 61, 52, 0.22),
+    0 2rpx 8rpx rgba(32, 61, 52, 0.10);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  animation: pf-breathe 3.4s ease-in-out infinite;
+}
+
+@keyframes pf-breathe {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+    box-shadow: 0 12rpx 30rpx rgba(32, 61, 52, 0.22), 0 2rpx 8rpx rgba(32, 61, 52, 0.10);
+  }
+  50% {
+    transform: scale(1.05) translateY(-4rpx);
+    box-shadow: 0 16rpx 36rpx rgba(32, 61, 52, 0.26), 0 2rpx 8rpx rgba(32, 61, 52, 0.10);
+  }
+}
+
+.pf:active .pf-ball {
+  transform: scale(0.94);
+}
+
+/* 红点 */
+.pf-badge {
+  position: absolute;
+  right: 2rpx;
+  top: 2rpx;
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  background: var(--c-accent, #BD5134);
+  border: 3rpx solid var(--c-card, #FFFCF5);
+  box-sizing: border-box;
+}
+
+/* 气泡 */
+.pf-bubble {
+  position: fixed;
+  right: 164rpx;
+  max-width: 320rpx;
+  padding: 14rpx 22rpx;
+  background: var(--c-card, #FFFCF5);
+  border: 1rpx solid var(--c-line, #DEDCCD);
+  border-radius: 18rpx;
+  box-shadow: 0 6rpx 18rpx rgba(32, 61, 52, 0.12);
+  z-index: 89;
+}
+
+.pf-bubble-text {
+  font-size: 24rpx;
+  color: var(--c-text, #203D34);
+  line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-ball { animation: none; }
+}

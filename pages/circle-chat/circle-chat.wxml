@@ -35,3 +35,6 @@
     <view class="circle-chat-send {{inputValue ? 'ready' : ''}}" bindtap="sendMessage">{{uploading ? '上传中' : (sending ? '发送中' : '发送')}}</view>
   </view>
 </view>
+
+<!-- 全局悬浮宠物（抬高避开输入框） -->
+<pet-float bottom="200" />

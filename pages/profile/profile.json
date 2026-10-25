@@ -3,6 +3,7 @@
   "backgroundColor": "#F6F8FB",
   "usingComponents": {
     "bottom-nav": "/components/bottom-nav/index",
-    "ui-popup": "/components/ui-popup/index"
+    "ui-popup": "/components/ui-popup/index",
+    "pet-float": "/components/pet-float/index"
   }
 }

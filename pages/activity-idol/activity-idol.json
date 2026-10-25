@@ -1,3 +1,6 @@
 {
-  "backgroundColor": "#FFF5F8"
+  "backgroundColor": "#FFF5F8",
+  "usingComponents": {
+    "pet-float": "/components/pet-float/index"
+  }
 }

@@ -1,0 +1,26 @@
+<!-- pet-float：全局悬浮宠物
+     所有页面右下角常驻，点击冒泡互动，不跳页 -->
+<view
+  class="pf"
+  style="bottom: calc({{bottom}}rpx + env(safe-area-inset-bottom));"
+  catchtap="onTap"
+  catchtouchmove="onMove"
+>
+  <view class="pf-ball">
+    <pet-avatar
+      appearance="{{appearance}}"
+      size="{{88}}"
+      auto="{{!reduceMotion}}"
+    />
+  </view>
+  <view class="pf-badge" wx:if="{{hasNews}}"></view>
+</view>
+
+<!-- 气泡：贴在宠物左上方 -->
+<view
+  class="pf-bubble"
+  style="bottom: calc({{bottom + 74}}rpx + env(safe-area-inset-bottom));"
+  wx:if="{{bubbleText}}"
+>
+  <text class="pf-bubble-text">{{bubbleText}}</text>
+</view>
