@@ -41,17 +41,17 @@
   overflow: visible;
 }
 
-/* 脚下投影：静态，不做动画（拖动时省掉一次重绘） */
+/* 脚下投影：静态，承担全部轮廓/落地感（不用 filter，拖动零开销） */
 .pf-shadow {
   position: absolute;
   left: 50%;
-  bottom: -6rpx;
-  width: 64rpx;
-  height: 14rpx;
-  margin-left: -32rpx;
+  bottom: -8rpx;
+  width: 72rpx;
+  height: 16rpx;
+  margin-left: -36rpx;
   border-radius: 50%;
-  background: rgba(32, 61, 52, 0.20);
-  box-shadow: 0 0 12rpx 6rpx rgba(32, 61, 52, 0.14);
+  background: rgba(32, 61, 52, 0.22);
+  box-shadow: 0 0 16rpx 10rpx rgba(32, 61, 52, 0.16);
   z-index: 0;
 }
 
@@ -59,7 +59,8 @@
 .pf-pet {
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0 4rpx 8rpx rgba(32, 61, 52, 0.24));
+  /* 不用 filter: drop-shadow —— 它要按图形轮廓逐帧重算，拖动时开销很高。
+     轮廓感改由下方 .pf-shadow 的静态投影提供 */
 }
 
 /* 红点 */

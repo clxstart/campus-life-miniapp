@@ -112,35 +112,39 @@ Component({
     /**
      * 拖动中
      *
-     * 性能要点：
-     * 1) 拖动时暂停宠物 Canvas 动画（dragging=true），否则动画循环和拖动
-     *    抢同一个渲染线程，表现为卡顿
-     * 2) 不在这里频繁 setData 存位置，只更新坐标
+     * 性能要点（这是修复「跳帧」的关键）：
+     * movable-view 自己维护位置，拖动过程中**不需要**把 x/y 回写 data。
+     * 之前每帧一次 setData({x,y}) 会触发跨线程通信 + 视图层重排版，
+     * 是跳帧的主因。现在只在实例变量里记坐标，松手才落盘。
      */
     onDragChange(e) {
       if (!e.detail || e.detail.source !== 'touch') return
       const { x, y } = e.detail
 
-      // 首次移动才进入 dragging 态，避免每帧 setData
+      // 首次移动才进入 dragging 态（暂停 Canvas 动画），此后不再 setData
       if (!this.data.dragging) this.setData({ dragging: true })
 
-      if (Math.abs(x - this.data.x) > DRAG_THRESHOLD || Math.abs(y - this.data.y) > DRAG_THRESHOLD) {
+      if (!this._moved &&
+          (Math.abs(x - this.data.x) > DRAG_THRESHOLD || Math.abs(y - this.data.y) > DRAG_THRESHOLD)) {
         this._moved = true
       }
+      // 只记在实例上，不 setData
       this._curX = x
       this._curY = y
-      this.setData({ x, y })
     },
 
-    /** 松手：恢复动画、保存位置；若确实是拖动则不触发冒泡 */
+    /** 松手：一次性回写坐标 + 恢复动画 + 保存位置 */
     onDragEnd() {
-      if (this.data.dragging) this.setData({ dragging: false })
+      const finalX = this._curX != null ? this._curX : this.data.x
+      const finalY = this._curY != null ? this._curY : this.data.y
+
+      // 只在这里同步一次 data，保证下次进入时位置正确
+      this.setData({ x: finalX, y: finalY, dragging: false })
+
       try {
-        wx.setStorageSync(POS_KEY, {
-          x: this._curX != null ? this._curX : this.data.x,
-          y: this._curY != null ? this._curY : this.data.y
-        })
+        wx.setStorageSync(POS_KEY, { x: finalX, y: finalY })
       } catch (e) {}
+
       // 延迟复位，避免同一次手势里 bindtap 又触发
       setTimeout(() => { this._moved = false }, 60)
     },
