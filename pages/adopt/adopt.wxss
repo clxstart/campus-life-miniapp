@@ -141,26 +141,101 @@
   margin-top: 16rpx;
 }
 
-/* ===== 破壳弹层 ===== */
+
+
+/* ===== 破壳演出（图片 + CSS） ===== */
 .hatch {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40rpx 48rpx 36rpx;
+  padding: 44rpx 56rpx 36rpx;
   background: var(--c-bg);
   border-radius: var(--radius-card);
-  min-width: 480rpx;
+  min-width: 500rpx;
 }
 
-.hatch-canvas {
+.hatch-stage {
+  position: relative;
   width: 220px;
   height: 220px;
-  display: block;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* 宠物：破壳前隐藏，裂开后淡入放大 */
+.hatch-pet {
+  position: relative;
+  z-index: 2;
+  width: 180px;
+  height: 180px;
+  opacity: 0;
+  transform: scale(0.72) translateY(16rpx);
+  transition: opacity 420ms ease, transform 520ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.hatch--revealed .hatch-pet {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  animation: hatch-pop 700ms ease-out;
+}
+
+@keyframes hatch-pop {
+  0%   { transform: scale(0.86) translateY(10rpx); }
+  55%  { transform: scale(1.06) translateY(-6rpx); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+/* 蛋壳上下两半 */
+.hatch-shell {
+  position: absolute;
+  left: 50%;
+  width: 160px;
+  height: 90px;
+  margin-left: -80px;
+  background: #F1E4CB;
+  border: 2rpx solid #DCC9A6;
+  transition: transform 620ms cubic-bezier(0.34, 1.2, 0.64, 1), opacity 400ms ease;
+}
+
+.hatch-shell--top {
+  top: 0;
+  border-radius: 90px 90px 12px 12px;
+  z-index: 3;
+}
+
+.hatch-shell--bottom {
+  bottom: 0;
+  height: 80px;
+  border-radius: 12px 12px 90px 90px;
+  z-index: 3;
+}
+
+/* 裂开：上下分离并放大淡出 */
+.hatch--open .hatch-shell--top,
+.hatch--revealed .hatch-shell--top {
+  transform: translateY(-46rpx) rotate(-9deg);
+  opacity: 0.9;
+}
+
+.hatch--open .hatch-shell--bottom,
+.hatch--revealed .hatch-shell--bottom {
+  transform: translateY(40rpx) rotate(7deg);
+  opacity: 0.9;
+}
+
+.hatch--revealed .hatch-shell--top,
+.hatch--revealed .hatch-shell--bottom {
+  opacity: 0;
 }
 
 .hatch-title {
-  margin: 16rpx 0 24rpx;
+  margin: 18rpx 0 24rpx;
   font-size: var(--fs-card-title);
   font-weight: 600;
   color: var(--c-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hatch-pet, .hatch-shell { transition: none; animation: none; }
 }

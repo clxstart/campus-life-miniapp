@@ -4,11 +4,13 @@
  * 要点：
  * - 候选宠物**可见预览**，不做完全不可知的随机抽取
  * - 选中状态用边框 + 勾 + 文字三重表达
- * - 破壳动画用 Canvas 实现（无可用 Lottie 资源，按「不引入空依赖」处理）
+ * - 破壳演出用图片 + CSS 动画（无可用 Lottie 资源，按「不引入空依赖」处理）
  * - 提供跳过入口
  */
 const petApi = require('../../utils/pet-api')
-const { randomAppearance, DEFAULT_APPEARANCE } = require('../../utils/pet-appearance')
+const {
+  randomAppearance, DEFAULT_APPEARANCE, findAccessory
+} = require('../../utils/pet-appearance')
 
 const PERSONAS = [
   { id: 'gentle', name: '温吞' },
@@ -17,7 +19,7 @@ const PERSONAS = [
   { id: 'clever', name: '机灵' }
 ]
 
-/** 三个性格描述各配一句，让选择有依据 */
+/** 性格各配一句，让选择有依据 */
 const PERSONA_HINT = {
   gentle: '它会安静地陪着你',
   lively: '它会第一个冲过来迎接你',
@@ -38,14 +40,17 @@ Page({
     previewAppearance: { ...DEFAULT_APPEARANCE },
     submitting: false,
     hatching: false,
-    hatchTitle: '正在破壳…'
+    hatchTitle: '正在破壳…',
+    /** 破壳演出的阶段：cracking → revealed */
+    hatchStage: 'cracking',
+    hatchImage: '/assets/pets/cat.png',
+    hatchFilter: 'none'
   },
 
   onLoad() {
     const metrics = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
     this.setData({ statusBarHeight: metrics.statusBarHeight || 20 })
 
-    // 学校名：从缓存或资料里取，取不到就用通用文案
     let schoolName = '校园'
     try {
       const profile = wx.getStorageSync('profile') || {}
@@ -53,24 +58,18 @@ Page({
     } catch (e) {}
     this.setData({ schoolName })
 
-    // 生成 3 个候选：用固定 seed，保证本次进入候选稳定
+    // 三个候选：固定 seed 保证本次进入候选稳定；每个候选是不同物种
     const seedBase = Date.now() % 100000
     const names = ['小云', '小豆', '阿橘']
     const candidates = names.map((name, i) => {
       const ap = randomAppearance(seedBase + i * 7919)
-      return {
-        key: 'c' + i,
-        name,
-        appearance: ap,
-        desc: describe(ap)
-      }
+      return { key: 'c' + i, name, appearance: ap, desc: describe(ap) }
     })
     this.setData({ candidates }, () => this._syncCurrent(0))
   },
 
   onUnload() { this._stopHatch() },
 
-  /** 选中候选 */
   onSelect(e) {
     const index = Number(e.currentTarget.dataset.index) || 0
     this.setData({ selected: index }, () => this._syncCurrent(index))
@@ -94,7 +93,7 @@ Page({
   /** 确认领养 → 写库 → 播放破壳 */
   async onAdopt() {
     if (this.data.submitting) return
-    const userId = petApi && getAppUserId()
+    const userId = getAppUserId()
     if (!userId) {
       wx.showToast({ title: '请先登录', icon: 'none' })
       return
@@ -105,113 +104,44 @@ Page({
     this.setData({ submitting: true })
     try {
       await petApi.saveAppearance(userId, candidate.appearance)
-      // 改名
       await petApi.rename(userId, candidate.name)
-      this.setData({ submitting: false, hatching: true })
+      this.setData({ submitting: false })
       this._playHatch(candidate.appearance)
     } catch (error) {
       this.setData({ submitting: false })
-      wx.showToast({ title: error && error.message ? error.message : '领养失败，请重试', icon: 'none' })
+      wx.showToast({ title: (error && error.message) || '领养失败，请重试', icon: 'none' })
     }
   },
 
-  // ===== 破壳动画（Canvas 2D）=====
+  // ===== 破壳演出（图片 + CSS 动画）=====
   _playHatch(appearance) {
-    const query = wx.createSelectorQuery()
-    query.select('#hatch-canvas').fields({ node: true, size: true })
-    query.exec((res) => {
-      const item = res && res[0]
-      if (!item || !item.node) return
-      const canvas = item.node
-      const ctx = canvas.getContext('2d')
-      const dpr = (wx.getWindowInfo ? wx.getWindowInfo().pixelRatio : 2) || 2
-      const W = item.width || 220
-      const H = item.height || 220
-      canvas.width = W * dpr
-      canvas.height = H * dpr
-      ctx.scale(dpr, dpr)
-
-      const { drawPet, LOGICAL } = require('../../utils/pet-engine')
-      const start = Date.now()
-      const DURATION = 1400
-      this._hatchAlive = true
-
-      const frame = () => {
-        if (!this._hatchAlive) return
-        const t = Math.min(1, (Date.now() - start) / DURATION)
-        ctx.clearRect(0, 0, W, H)
-
-        // 蛋壳：上下两半随时间分离
-        const gap = t * 46
-        ctx.save()
-        ctx.translate(W / 2, H / 2 + 10)
-
-        // 蛋壳后片
-        ctx.beginPath()
-        ctx.ellipse(0, -gap * 0.6, 54, 66, 0, Math.PI, Math.PI * 2)
-        ctx.fillStyle = '#F3E7D2'
-        ctx.fill()
-        ctx.strokeStyle = '#DCC9A6'
-        ctx.lineWidth = 2
-        ctx.stroke()
-
-        // 蛋壳前片
-        ctx.beginPath()
-        ctx.ellipse(0, gap, 54, 66, 0, 0, Math.PI)
-        ctx.fillStyle = '#EFE0C6'
-        ctx.fill()
-        ctx.stroke()
-
-        // 蛋壳裂纹
-        if (t > 0.25) {
-          ctx.beginPath()
-          ctx.moveTo(-30, -20 - gap * 0.2)
-          ctx.lineTo(-8, -2 - gap * 0.2)
-          ctx.lineTo(6, -16 - gap * 0.2)
-          ctx.lineTo(28, 4 - gap * 0.2)
-          ctx.strokeStyle = '#C9B48C'
-          ctx.lineWidth = 2.4
-          ctx.stroke()
-        }
-        ctx.restore()
-
-        // 宠物：随破壳进度淡入放大
-        if (t > 0.35) {
-          const p = (t - 0.35) / 0.65
-          ctx.save()
-          ctx.globalAlpha = Math.min(1, p * 1.6)
-          const scale = (W / LOGICAL) * (0.72 + 0.28 * p)
-          ctx.translate(W / 2 - 100 * scale, H / 2 - 105 * scale)
-          drawPet(ctx, {
-            appearance,
-            motion: 'cheer',
-            t: Date.now(),
-            scale,
-            reduceMotion: false
-          })
-          ctx.restore()
-        }
-
-        if (t < 1) {
-          this._hatchRaf = canvas.requestAnimationFrame(frame)
-        } else {
-          this.setData({ hatchTitle: '你的搭子来啦！' })
-          this._hatchTimer = setTimeout(() => this._goAppearance(), 900)
-        }
-      }
-
-      this._hatchCanvas = canvas
-      this._hatchRaf = canvas.requestAnimationFrame(frame)
+    this.setData({
+      hatching: true,
+      hatchStage: 'cracking',
+      hatchTitle: '正在破壳…',
+      // 小橘猫为固定形象，用引擎的待机贴图
+      hatchImage: '/assets/pet-orange/idle.png',
+      hatchFilter: 'none'
     })
+
+    // 蛋壳裂开
+    this._hatchTimer = setTimeout(() => {
+      this.setData({ hatchStage: 'open', hatchTitle: '蛋壳裂开了！' })
+    }, 700)
+
+    // 宠物出现
+    this._hatchTimer2 = setTimeout(() => {
+      this.setData({ hatchStage: 'revealed', hatchTitle: '你的搭子来啦！' })
+    }, 1400)
+
+    // 自动进入捏脸（用户也可点跳过）
+    this._hatchTimer3 = setTimeout(() => this._goAppearance(), 2600)
   },
 
   _stopHatch() {
-    this._hatchAlive = false
-    if (this._hatchRaf && this._hatchCanvas && this._hatchCanvas.cancelAnimationFrame) {
-      this._hatchCanvas.cancelAnimationFrame(this._hatchRaf)
-    }
-    this._hatchRaf = null
     if (this._hatchTimer) { clearTimeout(this._hatchTimer); this._hatchTimer = null }
+    if (this._hatchTimer2) { clearTimeout(this._hatchTimer2); this._hatchTimer2 = null }
+    if (this._hatchTimer3) { clearTimeout(this._hatchTimer3); this._hatchTimer3 = null }
   },
 
   onSkipHatch() {
@@ -239,20 +169,18 @@ function getAppUserId() {
     const profile = wx.getStorageSync('profile') || {}
     if (profile.id) return profile.id
   } catch (e) {}
-  // 开发环境兜底：本项目 dev-login 默认用户
   return 1
 }
 
-/** 根据外观生成一句描述，让候选项有辨识度 */
+/**
+ * 候选描述
+ *
+ * 小橘猫是固定形象（美术为成套动画贴图），所以三个候选不是「不同物种」，
+ * 而是同一只小橘的不同性格预设——描述按性格给出，避免误导成三只不同的猫。
+ */
 function describe(ap) {
-  const furName = {
-    cream: '奶油白', orange: '橘色', gray: '石墨灰', black: '墨黑', snow: '雪白'
-  }[ap.fur] || '奶fufu'
-  const traits = {
-    round: '圆眼睛总在发光',
-    sleepy: '总是一副没睡醒的样子',
-    sparkle: '眼睛里有小星星',
-    closed: '笑起来眼睛弯成月牙'
-  }
-  return `${furName}的毛，${traits[ap.eyes] || '看起来很乖巧'}。`
+  const acc = findAccessory(ap.accessory)
+  const accText = acc.id === 'none' ? '什么都没戴' : `戴着${acc.name}`
+  return `小橘猫，${accText}。`
 }
+

@@ -2,8 +2,8 @@
   "navigationStyle": "custom",
   "usingComponents": {
     "pet-stage": "/components/pet-stage/index",
-    "wardrobe-item": "/components/wardrobe-item/index",
     "t-dialog": "tdesign-miniprogram/dialog/dialog",
     "t-toast": "tdesign-miniprogram/toast/toast"
   }
 }
+

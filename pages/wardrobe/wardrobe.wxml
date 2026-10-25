@@ -1,11 +1,13 @@
-<!-- 衣柜页：上部真实宠物预览，下部按类别展示物品 -->
+<!-- 衣柜页 → 已改为「小橘的收藏」
+     原引擎不支持配饰图层，装备效果无法呈现在宠物身上，
+     故取消穿戴功能，保留兑换收集玩法（有积分消耗、有记录） -->
 <view class="cp-page cp-page--flush wardrobe">
   <view style="height:{{statusBarHeight}}px;"></view>
 
   <view class="wd-head">
     <view class="wd-head-left">
-      <text class="cp-page-title">小云的衣柜</text>
-      <text class="cp-hint wd-sub">装备后上面立刻能看到</text>
+      <text class="cp-page-title">小橘的收藏</text>
+      <text class="cp-hint wd-sub">用积分兑换，攒齐你的收藏</text>
     </view>
     <view class="wd-points">
       <text class="wd-points-num">{{balance}}</text>
@@ -13,48 +15,52 @@
     </view>
   </view>
 
-  <!-- 预览：真实宠物 -->
+  <!-- 宠物 -->
   <pet-stage
     appearance="{{appearance}}"
     motion="{{previewMotion}}"
-    size="{{210}}"
+    size="{{200}}"
     compact="{{true}}"
     bind:pettap="onPetTap"
   />
 
-  <!-- 分类 -->
-  <view class="wd-tabs">
-    <view
-      wx:for="{{categories}}"
-      wx:key="key"
-      class="wd-tab {{tab === item.key ? 'wd-tab--on' : ''}}"
-      data-key="{{item.key}}"
-      bindtap="onTab"
-    >
-      <text class="wd-tab-text">{{item.name}}</text>
-      <text class="wd-tab-count">{{item.count}}</text>
-    </view>
-  </view>
-
   <!-- 物品列表 -->
   <view class="wd-list">
-    <block wx:if="{{list.length > 0}}">
-      <wardrobe-item
-        wx:for="{{list}}"
+    <block wx:if="{{items.length > 0}}">
+      <view
+        wx:for="{{items}}"
         wx:key="id"
-        item="{{item}}"
-        appearance="{{appearance}}"
-        bind:buy="onBuy"
-        bind:equip="onEquip"
-        bind:unequip="onUnequip"
-      />
+        class="cp-card wd-item {{item.owned ? 'wd-item--owned' : ''}}"
+      >
+        <view class="wd-item-icon">{{item.symbol}}</view>
+        <view class="wd-item-body">
+          <view class="wd-item-head">
+            <text class="wd-item-name">{{item.name}}</text>
+            <text class="wd-item-state wd-item-state--{{item.owned ? 'owned' : 'locked'}}">
+              {{item.owned ? '已收藏' : '未解锁'}}
+            </text>
+          </view>
+          <text class="cp-hint wd-item-desc">{{item.description}}</text>
+        </view>
+        <view class="wd-item-action">
+          <button
+            wx:if="{{!item.owned}}"
+            class="wd-btn wd-btn--primary"
+            catchtap="onBuy"
+            data-code="{{item.code}}"
+            data-name="{{item.name}}"
+            data-price="{{item.price}}"
+          >{{item.price}} 分</button>
+          <text wx:else class="wd-owned-mark">✓</text>
+        </view>
+      </view>
     </block>
     <view class="cp-empty" wx:else>
-      <text>这个分类还没有物品</text>
+      <text>暂时没有可兑换的物品</text>
     </view>
   </view>
 
-  <!-- 兑换确认（TDesign Dialog） -->
+  <!-- 兑换确认 -->
   <t-dialog
     visible="{{buyVisible}}"
     title="兑换{{buying.name}}"

@@ -1,51 +1,44 @@
-<!-- 捏脸页：上部预览舞台，下部编辑面板 -->
+<!-- 宠物互动页
+     形象固定为小橘猫（成套动画贴图，无法换装），所以这里不是捏脸，
+     而是让它表演五个动作 + 摸头互动 -->
 <view class="cp-page cp-page--flush appear">
   <view style="height:{{statusBarHeight}}px;"></view>
 
   <view class="appear-head">
-    <text class="cp-page-title">捏一只你的</text>
-    <text class="cp-hint appear-sub">改哪个部位，上面就变哪个</text>
+    <text class="cp-page-title">小橘</text>
+    <text class="cp-hint appear-sub">点它一下，或者让它做点什么</text>
   </view>
 
-  <!-- 预览舞台 -->
+  <!-- 舞台 -->
   <pet-stage
     appearance="{{appearance}}"
     motion="{{previewMotion}}"
-    size="{{230}}"
+    size="{{240}}"
     reduce-motion="{{reduceMotion}}"
     bind:pettap="onPetTap"
   />
 
-  <!-- 编辑面板 -->
+  <!-- 动作选择：对应引擎的五个动作 -->
   <view class="appear-panel">
-    <appearance-editor
-      appearance="{{appearance}}"
-      bind:pick="onPick"
-    />
+    <text class="cp-hint action-label">让它试试</text>
+    <view class="action-grid">
+      <view
+        wx:for="{{actions}}"
+        wx:key="key"
+        class="action-btn {{currentAction === item.key ? 'cp-selected' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onAction"
+      >
+        <text class="action-icon">{{item.icon}}</text>
+        <text class="action-name">{{item.name}}</text>
+        <text class="action-check" wx:if="{{currentAction === item.key}}">✓</text>
+      </view>
+    </view>
 
-    <!-- 底部操作：随机 / 重置 / 保存（保存为主要） -->
-    <view class="appear-actions">
-      <t-button theme="default" size="medium" bind:tap="onRandom">随机一下</t-button>
-      <t-button theme="default" size="medium" bind:tap="onReset">重置</t-button>
-      <t-button
-        theme="primary"
-        size="medium"
-        loading="{{saving}}"
-        disabled="{{saving || !dirty}}"
-        bind:tap="onSave"
-        class="appear-save"
-      >保存外观</t-button>
+    <view class="appear-tip">
+      <text class="cp-hint">{{tip}}</text>
     </view>
   </view>
 
-  <t-dialog
-    visible="{{resetVisible}}"
-    title="重置外观"
-    content="会恢复成默认的样子，确定吗？"
-    confirm-btn="重置"
-    cancel-btn="再想想"
-    bind:confirm="onResetConfirm"
-    bind:cancel="onResetCancel"
-  />
   <t-toast id="t-toast" />
 </view>

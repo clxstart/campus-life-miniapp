@@ -4,6 +4,7 @@
 .appear {
   display: flex;
   flex-direction: column;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
 }
 
 .appear-head {
@@ -15,26 +16,68 @@
   margin-top: 8rpx;
 }
 
-/* 编辑面板：贴底，与舞台之间用边框分隔 */
+/* ===== 动作面板 ===== */
 .appear-panel {
   margin-top: var(--sp-gap);
   background: var(--c-card);
   border: var(--bw) solid var(--c-line);
   border-radius: var(--radius-card);
-  overflow: hidden;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  padding: var(--sp-card);
 }
 
-.appear-actions {
+.action-label {
+  display: block;
+  margin-bottom: 16rpx;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12rpx;
+}
+
+.action-btn {
+  position: relative;
   display: flex;
-  gap: var(--sp-col);
-  padding: 20rpx var(--sp-card) 0;
-  border-top: var(--bw) solid var(--c-line);
-  margin-top: 16rpx;
-  padding-top: 20rpx;
+  flex-direction: column;
+  align-items: center;
+  padding: 16rpx 4rpx 12rpx;
+  border: var(--bw) solid var(--c-line);
+  border-radius: 20rpx;
+  background: var(--c-bg);
+  transition: border-color 140ms ease, background 140ms ease;
 }
 
-/* 保存为主操作，占更大比例 */
-.appear-save {
-  flex: 1;
+.action-icon {
+  font-size: 28rpx;
+  color: var(--c-primary);
+  line-height: 1.2;
+}
+
+.action-name {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: var(--c-text-sub);
+}
+
+.action-btn.cp-selected .action-name {
+  color: var(--c-primary);
+  font-weight: 600;
+}
+
+.action-check {
+  position: absolute;
+  right: 6rpx;
+  top: 2rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+  color: var(--c-primary);
+}
+
+.appear-tip {
+  margin-top: 18rpx;
+  padding: 14rpx 18rpx;
+  background: var(--c-bg);
+  border-radius: 16rpx;
+  text-align: center;
 }

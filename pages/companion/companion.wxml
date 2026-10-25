@@ -4,7 +4,7 @@
 
   <!-- 顶部：头像 + 名称 + AI 身份 -->
   <view class="chat-head">
-    <pet-avatar appearance="{{appearance}}" size="{{56}}" crop="{{true}}" />
+    <pet-avatar appearance="{{appearance}}" size="{{56}}" />
     <view class="chat-head-info">
       <text class="chat-head-name">{{petName}}</text>
       <text class="chat-head-role">校园 AI 搭子 · 由模型生成回复</text>
@@ -77,3 +77,4 @@
 
   <t-toast id="t-toast" />
 </view>
+

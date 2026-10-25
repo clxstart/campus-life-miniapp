@@ -1,7 +1,21 @@
-<canvas
-  type="2d"
-  id="pet-canvas"
-  class="pet-canvas"
+<!-- pet-canvas：宠物主渲染
+     底层由 pet-avatar 承担（小橘猫分部件 Canvas 动画，5 个动作）
+     注意：不使用配饰图层——原包引擎不含配饰，手画 CSS 配饰质量不可控，已移除 -->
+<view
+  class="pet-wrap"
   style="width:{{size}}px;height:{{size}}px;"
-  bindtouchstart="onTouchStart"
-></canvas>
+  bindtap="onTouchStart"
+>
+  <pet-avatar
+    id="inner"
+    class="pet-inner"
+    auto="{{!reduceMotion && autoPlay}}"
+    paused="{{paused}}"
+    speed="{{speed}}"
+    action="{{action}}"
+    asset-base="/assets/pet-orange"
+    label="{{label}}"
+    bind:statechange="onInnerState"
+    bind:error="onInnerError"
+  />
+</view>

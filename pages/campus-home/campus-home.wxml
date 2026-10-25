@@ -11,7 +11,7 @@
   <!-- 宠物小院 -->
   <view class="cp-card cm-yard" bindtap="onOpenPet">
     <view class="cm-yard-top">
-      <pet-avatar appearance="{{appearance}}" size="{{72}}" crop="{{false}}" />
+      <pet-avatar appearance="{{appearance}}" size="{{72}}" />
       <view class="cm-yard-info">
         <view class="cm-yard-name-row">
           <text class="cp-card-title">{{petName}}</text>
@@ -31,8 +31,8 @@
     </view>
 
     <view class="cm-yard-actions">
-      <view class="cm-yard-btn" catchtap="onGoAppearance">捏脸</view>
-      <view class="cm-yard-btn" catchtap="onGoWardrobe">衣柜</view>
+      <view class="cm-yard-btn" catchtap="onGoAppearance">互动</view>
+      <view class="cm-yard-btn" catchtap="onGoWardrobe">收藏</view>
       <view class="cm-yard-btn" catchtap="onGoDispatch">派遣</view>
       <view class="cm-yard-btn cm-yard-btn--primary" catchtap="onGoChat">聊天</view>
     </view>
@@ -92,7 +92,7 @@
     bindtap="onFloatTap"
     catchtouchmove="onFloatMove"
   >
-    <pet-avatar appearance="{{appearance}}" size="{{floatSize}}" crop="{{true}}" />
+    <pet-avatar appearance="{{appearance}}" size="{{floatSize}}" />
     <view class="cm-float-badge" wx:if="{{hasBubble && !floatCollapsed}}"></view>
   </view>
 
@@ -107,3 +107,4 @@
 
   <t-toast id="t-toast" />
 </view>
+

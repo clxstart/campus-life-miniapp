@@ -82,22 +82,26 @@
 }
 
 /* 小院操作 */
+/* 四个操作按钮：窄屏也要能放下，故用小间距 + 不换行压缩 */
 .cm-yard-actions {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--sp-col);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12rpx;
   margin-top: 20rpx;
 }
 
 .cm-yard-btn {
-  height: 68rpx;
-  line-height: 68rpx;
+  height: 64rpx;
+  line-height: 64rpx;
   text-align: center;
-  font-size: 26rpx;
+  font-size: 24rpx;
+  padding: 0;
   border-radius: var(--radius-pill);
   background: var(--c-bg);
   border: var(--bw) solid var(--c-line);
   color: var(--c-text-sub);
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .cm-yard-btn--primary {
@@ -110,8 +114,8 @@
 /* ===== 快捷入口 ===== */
 .cm-quick {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--sp-col);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12rpx;
   margin-top: var(--sp-gap);
 }
 

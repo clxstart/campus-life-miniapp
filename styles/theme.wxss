@@ -35,6 +35,23 @@ page {
   /* ===== 安全区 ===== */
   --safe-bottom: env(safe-area-inset-bottom);
 
+  /* ===== TDesign 品牌色覆盖 =====
+   * TDesign 的 primary 默认是品牌蓝 #0052d9，与本项目森林绿主题冲突。
+   * 只覆盖品牌相关变量，不改 node_modules。
+   */
+  --td-brand-color: #2F6555;
+  --td-brand-color-active: #274F43;
+  --td-brand-color-disabled: #C2D3CC;
+  --td-brand-color-light: #E0EADC;
+  --td-brand-color-focus: #9DBCB0;
+  /* 主按钮文字用卡片底色，与规范一致 */
+  --td-button-primary-color: #FFFCF5;
+  /* 文字色跟随项目 */
+  --td-text-color-primary: #203D34;
+  --td-text-color-secondary: #586A60;
+  --td-text-color-placeholder: #8A9992;
+
   background: var(--c-bg);
   color: var(--c-text);
 }
+

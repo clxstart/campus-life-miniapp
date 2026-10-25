@@ -32,7 +32,7 @@
         data-index="{{index}}"
         bindtap="onSelect"
       >
-        <pet-avatar appearance="{{item.appearance}}" size="{{58}}" crop="{{true}}" />
+        <pet-avatar appearance="{{item.appearance}}" size="{{58}}" />
         <text class="egg-name">{{item.name}}</text>
         <!-- 选中：边框 + 勾 + 文字三重表达 -->
         <text class="egg-check" wx:if="{{selected === index}}">✓</text>
@@ -74,12 +74,25 @@
     <text class="cp-hint adopt-tip">领养后可以在「捏脸」里随时换外观</text>
   </view>
 
-  <!-- 破壳动画（Canvas 实现，跳过入口常驻） -->
+  <!-- 破壳演出（图片 + CSS 动画，跳过入口常驻） -->
   <t-popup visible="{{hatching}}" placement="center" bind:visible-change="onPopupChange">
-    <view class="hatch">
-      <canvas type="2d" id="hatch-canvas" class="hatch-canvas"></canvas>
+    <view class="hatch hatch--{{hatchStage}}">
+      <view class="hatch-stage">
+        <!-- 蛋壳上半 -->
+        <view class="hatch-shell hatch-shell--top"></view>
+        <!-- 宠物 -->
+        <image
+          class="hatch-pet"
+          src="{{hatchImage}}"
+          mode="aspectFit"
+          style="filter:{{hatchFilter}};"
+        />
+        <!-- 蛋壳下半 -->
+        <view class="hatch-shell hatch-shell--bottom"></view>
+      </view>
       <text class="hatch-title">{{hatchTitle}}</text>
       <t-button theme="light" size="medium" bind:tap="onSkipHatch">跳过</t-button>
     </view>
   </t-popup>
 </view>
+

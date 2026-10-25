@@ -11,15 +11,14 @@ public interface PetCompanionMapper {
 
     // ==================== 外观 ====================
 
-    @Update("UPDATE user_pet SET fur=#{fur},pattern=#{pattern},eyes=#{eyes},mouth=#{mouth},accessory=#{accessory} WHERE user_id=#{userId}")
+    @Update("UPDATE user_pet SET species=#{species},tint=#{tint},accessory=#{accessory},mood_tag=#{moodTag} WHERE user_id=#{userId}")
     int saveAppearance(@Param("userId") Long userId,
-                       @Param("fur") String fur,
-                       @Param("pattern") String pattern,
-                       @Param("eyes") String eyes,
-                       @Param("mouth") String mouth,
-                       @Param("accessory") String accessory);
+                       @Param("species") String species,
+                       @Param("tint") String tint,
+                       @Param("accessory") String accessory,
+                       @Param("moodTag") String moodTag);
 
-    @Select("SELECT fur,pattern,eyes,mouth,accessory FROM user_pet WHERE user_id=#{userId}")
+    @Select("SELECT species,tint,accessory,mood_tag FROM user_pet WHERE user_id=#{userId}")
     Map<String, Object> appearance(@Param("userId") Long userId);
 
     // ==================== 衣柜 ====================

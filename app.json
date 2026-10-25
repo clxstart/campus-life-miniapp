@@ -1,5 +1,7 @@
 {
   "pages": [
+    "pages/appearance/appearance",
+    "pages/campus-home/campus-home",
     "pages/index/index",
     "pages/discover/discover",
     "pages/circle-detail/circle-detail",
@@ -33,11 +35,9 @@
     "pages/campus-offer/campus-offer",
     "pages/pet/pet",
     "pages/adopt/adopt",
-    "pages/appearance/appearance",
     "pages/wardrobe/wardrobe",
     "pages/dispatch/dispatch",
-    "pages/companion/companion",
-    "pages/campus-home/campus-home"
+    "pages/companion/companion"
   ],
   "window": {
     "navigationStyle": "custom",

@@ -1,132 +1,77 @@
 /**
- * 捏脸页
+ * 宠物互动页
  *
- * - 选项变化立即更新预览（不点保存也能看到）
- * - 保存写库；重新进入能从数据库恢复
- * - 保存是主要操作，随机/重置为次要
+ * 形象固定为小橘猫（成套动画贴图），原「捏脸」已不适用，
+ * 本页改为动作互动：展示引擎支持的五个动作 + 摸头反馈。
+ *
+ * 五个动作来自 utils/orange-pet-engine.js：
+ *   idle / happy / sad / sleepy / celebrate，各 4 秒
  */
-const petApi = require('../../utils/pet-api')
-const {
-  DEFAULT_APPEARANCE, randomAppearance, normalizeAppearance
-} = require('../../utils/pet-appearance')
-const Toast = require('tdesign-miniprogram/toast/index')
+const ACTIONS = [
+  { key: 'idle',      name: '待机',   icon: '◡', tip: '它在发呆，偶尔眨眨眼' },
+  { key: 'happy',     name: '开心',   icon: '◠', tip: '尾巴摇起来了' },
+  { key: 'sad',       name: '委屈',   icon: '⌒', tip: '它有点小情绪' },
+  { key: 'sleepy',    name: '困了',   icon: '☾', tip: '打了个哈欠' },
+  { key: 'celebrate', name: '庆祝',   icon: '✦', tip: '跳起来了！' }
+]
 
 Page({
   data: {
     statusBarHeight: 20,
-    appearance: { ...DEFAULT_APPEARANCE },
+    appearance: {},
     previewMotion: 'idle',
-    reduceMotion: false,
-    saving: false,
-    dirty: false,
-    resetVisible: false
+    currentAction: 'idle',
+    actions: ACTIONS,
+    tip: '它在发呆，偶尔眨眨眼',
+    reduceMotion: false
   },
 
   onLoad() {
     const metrics = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
-    // 尊重系统「减少动态效果」
     let reduceMotion = false
     try {
       const app = getApp()
       reduceMotion = !!(app && app.globalData && app.globalData.reduceMotion)
       if (metrics.reducedMotion != null) reduceMotion = !!metrics.reducedMotion
     } catch (e) {}
-    this.setData({ statusBarHeight: metrics.statusBarHeight || 20, reduceMotion })
-    this._userId = getUserId()
-    this._load()
-  },
-
-  onShow() {
-    // 从衣柜返回时外观可能已变，重新拉一次
-    if (this._loaded) this._load()
-  },
-
-  async _load() {
-    try {
-      const ap = await petApi.getAppearance(this._userId)
-      if (ap) {
-        this.setData({ appearance: normalizeAppearance(ap), dirty: false })
-      }
-      this._loaded = true
-    } catch (error) {
-      // 没领养过或网络失败：用默认外观，页面仍可用
-      this.setData({ appearance: { ...DEFAULT_APPEARANCE } })
-      this._loaded = true
-    }
-  },
-
-  /** 选中部件：立即更新预览 */
-  onPick(e) {
-    const { category, id } = e.detail || {}
-    if (!category || !id) return
     this.setData({
-      [`appearance.${category}`]: id,
-      dirty: true
+      statusBarHeight: metrics.statusBarHeight || 20,
+      reduceMotion
     })
   },
 
+  /** 点宠物：播开心 */
   onPetTap() {
-    this.setData({ previewMotion: 'happy' })
-    if (this._happyTimer) clearTimeout(this._happyTimer)
-    this._happyTimer = setTimeout(() => this.setData({ previewMotion: 'idle' }), 1200)
+    this.setData({
+      previewMotion: 'happy',
+      currentAction: 'happy',
+      tip: '被你摸到了，很开心'
+    })
+    this._restore('idle')
   },
 
-  onRandom() {
-    const ap = randomAppearance(Date.now())
-    this.setData({ appearance: ap, dirty: true })
+  /** 选动作 */
+  onAction(e) {
+    const key = e.currentTarget.dataset.key
+    const item = ACTIONS.find(a => a.key === key)
+    if (!item) return
+    this.setData({
+      previewMotion: key,
+      currentAction: key,
+      tip: item.tip
+    })
+    if (key !== 'idle') this._restore('idle')
   },
 
-  onReset() {
-    this.setData({ resetVisible: true })
-  },
-
-  onResetCancel() {
-    this.setData({ resetVisible: false })
-  },
-
-  async onResetConfirm() {
-    this.setData({ resetVisible: false })
-    try {
-      const ap = await petApi.resetAppearance(this._userId)
-      this.setData({ appearance: normalizeAppearance(ap || DEFAULT_APPEARANCE), dirty: false })
-      Toast({ context: this, selector: '#t-toast', message: '已恢复默认外观', theme: 'success' })
-    } catch (error) {
-      // 网络失败也允许本地重置，至少预览能变
-      this.setData({ appearance: { ...DEFAULT_APPEARANCE }, dirty: true })
-      Toast({ context: this, selector: '#t-toast', message: error.message || '重置失败', theme: 'fail' })
-    }
-  },
-
-  async onSave() {
-    if (this.data.saving) return
-    this.setData({ saving: true })
-    try {
-      const saved = await petApi.saveAppearance(this._userId, this.data.appearance)
-      this.setData({
-        appearance: normalizeAppearance(saved || this.data.appearance),
-        saving: false,
-        dirty: false
-      })
-      Toast({ context: this, selector: '#t-toast', message: '外观已保存', theme: 'success' })
-    } catch (error) {
-      this.setData({ saving: false })
-      Toast({ context: this, selector: '#t-toast', message: error.message || '保存失败，请重试', theme: 'fail' })
-    }
+  /** 动作播完回落到待机 */
+  _restore(key) {
+    if (this._timer) clearTimeout(this._timer)
+    this._timer = setTimeout(() => {
+      this.setData({ previewMotion: key, currentAction: key })
+    }, 4200)
   },
 
   onUnload() {
-    if (this._happyTimer) clearTimeout(this._happyTimer)
+    if (this._timer) { clearTimeout(this._timer); this._timer = null }
   }
 })
-
-function getUserId() {
-  try {
-    const app = getApp()
-    if (app && app.globalData && app.globalData.userId) return app.globalData.userId
-  } catch (e) {}
-  try {
-    const profile = wx.getStorageSync('profile') || {}
-    if (profile.id) return profile.id
-  } catch (e) {}
-  return 1
-}

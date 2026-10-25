@@ -28,17 +28,26 @@ public class PetCompanionService {
     private final PetMapper petMapper;
     private final SecureRandom random = new SecureRandom();
 
-    /** 合法部件编号 —— 与 utils/pet-appearance.js 严格对应 */
+    /**
+     * 合法外观取值 —— 与 utils/pet-appearance.js 严格对应。
+     * 美术为 Kenney Cube Pets（CC0），物种为图片，色调走 CSS filter，配饰为叠加元素。
+     */
     private static final Map<String, Set<String>> VALID = Map.of(
-        "fur", Set.of("cream", "orange", "gray", "black", "snow"),
-        "pattern", Set.of("none", "patch", "stripe", "star"),
-        "eyes", Set.of("round", "sleepy", "sparkle", "closed"),
-        "mouth", Set.of("smile", "grin", "meow", "flat"),
-        "accessory", Set.of("none", "scarf", "bell", "glasses", "leaf")
+        "species", Set.of("cat", "bunny", "dog", "panda", "fox", "koala", "tiger", "penguin", "chick"),
+        "tint", Set.of("natural", "warm", "mint", "rose", "mono"),
+        "accessory", Set.of("none", "scarf", "bell", "glasses", "leaf"),
+        // 数据库列名是 mood_tag（旧 mood 列已被 int 情绪值占用）
+        "moodTag", Set.of("happy", "calm", "hungry", "sleepy")
     );
 
     private static final Map<String, String> DEFAULT_APPEARANCE = Map.of(
-        "fur", "cream", "pattern", "none", "eyes", "round", "mouth", "smile", "accessory", "scarf"
+        "species", "cat", "tint", "natural", "accessory", "scarf", "moodTag", "calm"
+    );
+
+    /** 对外字段名与数据库列名的映射 */
+    private static final Map<String, String> COLUMN = Map.of(
+        "species", "species", "tint", "tint",
+        "accessory", "accessory", "moodTag", "mood_tag"
     );
 
     // ==================== 外观 ====================
@@ -50,7 +59,7 @@ public class PetCompanionService {
         if (row == null) return null;
         Map<String, Object> out = new LinkedHashMap<>();
         for (String key : VALID.keySet()) {
-            Object v = row.get(key);
+            Object v = row.get(COLUMN.get(key));
             out.put(key, v == null || String.valueOf(v).isBlank() ? DEFAULT_APPEARANCE.get(key) : String.valueOf(v));
         }
         return out;
@@ -72,12 +81,12 @@ public class PetCompanionService {
                 ? DEFAULT_APPEARANCE.get(key)
                 : String.valueOf(raw).trim();
             if (!e.getValue().contains(id)) {
-                throw new IllegalArgumentException("不支持的 " + key + " 部件：" + id);
+                throw new IllegalArgumentException("不支持的 " + key + "：" + id);
             }
             clean.put(key, id);
         }
-        mapper.saveAppearance(userId, clean.get("fur"), clean.get("pattern"),
-            clean.get("eyes"), clean.get("mouth"), clean.get("accessory"));
+        mapper.saveAppearance(userId, clean.get("species"), clean.get("tint"),
+            clean.get("accessory"), clean.get("moodTag"));
         return appearance(userId);
     }
 
@@ -86,8 +95,8 @@ public class PetCompanionService {
     public Map<String, Object> resetAppearance(Long userId) {
         requireUser(userId);
         if (mapper.appearance(userId) == null) throw new IllegalArgumentException("还没有领养宠物，请先领养");
-        mapper.saveAppearance(userId, DEFAULT_APPEARANCE.get("fur"), DEFAULT_APPEARANCE.get("pattern"),
-            DEFAULT_APPEARANCE.get("eyes"), DEFAULT_APPEARANCE.get("mouth"), DEFAULT_APPEARANCE.get("accessory"));
+        mapper.saveAppearance(userId, DEFAULT_APPEARANCE.get("species"), DEFAULT_APPEARANCE.get("tint"),
+            DEFAULT_APPEARANCE.get("accessory"), DEFAULT_APPEARANCE.get("moodTag"));
         return appearance(userId);
     }
 
@@ -175,11 +184,10 @@ public class PetCompanionService {
         Map<String, Object> current = appearance(userId);
         if (current == null) throw new IllegalArgumentException("还没有领养宠物，请先领养");
         mapper.saveAppearance(userId,
-            String.valueOf(current.get("fur")),
-            String.valueOf(current.get("pattern")),
-            String.valueOf(current.get("eyes")),
-            String.valueOf(current.get("mouth")),
-            VALID.get("accessory").contains(partId) ? partId : "none");
+            String.valueOf(current.get("species")),
+            String.valueOf(current.get("tint")),
+            VALID.get("accessory").contains(partId) ? partId : "none",
+            String.valueOf(current.get("moodTag")));
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("ok", true);
@@ -196,8 +204,8 @@ public class PetCompanionService {
         Map<String, Object> current = appearance(userId);
         if (current != null) {
             mapper.saveAppearance(userId,
-                String.valueOf(current.get("fur")), String.valueOf(current.get("pattern")),
-                String.valueOf(current.get("eyes")), String.valueOf(current.get("mouth")), "none");
+                String.valueOf(current.get("species")), String.valueOf(current.get("tint")),
+                "none", String.valueOf(current.get("moodTag")));
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("ok", true);
