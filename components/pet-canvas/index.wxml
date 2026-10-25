@@ -9,6 +9,7 @@
   <pet-avatar
     id="inner"
     class="pet-inner"
+    size="{{size}}"
     auto="{{!reduceMotion && autoPlay}}"
     paused="{{paused}}"
     speed="{{speed}}"

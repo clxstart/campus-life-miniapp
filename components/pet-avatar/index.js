@@ -8,13 +8,22 @@ Component({
     // Empty by default. Set from the host page to trigger a one-shot action.
     action: { type: String, value: '', observer(value) { if (value) this.play(value); } },
     assetBase: { type: String, value: '/assets/pet-orange' },
-    label: { type: String, value: '小橘，点击互动' }
+    label: { type: String, value: '小橘，点击互动' },
+    /**
+     * 显示尺寸（CSS px，正方形）。0 表示不设固定尺寸、由父容器决定（宽高 100%）。
+     * 注意：Canvas 必须有非零尺寸才能初始化，父容器若没给高度就会「画布未就绪」。
+     */
+    size: { type: Number, value: 0 }
   },
   data: { ready: false, error: '', state: 'idle' },
   lifetimes: {
     attached() { this._alive = true; this._visible = true; this._last = null; this._loading = false; },
     ready() { this._init(); },
-    detached() { this._alive = false; this._stop(); this._renderer = null; this._canvas = null; }
+    detached() {
+      this._alive = false; this._stop();
+      if (this._retryTimer) { clearTimeout(this._retryTimer); this._retryTimer = null; }
+      this._renderer = null; this._canvas = null;
+    }
   },
   pageLifetimes: {
     show() { this._visible = true; this._syncLoop(); },
@@ -25,37 +34,65 @@ Component({
     _init() {
       if (!this._alive || this._loading) return;
       this._loading = true;
-      this.createSelectorQuery().select('#petCanvas').fields({ node: true, size: true }).exec(async result => {
+      this._attempt = 0;
+      this._queryCanvas();
+    },
+
+    /**
+     * 查询 canvas 节点。
+     *
+     * 首次进入页面时节点可能还没完成布局（box.width 为 0），
+     * 直接报错会让用户看到「画布未就绪」，随后页面重排又自己好了——
+     * 这就是「先闪一下错误、再跳转到正常页面」的原因。
+     * 这里改为短暂自动重试，只有连续多次失败才提示用户。
+     */
+    _queryCanvas() {
+      this.createSelectorQuery().select('#petCanvas').fields({ node: true, size: true }).exec(result => {
         if (!this._alive) return;
         const box = result && result[0];
-        if (!box || !box.node || !box.width || !box.height) return this._fail('画布未就绪，请重试');
+        const usable = box && box.node && box.width > 0 && box.height > 0;
+
+        if (!usable) {
+          this._attempt += 1;
+          if (this._attempt < 8) {
+            this._retryTimer = setTimeout(() => this._queryCanvas(), 100);
+            return;
+          }
+          return this._fail('画布未就绪，请重试');
+        }
+
+        this._attempt = 0;
         this._canvas = box.node; this._width = box.width; this._height = box.height;
         this._setSize();
-        try {
-          const images = {};
-          await Promise.all(['idle', 'head', 'body', 'tail', 'skin', 'body-clean'].map(name => new Promise((resolve, reject) => {
-            const img = box.node.createImage();
-            img.onload = () => { images[name] = img; resolve(); };
-            img.onerror = () => reject(new Error('素材加载失败：' + name));
-            img.src = this.properties.assetBase.replace(/\/$/, '') + '/' + name + '.png';
-          })));
-          if (!this._alive) return;
-          this._controller = new Controller({
-            auto: this.properties.auto,
-            onChange: action => {
-              if (!this._alive) return;
-              this.setData({ state: action }); this.triggerEvent('statechange', { action, name: ACTIONS[action].name });
-            },
-            onComplete: action => this.triggerEvent('actionend', { action })
-          });
-          this._controller.setSpeed(this.properties.speed);
-          this._renderer = new Renderer(box.node.getContext('2d'), images);
-          this._loading = false; this.setData({ ready: true, error: '' });
-          this._draw();
-          if (this.properties.action) this.play(this.properties.action);
-          this.triggerEvent('ready'); this._syncLoop();
-        } catch (error) { this._fail(error.message); }
+        this._loadAssets(box.node);
       });
+    },
+
+    async _loadAssets(node) {
+      try {
+        const images = {};
+        await Promise.all(['idle', 'head', 'body', 'tail', 'skin', 'body-clean'].map(name => new Promise((resolve, reject) => {
+          const img = node.createImage();
+          img.onload = () => { images[name] = img; resolve(); };
+          img.onerror = () => reject(new Error('素材加载失败：' + name));
+          img.src = this.properties.assetBase.replace(/\/$/, '') + '/' + name + '.png';
+        })));
+        if (!this._alive) return;
+        this._controller = new Controller({
+          auto: this.properties.auto,
+          onChange: action => {
+            if (!this._alive) return;
+            this.setData({ state: action }); this.triggerEvent('statechange', { action, name: ACTIONS[action].name });
+          },
+          onComplete: action => this.triggerEvent('actionend', { action })
+        });
+        this._controller.setSpeed(this.properties.speed);
+        this._renderer = new Renderer(node.getContext('2d'), images);
+        this._loading = false; this.setData({ ready: true, error: '' });
+        this._draw();
+        if (this.properties.action) this.play(this.properties.action);
+        this.triggerEvent('ready'); this._syncLoop();
+      } catch (error) { this._fail(error.message); }
     },
     _setSize() {
       const info = typeof wx.getWindowInfo === 'function' ? wx.getWindowInfo() : wx.getSystemInfoSync();
