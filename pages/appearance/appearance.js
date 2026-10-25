@@ -2,17 +2,16 @@
  * 宠物互动页
  *
  * 形象固定为小橘猫（成套动画贴图），原「捏脸」已不适用，
- * 本页改为动作互动：展示引擎支持的五个动作 + 摸头反馈。
+ * 本页改为动作互动：展示动作 + 摸头反馈。
  *
- * 五个动作来自 utils/orange-pet-engine.js：
- *   idle / happy / sad / sleepy / celebrate，各 4 秒
+ * 动作来源 utils/orange-pet-engine.js，按需求保留三个：
+ *   idle / happy / sad，各 4 秒
+ * （已去掉 sleepy 打瞌睡与 celebrate 跳起来）
  */
 const ACTIONS = [
-  { key: 'idle',      name: '待机',   icon: '◡', tip: '它在发呆，偶尔眨眨眼' },
-  { key: 'happy',     name: '开心',   icon: '◠', tip: '尾巴摇起来了' },
-  { key: 'sad',       name: '委屈',   icon: '⌒', tip: '它有点小情绪' },
-  { key: 'sleepy',    name: '困了',   icon: '☾', tip: '打了个哈欠' },
-  { key: 'celebrate', name: '庆祝',   icon: '✦', tip: '跳起来了！' }
+  { key: 'idle',  name: '待机', icon: '◡', tip: '它在发呆，偶尔眨眨眼' },
+  { key: 'happy', name: '开心', icon: '◠', tip: '尾巴摇起来了' },
+  { key: 'sad',   name: '委屈', icon: '⌒', tip: '它有点小情绪' }
 ]
 
 Page({

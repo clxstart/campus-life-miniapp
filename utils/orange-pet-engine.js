@@ -17,7 +17,10 @@
     sleepy: { name: '困倦哈欠', duration: 4 },
     celebrate: { name: '雀跃庆祝', duration: 4 }
   });
-  const ORDER = Object.keys(ACTIONS);
+  // 自动循环序列：只播 idle / happy / sad
+  // sleepy（打瞌睡）与 celebrate（跳起来）已按要求下线，
+  // 但仍保留在 ACTIONS 里，避免外部旧调用报「不支持的动作」
+  const ORDER = ['idle', 'happy', 'sad'];
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const smooth = (v) => { v = clamp(v, 0, 1); return clamp(v * v * v * (v * (v * 6 - 15) + 10), 0, 1); };
   const envelope = (u) => smooth(u / .22) * smooth((1 - u) / .22);

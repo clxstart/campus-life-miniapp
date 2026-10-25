@@ -301,7 +301,7 @@
 /* 动作选择 */
 .cm-actions {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10rpx;
   margin-top: 18rpx;
 }
