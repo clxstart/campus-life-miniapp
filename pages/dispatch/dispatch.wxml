@@ -1,6 +1,7 @@
 <!-- 派遣页：可展开任务卡 + 进行中状态 + 到期领取 -->
+<nav-bar title="派遣" back="/pages/campus-home/campus-home" />
+
 <view class="cp-page cp-page--flush dispatch">
-  <view style="height:{{statusBarHeight}}px;"></view>
 
   <view class="dp-head">
     <text class="cp-page-title">派小云出去走走</text>

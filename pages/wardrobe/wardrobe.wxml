@@ -1,8 +1,9 @@
 <!-- 衣柜页 → 已改为「小橘的收藏」
      原引擎不支持配饰图层，装备效果无法呈现在宠物身上，
      故取消穿戴功能，保留兑换收集玩法（有积分消耗、有记录） -->
+<nav-bar title="小橘的收藏" back="/pages/campus-home/campus-home" />
+
 <view class="cp-page cp-page--flush wardrobe">
-  <view style="height:{{statusBarHeight}}px;"></view>
 
   <view class="wd-head">
     <view class="wd-head-left">

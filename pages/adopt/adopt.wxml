@@ -1,6 +1,7 @@
 <!-- 领养页：顶部学校 + 中间场景选蛋 + 底部性格与确认 -->
+<nav-bar title="领养搭子" back="/pages/campus-home/campus-home" />
+
 <view class="cp-page cp-page--flush adopt">
-  <view style="height:{{statusBarHeight}}px;"></view>
 
   <!-- 顶部 -->
   <view class="adopt-head">

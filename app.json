@@ -1,8 +1,8 @@
 {
   "pages": [
+    "pages/index/index",
     "pages/appearance/appearance",
     "pages/campus-home/campus-home",
-    "pages/index/index",
     "pages/discover/discover",
     "pages/circle-detail/circle-detail",
     "pages/circle-chat/circle-chat",

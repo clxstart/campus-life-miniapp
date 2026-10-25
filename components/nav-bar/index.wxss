@@ -1,0 +1,65 @@
+/* nav-bar：自定义返回导航 */
+
+.navbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 100;
+  background: var(--c-bg, #F7F3EA);
+}
+
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  padding: 0 16rpx;
+  box-sizing: border-box;
+}
+
+/* 返回按钮：44×44 的可点区域，视觉上只有一个小箭头 */
+.navbar-left {
+  flex-shrink: 0;
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.navbar-left--hover {
+  background: rgba(32, 61, 52, 0.06);
+}
+
+.navbar-back {
+  font-size: 48rpx;
+  line-height: 1;
+  color: var(--c-text, #203D34);
+  /* 箭头略上提，视觉居中 */
+  margin-top: -4rpx;
+  font-weight: 400;
+}
+
+/* 标题居中 */
+.navbar-center {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navbar-title {
+  font-size: var(--fs-card-title, 32rpx);
+  font-weight: 600;
+  color: var(--c-text, #203D34);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 右侧与胶囊等宽，保证标题真正居中 */
+.navbar-right {
+  flex-shrink: 0;
+  height: 1rpx;
+}

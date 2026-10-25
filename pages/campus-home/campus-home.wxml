@@ -1,6 +1,7 @@
 <!-- 校园首页：学校问候 → 宠物小院 → 快捷入口 → 校园内容 -->
+<nav-bar back="/pages/index/index" />
+
 <view class="cp-page cp-page--flush campus">
-  <view style="height:{{statusBarHeight}}px;"></view>
 
   <!-- 顶部：学校 / 校区 / 问候 -->
   <view class="cm-head">

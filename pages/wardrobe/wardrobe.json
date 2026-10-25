@@ -3,7 +3,7 @@
   "usingComponents": {
     "pet-stage": "/components/pet-stage/index",
     "t-dialog": "tdesign-miniprogram/dialog/dialog",
-    "t-toast": "tdesign-miniprogram/toast/toast"
+    "t-toast": "tdesign-miniprogram/toast/toast",
+    "nav-bar": "/components/nav-bar/index"
   }
 }
-

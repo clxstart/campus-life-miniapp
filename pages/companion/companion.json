@@ -3,6 +3,7 @@
   "usingComponents": {
     "pet-avatar": "/components/pet-avatar/index",
     "chat-message": "/components/chat-message/index",
-    "t-toast": "tdesign-miniprogram/toast/toast"
+    "t-toast": "tdesign-miniprogram/toast/toast",
+    "nav-bar": "/components/nav-bar/index"
   }
 }

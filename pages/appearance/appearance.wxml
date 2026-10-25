@@ -1,11 +1,10 @@
 <!-- 宠物互动页
      形象固定为小橘猫（成套动画贴图，无法换装），所以这里不是捏脸，
      而是让它表演五个动作 + 摸头互动 -->
-<view class="cp-page cp-page--flush appear">
-  <view style="height:{{statusBarHeight}}px;"></view>
+<nav-bar title="小橘" back="/pages/campus-home/campus-home" />
 
+<view class="cp-page cp-page--flush appear">
   <view class="appear-head">
-    <text class="cp-page-title">小橘</text>
     <text class="cp-hint appear-sub">点它一下，或者让它做点什么</text>
   </view>
 
