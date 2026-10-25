@@ -22,6 +22,7 @@
           appearance="{{appearance}}"
           size="{{60}}"
           auto="{{!reduceMotion}}"
+          paused="{{dragging}}"
         />
       </view>
     </view>

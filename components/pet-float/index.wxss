@@ -22,9 +22,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* 提升合成层，拖动更顺滑 */
+  will-change: transform;
+  transform: translateZ(0);
 }
 
-/* 容器：透明，宠物直接浮在页面上 */
+/* 容器：透明，宠物直接浮在页面上
+   注意：这里绝对不能对 transform 做动画——movable-view 拖动时
+   依赖 transform 定位，两处同时改 transform 会互相覆盖导致卡顿 */
 .pf-ball {
   position: relative;
   width: 136rpx;
@@ -34,10 +39,9 @@
   align-items: flex-end;
   justify-content: center;
   overflow: visible;
-  animation: pf-breathe 3.4s ease-in-out infinite;
 }
 
-/* 脚下投影 */
+/* 脚下投影：静态，不做动画（拖动时省掉一次重绘） */
 .pf-shadow {
   position: absolute;
   left: 50%;
@@ -46,31 +50,16 @@
   height: 14rpx;
   margin-left: -32rpx;
   border-radius: 50%;
-  background: rgba(32, 61, 52, 0.22);
-  box-shadow: 0 0 14rpx 8rpx rgba(32, 61, 52, 0.16);
+  background: rgba(32, 61, 52, 0.20);
+  box-shadow: 0 0 12rpx 6rpx rgba(32, 61, 52, 0.14);
   z-index: 0;
-  animation: pf-shadow 3.4s ease-in-out infinite;
 }
 
-@keyframes pf-shadow {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50%      { transform: scale(0.85); opacity: 0.65; }
-}
-
-/* 宠物本体：投影衬托轮廓，不用白圈 */
+/* 宠物本体：单层投影（三层 filter 在拖动时太重） */
 .pf-pet {
   position: relative;
   z-index: 1;
-  filter:
-    drop-shadow(0 0 2rpx rgba(32, 61, 52, 0.30))
-    drop-shadow(0 4rpx 6rpx rgba(32, 61, 52, 0.26))
-    drop-shadow(0 10rpx 18rpx rgba(32, 61, 52, 0.18));
-}
-
-/* 呼吸：轻微上浮 */
-@keyframes pf-breathe {
-  0%, 100% { transform: scale(1) translateY(0); }
-  50%      { transform: scale(1.04) translateY(-6rpx); }
+  filter: drop-shadow(0 4rpx 8rpx rgba(32, 61, 52, 0.24));
 }
 
 /* 红点 */
@@ -103,8 +92,4 @@
   font-size: 24rpx;
   color: var(--c-text, #203D34);
   line-height: 1.5;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pf-ball, .pf-shadow { animation: none; }
 }

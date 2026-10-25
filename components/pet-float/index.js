@@ -40,7 +40,9 @@ Component({
     // 视口尺寸与可移动范围
     areaHeight: 600,
     x: 0,
-    y: 0
+    y: 0,
+    /** 拖动中：用于暂停宠物动画，减少渲染压力 */
+    dragging: false
   },
 
   lifetimes: {
@@ -107,20 +109,37 @@ Component({
       this.setData({ areaHeight: winH, x, y })
     },
 
-    /** 拖动中：记录是否真的移动了（用于区分点击） */
+    /**
+     * 拖动中
+     *
+     * 性能要点：
+     * 1) 拖动时暂停宠物 Canvas 动画（dragging=true），否则动画循环和拖动
+     *    抢同一个渲染线程，表现为卡顿
+     * 2) 不在这里频繁 setData 存位置，只更新坐标
+     */
     onDragChange(e) {
       if (!e.detail || e.detail.source !== 'touch') return
       const { x, y } = e.detail
+
+      // 首次移动才进入 dragging 态，避免每帧 setData
+      if (!this.data.dragging) this.setData({ dragging: true })
+
       if (Math.abs(x - this.data.x) > DRAG_THRESHOLD || Math.abs(y - this.data.y) > DRAG_THRESHOLD) {
         this._moved = true
       }
+      this._curX = x
+      this._curY = y
       this.setData({ x, y })
     },
 
-    /** 松手：保存位置；若确实是拖动则不触发冒泡 */
+    /** 松手：恢复动画、保存位置；若确实是拖动则不触发冒泡 */
     onDragEnd() {
+      if (this.data.dragging) this.setData({ dragging: false })
       try {
-        wx.setStorageSync(POS_KEY, { x: this.data.x, y: this.data.y })
+        wx.setStorageSync(POS_KEY, {
+          x: this._curX != null ? this._curX : this.data.x,
+          y: this._curY != null ? this._curY : this.data.y
+        })
       } catch (e) {}
       // 延迟复位，避免同一次手势里 bindtap 又触发
       setTimeout(() => { this._moved = false }, 60)
