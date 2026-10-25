@@ -7,11 +7,14 @@
   catchtouchmove="onMove"
 >
   <view class="pf-ball">
-    <pet-avatar
-      appearance="{{appearance}}"
-      size="{{88}}"
-      auto="{{!reduceMotion}}"
-    />
+    <view class="pf-shadow"></view>
+    <view class="pf-pet">
+      <pet-avatar
+        appearance="{{appearance}}"
+        size="{{60}}"
+        auto="{{!reduceMotion}}"
+      />
+    </view>
   </view>
   <view class="pf-badge" wx:if="{{hasNews}}"></view>
 </view>

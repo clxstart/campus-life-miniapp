@@ -3,58 +3,82 @@
 .pf {
   position: fixed;
   right: 24rpx;
-  width: 124rpx;
-  height: 124rpx;
+  width: 136rpx;
+  height: 136rpx;
   z-index: 90;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* 圆球：白边 + 强阴影，确保在任何页面背景上都清晰 */
+/* 容器：只做定位，不画背景，宠物直接浮在页面内容上 */
 .pf-ball {
-  width: 124rpx;
-  height: 124rpx;
-  border-radius: 50%;
-  background: var(--c-card, #FFFCF5);
-  border: 4rpx solid #FFFFFF;
-  box-shadow:
-    0 12rpx 30rpx rgba(32, 61, 52, 0.22),
-    0 2rpx 8rpx rgba(32, 61, 52, 0.10);
-  box-sizing: border-box;
+  position: relative;
+  width: 136rpx;
+  height: 136rpx;
+  background: transparent;
+  border: none;
+  box-shadow: none;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  overflow: hidden;
+  /* 允许阴影溢出到容器外 */
+  overflow: visible;
   animation: pf-breathe 3.4s ease-in-out infinite;
 }
 
+/* 脚下投影：放在宠物实际落脚位置下方（宠物图底部有透明留白，故需下探） */
+.pf-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -6rpx;
+  width: 64rpx;
+  height: 14rpx;
+  margin-left: -32rpx;
+  border-radius: 50%;
+  background: rgba(32, 61, 52, 0.22);
+  box-shadow: 0 0 14rpx 8rpx rgba(32, 61, 52, 0.16);
+  z-index: 0;
+  animation: pf-shadow 3.4s ease-in-out infinite;
+}
+
+/* 阴影与呼吸联动：浮起时收小变淡 */
+@keyframes pf-shadow {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(0.85); opacity: 0.65; }
+}
+
+/* 宠物本体：用较强投影衬托轮廓（不加白圈） */
+.pf-pet {
+  position: relative;
+  z-index: 1;
+  /* 投影贴身一圈，让浅色猫在任何背景上都有清晰边界 */
+  filter:
+    drop-shadow(0 0 2rpx rgba(32, 61, 52, 0.30))
+    drop-shadow(0 4rpx 6rpx rgba(32, 61, 52, 0.26))
+    drop-shadow(0 10rpx 18rpx rgba(32, 61, 52, 0.18));
+}
+
+/* 只剩轻微上浮的呼吸感，不带任何白圈 */
 @keyframes pf-breathe {
-  0%, 100% {
-    transform: scale(1) translateY(0);
-    box-shadow: 0 12rpx 30rpx rgba(32, 61, 52, 0.22), 0 2rpx 8rpx rgba(32, 61, 52, 0.10);
-  }
-  50% {
-    transform: scale(1.05) translateY(-4rpx);
-    box-shadow: 0 16rpx 36rpx rgba(32, 61, 52, 0.26), 0 2rpx 8rpx rgba(32, 61, 52, 0.10);
-  }
+  0%, 100% { transform: scale(1) translateY(0); }
+  50%      { transform: scale(1.04) translateY(-6rpx); }
 }
 
 .pf:active .pf-ball {
   transform: scale(0.94);
 }
 
-/* 红点 */
+/* 红点：去掉白边，直接是实心小圆 */
 .pf-badge {
   position: absolute;
-  right: 2rpx;
-  top: 2rpx;
-  width: 20rpx;
-  height: 20rpx;
+  right: 8rpx;
+  top: 10rpx;
+  width: 18rpx;
+  height: 18rpx;
   border-radius: 50%;
   background: var(--c-accent, #BD5134);
-  border: 3rpx solid var(--c-card, #FFFCF5);
-  box-sizing: border-box;
+  box-shadow: 0 2rpx 6rpx rgba(189, 81, 52, 0.35);
 }
 
 /* 气泡 */
