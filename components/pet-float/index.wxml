@@ -16,7 +16,7 @@
     bindtap="onTap"
   >
     <view class="pf-ball">
-      <view class="pf-pet {{dragging ? 'pf-pet--dragging' : ''}}">
+      <view class="pf-pet">
         <pet-avatar
           appearance="{{appearance}}"
           size="{{60}}"

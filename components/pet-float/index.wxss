@@ -44,18 +44,10 @@
 }
 
 
-/* 宠物本体
-   静止时用一层轻投影衬托轮廓；拖动时（pf-pet--dragging）去掉，
-   避免按轮廓逐帧重算 filter 造成卡顿。 */
+/* 宠物本体：只保留小猫本身，不加任何投影/阴影 */
 .pf-pet {
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0 3rpx 6rpx rgba(32, 61, 52, 0.22));
-}
-
-/* 拖动中关闭 filter，保证跟手 */
-.pf-pet--dragging {
-  filter: none;
 }
 
 /* 红点 */
