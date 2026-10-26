@@ -1,0 +1,30 @@
+<!-- pet-stage：场景（浅绿远景 + 暖色地面 + 宠物） -->
+<view class="stage {{compact ? 'stage--compact' : ''}}">
+  <!-- 远景装饰：放在宠物之后，不与宠物轮廓重叠 -->
+  <view class="stage-sky">
+    <view class="stage-cloud stage-cloud--a"></view>
+    <view class="stage-cloud stage-cloud--b"></view>
+    <view class="stage-tree stage-tree--l"></view>
+    <view class="stage-tree stage-tree--r"></view>
+  </view>
+
+  <!-- 地面 -->
+  <view class="stage-ground"></view>
+
+  <!-- 宠物 -->
+  <view class="stage-pet">
+    <pet-canvas
+      appearance="{{appearance}}"
+      motion="{{motion}}"
+      size="{{size}}"
+      reduce-motion="{{reduceMotion}}"
+      interactive="{{interactive}}"
+      bind:pettap="onPetTap"
+    />
+  </view>
+
+  <!-- 气泡插槽 -->
+  <view class="stage-bubble" wx:if="{{bubble}}">
+    <slot name="bubble"></slot>
+  </view>
+</view>

@@ -1,0 +1,10 @@
+{
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "pet-stage": "/components/pet-stage/index",
+    "task-card": "/components/task-card/index",
+    "t-toast": "tdesign-miniprogram/toast/toast",
+    "nav-bar": "/components/nav-bar/index",
+    "pet-float": "/components/pet-float/index"
+  }
+}

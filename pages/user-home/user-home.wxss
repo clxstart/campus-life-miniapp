@@ -1,0 +1,27 @@
+.uh-page{min-height:100vh;background:#f6f8fb;color:#18212b;padding-bottom:40rpx}
+/* 自定义导航：与社区页同款，返回键 + 标题 */
+.nav{box-sizing:content-box;display:flex;align-items:center;padding:0 32rpx;background:#fff
+  box-shadow: 0 2rpx 0 #eef1f4; /* 白导航压在浅底上，加分隔线否则边界看不清 */
+}
+.nav-title{font-size:36rpx;font-weight:700}
+.back{flex:none;margin-right:20rpx;padding:0 10rpx;font-size:40rpx;font-weight:400;color:#1a2330}
+.uh-head{display:flex;flex-direction:column;align-items:center;padding:70rpx 40rpx 40rpx;background:#fff;box-shadow:0 8rpx 24rpx rgba(36,62,96,.06)}
+.uh-avatar{width:160rpx;height:160rpx;border-radius:50%;background:#dcecff}
+.fallback{display:flex;align-items:center;justify-content:center;background:#e6f5ef;color:#3a9b76;font-weight:700;font-size:60rpx}
+.uh-name{margin-top:22rpx;font-size:36rpx;font-weight:700}
+.uh-school{margin-top:10rpx;color:#98a2ac;font-size:23rpx}
+.uh-stats{display:flex;justify-content:space-around;width:100%;margin-top:30rpx}
+.stat{display:flex;flex-direction:column;align-items:center}
+.stat-num{font-size:32rpx;font-weight:700;color:#22303c}
+.stat-label{margin-top:4rpx;color:#98a2ac;font-size:21rpx}
+.uh-btns{display:flex;gap:20rpx;width:100%;margin-top:34rpx}
+.uh-btn{flex:1;height:80rpx;line-height:80rpx;text-align:center;border-radius:40rpx;background:#378be7;color:#fff;font-size:26rpx;font-weight:600}
+.uh-btn.ghost{background:#f2f5f8;color:#8b959f}
+.uh-section{margin:34rpx 28rpx 12rpx;color:#63707c;font-size:26rpx;font-weight:600}
+.uh-post{margin:14rpx 28rpx;padding:26rpx;border-radius:22rpx;background:#fff;box-shadow:0 8rpx 24rpx rgba(36,62,96,.06)}
+.uh-post-title{font-size:28rpx;line-height:40rpx;font-weight:600}
+.uh-post-meta{margin-top:10rpx;color:#a2aab2;font-size:21rpx}
+.uh-empty{text-align:center;padding:80rpx 0;color:#a5adb5;font-size:24rpx}
+.uh-more{margin:22rpx 28rpx 0;padding:24rpx;border-radius:20rpx;background:#fff;color:#378be7;font-size:25rpx;text-align:center;box-shadow:0 8rpx 24rpx rgba(36,62,96,.06)}
+.uh-more.end{color:#a5adb5;font-size:22rpx;box-shadow:none;background:transparent}
+.page-tip{padding-top:200rpx}

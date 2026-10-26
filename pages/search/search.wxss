@@ -1,0 +1,35 @@
+@import "../community/community.wxss";
+.search-page{min-height:100vh;background:#fcfcfc;color:#18212b;padding-bottom:calc(30rpx + env(safe-area-inset-bottom))}
+.search-navbar{background:#fff}
+.search-navbar-row{display:flex;align-items:center;padding-left:24rpx;gap:12rpx;box-sizing:border-box}
+.search-box{flex:1;min-width:0;display:flex;align-items:center;height:58rpx;border-radius:30rpx;background:#f3f6fa;padding:0 16rpx}
+.search-box image{width:28rpx;height:28rpx;flex:none;margin-right:12rpx}
+.search-box input{flex:1;min-width:0;font-size:25rpx;color:#26313a}
+.search-submit{font-size:24rpx;color:#378be7;flex:none}
+.result-caption{padding:24rpx 32rpx;color:#8b959f;font-size:24rpx;overflow-wrap:break-word}
+.result-card{padding:24rpx 32rpx;background:#fff;border-bottom:1rpx solid #f0f1f3}
+/* ===== 分类 Tab ===== */
+.type-tabs{background:#fff;border-bottom:1rpx solid #f0f1f3;white-space:nowrap}
+.type-tab-row{display:inline-flex;align-items:center;gap:12rpx;padding:16rpx 24rpx}
+.type-tab{flex:none;display:inline-flex;align-items:center;gap:6rpx;padding:12rpx 24rpx;border-radius:28rpx;background:#f3f6fa;color:#63707c;font-size:24rpx}
+.type-tab.selected{background:#378be7;color:#fff;font-weight:600}
+.type-count{margin-left:4rpx;font-size:20rpx;opacity:.72}
+/* ===== 结果卡片：类型徽标 + 图文 ===== */
+.card-head{display:flex;align-items:center;gap:12rpx;margin-bottom:14rpx}
+.type-badge{padding:4rpx 14rpx;border-radius:8rpx;font-size:19rpx;line-height:1.5}
+.type-badge.post{background:#eaf3ff;color:#2f6fbf}
+.type-badge.circle{background:#e8f8f1;color:#2f8f6a}
+.type-badge.goods{background:#fff1e6;color:#c1762c}
+.type-badge.activity{background:#fdeaf2;color:#b8507f}
+.type-badge.job{background:#f0edff;color:#6553b8}
+.type-badge.shop,.type-badge.shopGoods{background:#fdf6e3;color:#a8802a}
+.card-author{color:#99a3ad;font-size:21rpx}
+.card-body{display:flex;align-items:flex-start;gap:20rpx}
+.card-copy{flex:1;min-width:0}
+.card-image{flex:none;width:150rpx;height:150rpx;border-radius:14rpx;background:#eef3f9}
+.card-meta{margin-top:12rpx;color:#99a3ad;font-size:22rpx;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.result-footer{display:flex;align-items:baseline;justify-content:space-between;margin-top:12rpx;color:#99a3ad;font-size:22rpx}
+.search-state{text-align:center;padding:50rpx 32rpx;font-size:24rpx;color:#99a3ad}
+.error-text{display:block;color:#c76156}
+.retry,.load-more{margin:22rpx auto;text-align:center;font-size:25rpx;color:#378be7;padding:18rpx 28rpx}
+.retry{display:inline-block;background:#eaf3ff;border-radius:28rpx}

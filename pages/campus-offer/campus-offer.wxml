@@ -1,0 +1,7 @@
+<view class="offer-page">
+  <view class="offer-nav" style="padding-top:{{statusBarHeight}}px;"><view class="offer-nav-row" style="height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px;"><text bindtap="goBack" class="back">‹</text><text>校园数码专题</text></view></view>
+  <offline-banner />
+  <view class="offer-card"><text class="badge">广告展示位</text><text class="title">联想小新 · 校园学习装备</text><image src="/assets/home/laptop-silver.webp" mode="aspectFit" /><text class="copy">这是一处校园推广展示位。当前尚未配置品牌官方活动链接，具体优惠、资格和价格以品牌官方公布为准。</text><view class="offer-button" bindtap="openMarket">逛逛校园数码闲置 ›</view><text class="note">二手物品由校园用户发布，与品牌官方活动无关联。</text></view>
+</view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

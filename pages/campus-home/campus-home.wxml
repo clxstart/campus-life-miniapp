@@ -1,0 +1,116 @@
+<!-- 校园首页：学校问候 → 宠物小院 → 快捷入口 → 校园内容 -->
+<nav-bar back="/pages/index/index" />
+
+<view class="cp-page cp-page--flush campus">
+
+  <!-- 顶部：学校 / 校区 / 问候 -->
+  <view class="cm-head">
+    <text class="cp-hint">{{schoolName}} · {{campusName}}</text>
+    <text class="cp-page-title cm-greet">{{greeting}}</text>
+  </view>
+
+  <!-- 宠物小院：常驻大图互动 + 宠物信息，与首页内容同屏 -->
+  <view class="cp-card cm-yard">
+    <!-- 大图舞台：常驻显示，不用切换 -->
+    <view class="cm-stage">
+      <pet-canvas
+        appearance="{{appearance}}"
+        motion="{{petMotion}}"
+        size="{{200}}"
+        bind:pettap="onPetTap"
+      />
+    </view>
+
+    <!-- 宠物信息 -->
+    <view class="cm-yard-top">
+      <view class="cm-yard-info">
+        <view class="cm-yard-name-row">
+          <text class="cp-card-title">{{petName}}</text>
+          <text class="cm-level">Lv.{{petLevel}}</text>
+        </view>
+        <text class="cp-hint">{{tip}}</text>
+      </view>
+    </view>
+
+    <!-- 经验条 -->
+    <view class="cm-exp">
+      <view class="cm-exp-bar">
+        <view class="cm-exp-fill" style="width:{{expPercent}}%;"></view>
+      </view>
+      <text class="cm-exp-text">{{petExp}} / {{expNext}}</text>
+    </view>
+
+    <!-- 动作选择：直接放在页面上，不需要展开 -->
+    <view class="cm-actions">
+      <view
+        wx:for="{{actions}}"
+        wx:key="key"
+        class="cm-action {{currentAction === item.key ? 'cp-selected' : ''}}"
+        data-key="{{item.key}}"
+        catchtap="onAction"
+      >
+        <text class="cm-action-icon">{{item.icon}}</text>
+        <text class="cm-action-name">{{item.name}}</text>
+      </view>
+    </view>
+
+    <!-- 功能按钮 -->
+    <view class="cm-yard-actions">
+      <view class="cm-yard-btn" catchtap="onGoWardrobe">收藏</view>
+      <view class="cm-yard-btn" catchtap="onGoDispatch">派遣</view>
+      <view class="cm-yard-btn cm-yard-btn--primary" catchtap="onGoChat">聊天</view>
+    </view>
+  </view>
+
+  <!-- 快捷入口 -->
+  <view class="cm-quick">
+    <view
+      wx:for="{{quickEntries}}"
+      wx:key="key"
+      class="cm-quick-item"
+      data-key="{{item.key}}"
+      bindtap="onQuick"
+    >
+      <view class="cm-quick-icon">{{item.icon}}</view>
+      <text class="cm-quick-label">{{item.label}}</text>
+    </view>
+  </view>
+
+  <!-- 校园内容 -->
+  <view class="cm-section">
+    <view class="cm-section-head">
+      <text class="cp-card-title">校园新鲜事</text>
+      <text class="cp-hint">共 {{feed.length}} 条</text>
+    </view>
+
+    <block wx:if="{{feed.length > 0}}">
+      <view
+        wx:for="{{feed}}"
+        wx:key="id"
+        class="cp-card cm-feed-item"
+        data-id="{{item.id}}"
+        bindtap="onOpenFeed"
+      >
+        <view class="cm-feed-head">
+          <text class="cm-feed-tag">{{item.tagName}}</text>
+          <text class="cm-feed-title">{{item.title}}</text>
+        </view>
+        <text class="cm-feed-summary cp-hint">{{item.summary}}</text>
+        <view class="cm-feed-foot">
+          <text class="cp-hint">{{item.author}}</text>
+          <text class="cp-hint">{{item.timeText}}</text>
+        </view>
+      </view>
+    </block>
+    <view class="cp-empty" wx:else>
+      <text>暂时没有新内容</text>
+    </view>
+  </view>
+
+  <view style="height:200rpx;"></view>
+
+  <!-- 悬浮宠物统一由全局组件 pet-float 提供（与其它页面一致） -->
+
+  <t-toast id="t-toast" />
+</view>
+

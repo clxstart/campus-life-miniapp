@@ -1,0 +1,80 @@
+<view class="ai-page">
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px">
+    <view class="back" catchtap="goBack">‹</view>
+    <view class="nav-title">校园小助手</view>
+    <view class="nav-action" catchtap="clearChat">清空</view>
+  </view>
+
+  <offline-banner local="{{offline}}" />
+
+  <scroll-view
+    class="chat-body"
+    scroll-y
+    scroll-into-view="{{scrollTarget}}"
+    scroll-with-animation
+    style="padding-bottom:{{keyboardHeight ? 0 : 0}}px"
+  >
+    <view
+      wx:for="{{messages}}"
+      wx:key="id"
+      id="msg-{{item.id}}"
+      class="row {{item.role === 'user' ? 'row-user' : 'row-ai'}}"
+    >
+      <view wx:if="{{item.role !== 'user'}}" class="avatar ai-avatar">✦</view>
+      <view class="bubble {{item.role === 'user' ? 'bubble-user' : 'bubble-ai'}}">
+        <text class="bubble-text">{{item.text}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{sending}}" class="row row-ai">
+      <view class="avatar ai-avatar">✦</view>
+      <view class="bubble bubble-ai typing">
+        <text class="dot"></text><text class="dot"></text><text class="dot"></text>
+      </view>
+    </view>
+
+    <view class="body-bottom"></view>
+  </scroll-view>
+
+  <!-- 快捷关键词：优先用回复自带的追问，没有就显示常驻关键词，保证底部永远有可点的词 -->
+  <view wx:if="{{!sending}}" class="quick-row">
+    <view
+      wx:for="{{quickReplies.length ? quickReplies : starterChips}}"
+      wx:key="*this"
+      class="quick-chip"
+      data-text="{{item}}"
+      catchtap="tapQuick"
+    >{{item}}</view>
+  </view>
+
+  <!-- 输入区 -->
+  <view class="input-bar">
+    <input
+      class="input"
+      value="{{inputValue}}"
+      placeholder="说点什么…"
+      placeholder-class="input-ph"
+      confirm-type="send"
+      maxlength="200"
+      bindinput="inputMessage"
+      bindconfirm="sendCurrent"
+      cursor-spacing="20"
+    />
+    <view
+      class="send-btn {{inputValue && !sending ? 'send-on' : ''}}"
+      catchtap="sendCurrent"
+    >发送</view>
+  </view>
+
+  <ui-popup
+    uiPopup="{{uiPopup}}"
+    bind:confirm="onPopupConfirm"
+    bind:cancel="onPopupCancel"
+    bind:action="onPopupAction"
+    bind:input="onPopupInput"
+    bind:close="onPopupClose"
+  />
+</view>
+
+<!-- 全局悬浮宠物（抬高避开输入框） -->
+<pet-float bottom="220" />

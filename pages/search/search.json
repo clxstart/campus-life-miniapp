@@ -1,0 +1,9 @@
+{
+  "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#FCFCFC",
+  "usingComponents": {
+    "ui-popup": "/components/ui-popup/index",
+    "pet-float": "/components/pet-float/index"
+  }
+}

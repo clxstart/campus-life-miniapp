@@ -1,0 +1,83 @@
+/* pet-float：可拖动的全局悬浮宠物 */
+
+/* 拖动区域铺满视口，但本身不拦截事件（pointer-events: none）
+   只有宠物本体（movable-view）可点可拖。
+   position: relative 作为阴影绝对定位的基准。 */
+.pf-area {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 90;
+  pointer-events: none;
+  background: transparent;
+  overflow: hidden;
+}
+
+/* 可拖动的小球 */
+.pf-view {
+  width: 136rpx;
+  height: 136rpx;
+  /* 只有它接收事件 */
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 提升合成层，拖动更顺滑 */
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* 容器：透明，宠物直接浮在页面上
+   注意：这里绝对不能对 transform 做动画——movable-view 拖动时
+   依赖 transform 定位，两处同时改 transform 会互相覆盖导致卡顿 */
+.pf-ball {
+  position: relative;
+  width: 136rpx;
+  height: 136rpx;
+  background: transparent;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: visible;
+}
+
+
+/* 宠物本体：只保留小猫本身，不加任何投影/阴影 */
+.pf-pet {
+  position: relative;
+  z-index: 1;
+}
+
+/* 红点 */
+.pf-badge {
+  position: absolute;
+  right: 8rpx;
+  top: 10rpx;
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 50%;
+  background: var(--c-accent, #BD5134);
+  box-shadow: 0 2rpx 6rpx rgba(189, 81, 52, 0.35);
+  z-index: 2;
+}
+
+/* 气泡：跟随宠物位置（left/top 由 JS 计算） */
+.pf-bubble {
+  position: fixed;
+  max-width: 300rpx;
+  padding: 14rpx 22rpx;
+  background: var(--c-card, #FFFCF5);
+  border: 1rpx solid var(--c-line, #DEDCCD);
+  border-radius: 18rpx;
+  box-shadow: 0 6rpx 18rpx rgba(32, 61, 52, 0.12);
+  z-index: 91;
+  pointer-events: none;
+}
+
+.pf-bubble-text {
+  font-size: 24rpx;
+  color: var(--c-text, #203D34);
+  line-height: 1.5;
+}

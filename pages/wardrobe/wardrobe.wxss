@@ -1,0 +1,148 @@
+@import "../../styles/theme.wxss";
+@import "../../styles/common.wxss";
+
+.wardrobe {
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+}
+
+/* ===== 头部 ===== */
+.wd-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 20rpx 0 22rpx;
+  gap: 16rpx;
+}
+
+.wd-head-left { min-width: 0; }
+
+.wd-sub {
+  display: block;
+  margin-top: 6rpx;
+}
+
+.wd-points {
+  display: flex;
+  align-items: baseline;
+  gap: 6rpx;
+  flex-shrink: 0;
+  background: var(--c-card);
+  border: var(--bw) solid var(--c-line);
+  border-radius: var(--radius-pill);
+  padding: 10rpx 22rpx;
+}
+
+.wd-points-num {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--c-accent);
+}
+
+.wd-points-unit {
+  font-size: 22rpx;
+  color: var(--c-text-sub);
+}
+
+/* ===== 物品列表 ===== */
+.wd-list {
+  margin-top: var(--sp-gap);
+}
+
+.wd-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.wd-item + .wd-item {
+  margin-top: var(--sp-gap);
+}
+
+/* 已收藏：左侧竖条强调 */
+.wd-item--owned {
+  border-color: var(--c-primary);
+  box-shadow: inset 6rpx 0 0 var(--c-primary);
+}
+
+.wd-item-icon {
+  flex-shrink: 0;
+  width: 76rpx;
+  height: 76rpx;
+  line-height: 76rpx;
+  text-align: center;
+  font-size: 38rpx;
+  border-radius: 20rpx;
+  background: var(--c-bg);
+}
+
+.wd-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.wd-item-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+}
+
+.wd-item-name {
+  font-size: var(--fs-card-title);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.wd-item-state {
+  font-size: 20rpx;
+  padding: 2rpx 12rpx;
+  border-radius: var(--radius-pill);
+  line-height: 1.7;
+}
+
+.wd-item-state--locked {
+  background: #F0EDE3;
+  color: var(--c-text-sub);
+}
+
+.wd-item-state--owned {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+.wd-item-desc {
+  display: block;
+  margin-top: 6rpx;
+}
+
+.wd-item-action {
+  flex-shrink: 0;
+}
+
+.wd-btn {
+  min-width: 128rpx;
+  height: 60rpx;
+  line-height: 60rpx;
+  padding: 0 22rpx;
+  font-size: 26rpx;
+  border-radius: var(--radius-pill);
+  margin: 0;
+}
+
+.wd-btn--primary {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+.wd-owned-mark {
+  display: inline-block;
+  width: 52rpx;
+  height: 52rpx;
+  line-height: 52rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--c-soft);
+  color: var(--c-primary);
+  font-size: 28rpx;
+  font-weight: 700;
+}

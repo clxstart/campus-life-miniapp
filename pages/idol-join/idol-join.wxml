@@ -1,0 +1,65 @@
+<view class="join-page">
+  <!-- 自定义导航 -->
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px">
+    <view class="back" catchtap="goBack">‹</view>
+    <view class="nav-title">报名参选</view>
+  </view>
+  <offline-banner />
+
+  <view class="join-hero">
+    <text class="join-hero-title">上传照片，赢校园人气王</text>
+    <text class="join-hero-sub">报名信息提交后即进入展示队列，得票最高者获定制周边礼盒</text>
+  </view>
+
+  <view class="join-card">
+    <!-- 照片：3:4 竖版 -->
+    <view class="join-photo" bindtap="choosePhoto">
+      <image wx:if="{{photo}}" class="join-photo-img" src="{{photo}}" mode="aspectFill" />
+      <view wx:else class="join-photo-add">
+        <text class="plus">＋</text>
+        <text class="tip">上传竖版照片</text>
+        <text class="sub">3:4 效果最佳</text>
+      </view>
+      <view wx:if="{{photo}}" class="join-photo-edit">更换照片</view>
+    </view>
+
+    <!-- 组别 -->
+    <text class="join-label">参选组别</text>
+    <view class="join-segment">
+      <view class="join-seg {{gender === 2 ? 'active' : ''}}" bindtap="setGender" data-gender="2">校花组</view>
+      <view class="join-seg {{gender === 1 ? 'active' : ''}}" bindtap="setGender" data-gender="1">校草组</view>
+    </view>
+
+    <text class="join-label">展示昵称</text>
+    <input class="join-input" maxlength="16" value="{{name}}" placeholder="大家怎么称呼你" placeholder-class="join-placeholder" bindinput="inputName" />
+
+    <text class="join-label">学院</text>
+    <input class="join-input" maxlength="24" value="{{college}}" placeholder="如：新闻与传播学院" placeholder-class="join-placeholder" bindinput="inputCollege" />
+
+    <text class="join-label">拉票宣言（选填）</text>
+    <input class="join-input" maxlength="30" value="{{slogan}}" placeholder="一句话为自己拉票" placeholder-class="join-placeholder" bindinput="inputSlogan" />
+
+    <button class="join-submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">
+      {{submitting ? '正在提交…' : '提交报名'}}
+    </button>
+    <text class="join-note">提交即同意：照片为本人在校照片，允许活动页面展示</text>
+  </view>
+
+  <ui-popup
+    id="ui-popup"
+    visible="{{uiPopup.visible}}"
+    mode="{{uiPopup.mode}}"
+    tone="{{uiPopup.tone}}"
+    title="{{uiPopup.title}}"
+    message="{{uiPopup.message}}"
+    actions="{{uiPopup.actions}}"
+    show-cancel="{{uiPopup.showCancel}}"
+    cancel-text="{{uiPopup.cancelText}}"
+    confirm-text="{{uiPopup.confirmText}}"
+    bindconfirm="onPopupConfirm"
+    bindcancel="onPopupCancel"
+    bindclose="onPopupClose"
+  />
+</view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

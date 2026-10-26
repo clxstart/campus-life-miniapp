@@ -1,0 +1,18 @@
+<view class="orders-page">
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px"><view class="back" catchtap="goBack">‹</view><view class="nav-title">我的外卖订单</view><view class="nav-action" bindtap="load">刷新</view></view>
+  <offline-banner />
+  <view wx:if="{{loading && !orders.length}}" class="state">正在加载订单…</view>
+  <view wx:elif="{{error}}" class="state"><text class="state-title">{{error}}</text><view class="retry" bindtap="load">重新加载</view></view>
+  <view wx:elif="{{!orders.length}}" class="state empty"><text class="state-title">还没有外卖订单</text><text class="state-copy">选一家店，看看今天想吃什么。</text><button class="browse" bindtap="goFood">去逛逛</button></view>
+  <view wx:else class="order-list">
+    <view wx:for="{{orders}}" wx:key="id" class="order-card" data-id="{{item.id}}" bindtap="openOrder">
+      <view class="order-top"><text class="shop-name">{{item.shopName}}</text><text class="status {{item.statusTone}}">{{item.statusText}}</text></view>
+      <text class="items">{{item.itemSummary}}</text>
+      <view class="order-foot"><text class="time">{{item.createdText}}</text><text class="amount">¥{{item.totalText}}</text></view>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+  <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" editable="{{uiPopup.editable}}" placeholder="{{uiPopup.placeholder}}" inputValue="{{uiPopup.inputValue}}" actions="{{uiPopup.actions}}" show-cancel="{{uiPopup.showCancel}}" confirm-text="{{uiPopup.confirmText}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose"/>
+</view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

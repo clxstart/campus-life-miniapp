@@ -1,0 +1,252 @@
+/* 校园小助手：AI 陪聊页 */
+.ai-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #f7f8fa;
+}
+
+/* ---------- 导航 ---------- */
+/* 关键：全局是 border-box，这里必须 content-box，
+   否则 height:navBarHeight 会被 padding-top:statusBarHeight 压扁，标题和按钮挤在一起 */
+.nav {
+  box-sizing: content-box;
+  display: flex;
+  align-items: center;
+  padding-left: 20rpx;
+  background: #ffffff;
+  box-shadow: 0 2rpx 0 #eef1f4;
+  flex-shrink: 0;
+}
+
+.back {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+  line-height: 1;
+  color: #1c1f23;
+  flex-shrink: 0;
+}
+
+.nav-title {
+  flex: 1;
+  font-size: 32rpx;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #1c1f23;
+  margin-left: 4rpx;
+}
+
+/* 「清空」：字号对齐标题基线，颜色加深，扩大点击区 */
+.nav-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88rpx;
+  height: 56rpx;
+  padding: 0 20rpx;
+  margin-right: 4rpx;
+  font-size: 26rpx;
+  line-height: 1;
+  color: #5d6875;
+  border-radius: 28rpx;
+  background: #f4f6f8;
+  flex-shrink: 0;
+}
+
+.nav-action:active {
+  background: #e8ecf1;
+}
+
+/* ---------- 对话区 ---------- */
+.chat-body {
+  flex: 1;
+  min-height: 0;
+  padding: 24rpx 24rpx 0;
+  overflow: hidden;
+}
+
+.body-bottom {
+  height: 24rpx;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 22rpx;
+}
+
+.row-user {
+  flex-direction: row-reverse;
+}
+
+.row-ai {
+  flex-direction: row;
+}
+
+.avatar {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 24rpx;
+  line-height: 1;
+}
+
+/* 头像略微下移，与气泡首行文字的视觉中线对齐 */
+.ai-avatar {
+  background: #e8eefc;
+  color: #3476f6;
+  margin-right: 14rpx;
+  margin-top: 6rpx;
+}
+
+.bubble {
+  max-width: 78%;
+  padding: 20rpx 24rpx;
+  border-radius: 22rpx;
+  line-height: 1.6;
+}
+
+/* 靠头像那一角收窄，形成指向感 */
+.bubble-ai {
+  background: #ffffff;
+  border-top-left-radius: 8rpx;
+  box-shadow: 0 2rpx 10rpx rgba(28, 31, 35, 0.05);
+}
+
+.bubble-user {
+  background: #3476f6;
+  border-top-right-radius: 8rpx;
+}
+
+.bubble-text {
+  font-size: 28rpx;
+  word-break: break-word;
+  display: block;
+}
+
+.bubble-ai .bubble-text {
+  color: #1c1f23;
+}
+
+.bubble-user .bubble-text {
+  color: #ffffff;
+}
+
+/* 打字中动画 */
+.typing {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 26rpx 24rpx;
+}
+
+.dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: #c3c9d1;
+  animation: blink 1.2s infinite ease-in-out;
+}
+
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.3; }
+  40% { opacity: 1; }
+}
+
+/* ---------- 快捷追问 ---------- */
+/* 用统一 gap + 固定行高，保证每个芯片等高、行距一致 */
+.quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+  padding: 10rpx 24rpx 18rpx;
+  flex-shrink: 0;
+  /* 词多时最多两行半，超出横向滚动，避免把聊天区挤没 */
+  max-height: 200rpx;
+  overflow-y: auto;
+}
+
+.quick-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 62rpx;
+  padding: 0 26rpx;
+  background: #ffffff;
+  border: 2rpx solid #e3e8ee;
+  border-radius: 31rpx;
+  font-size: 26rpx;
+  line-height: 1;
+  color: #3476f6;
+  flex-shrink: 0;
+}
+
+.quick-chip:active {
+  background: #eef4ff;
+  border-color: #cfdffd;
+}
+
+/* ---------- 输入区 ---------- */
+.input-bar {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-top: 2rpx solid #f0f2f4;
+  flex-shrink: 0;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 80rpx;
+  padding: 0 26rpx;
+  background: #f4f6f8;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  line-height: 80rpx;
+  color: #1c1f23;
+}
+
+.input-ph {
+  color: #a7b0ba;
+  font-size: 28rpx;
+}
+
+/* 发送按钮：尺寸与输入框等高，禁用态也保持可辨识 */
+.send-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 128rpx;
+  height: 80rpx;
+  border-radius: 40rpx;
+  background: #eef1f5;
+  color: #9aa4b0;
+  font-size: 27rpx;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.send-on {
+  background: #3476f6;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.send-on:active {
+  background: #2c66d9;
+}

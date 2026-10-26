@@ -1,0 +1,26 @@
+/* 外卖模块：薄荷绿、白卡片与清晰的金额层级。 */
+page{background:#F7F9FC;color:#2B3540}
+.food-page{min-height:100vh;padding-bottom:40rpx;background:#F7F9FC}
+.nav{box-sizing:content-box;display:flex;align-items:center;flex:none;padding-left:28rpx;background:#F7F9FC}
+.back{width:64rpx;line-height:72rpx;font-size:52rpx;color:#1A2330}
+.nav-title{font-size:34rpx;font-weight:700;color:#1A2330}
+.card{background:#fff;border-radius:22rpx;box-shadow:0 5rpx 18rpx rgba(46,65,86,0.045)}
+.title{color:#1A2330;font-weight:700}
+.muted{color:#98A2AC;font-size:22rpx}
+.chips{width:100%;white-space:nowrap}
+.chip-row{display:inline-flex;padding:0 28rpx 8rpx;gap:14rpx}
+.chip{display:inline-block;flex:none;padding:15rpx 24rpx;border-radius:40rpx;background:#fff;font-size:24rpx;color:#66736E}
+.chip.active{background:#249B70;color:#fff;font-weight:600}
+.state{padding:70rpx 30rpx;text-align:center;color:#98A2AC;font-size:25rpx}
+.state-title{display:block;margin-bottom:14rpx;color:#1A2330;font-size:32rpx;font-weight:700}
+.primary{border:0;background:#249B70;color:#fff;font-size:27rpx;font-weight:600;border-radius:40rpx;line-height:82rpx;padding:0 32rpx;margin:0}
+.primary[disabled]{background:#D8E3DE;color:#83958D}
+.bottom{position:fixed;z-index:10;bottom:0;left:0;right:0;padding:18rpx 28rpx calc(18rpx + env(safe-area-inset-bottom));background:rgba(247,249,252,.97)}
+.bottom-inner{display:flex;align-items:center;gap:20rpx;padding:14rpx 16rpx 14rpx 24rpx;border-radius:54rpx;background:#193D32;box-shadow:0 12rpx 30rpx rgba(25,61,50,.16);color:#fff}
+.bottom-copy{flex:1;min-width:0}
+.bottom-price{display:block;font-size:36rpx;font-weight:700}
+.bottom-note{display:block;margin-top:4rpx;color:#B7CEC3;font-size:20rpx}
+.bottom .primary{flex:none;line-height:76rpx;padding:0 28rpx}
+.discount-pill{display:inline-block;padding:5rpx 12rpx;border-radius:9rpx;background:#FFF0EC;color:#DF6953;font-size:19rpx;font-weight:600}
+.price{color:#DF6953;font-weight:700}
+.bottom .primary{font-size:24rpx;white-space:nowrap}

@@ -1,0 +1,33 @@
+<page-meta page-style="background:#F7F9FC;" />
+<view class="publish-page">
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px"><view class="back" catchtap="goBack">‹</view><view class="nav-title">发布闲置</view></view>
+  <offline-banner />
+
+  <view class="publish-intro">
+    <view><text class="intro-title">挂个闲置</text><text class="intro-subtitle">让闲置流转，遇见刚好需要的同学</text></view>
+    <view class="intro-mark">♻</view>
+  </view>
+
+  <view class="form-card">
+    <input class="title-input" maxlength="28" value="{{title}}" placeholder="给宝贝起个标题" bindinput="inputTitle"/>
+    <view class="form-divider"></view>
+    <textarea class="content-input" maxlength="200" value="{{description}}" placeholder="说说使用时长、成色细节和交易方式…" bindinput="inputDescription"></textarea>
+    <text class="content-count">{{description.length}}/200</text>
+    <view class="media-grid">
+      <view wx:for="{{images}}" wx:key="*this" class="media-item"><image src="{{item}}" mode="aspectFill"/><view class="media-remove" catchtap="removeMedia" data-index="{{index}}">×</view></view>
+      <view wx:if="{{images.length < 6}}" class="media-add" bindtap="chooseImage"><text class="plus">＋</text><text>添加图片</text></view>
+    </view>
+  </view>
+
+  <view class="setting-card">
+    <view class="setting-row"><text class="setting-title">价格</text><view class="price-input"><text>¥</text><input class="price-field" type="digit" value="{{price}}" placeholder="0.00" bindinput="inputPrice"/></view></view>
+    <view class="setting-row"><text class="setting-title">成色</text><view class="segments"><view wx:for="{{conditionLevels}}" wx:key="*this" class="segment {{conditionLevel===item?'active':''}}" data-value="{{item}}" bindtap="chooseCondition">{{item}}</view></view></view>
+    <view class="setting-row"><text class="setting-title">分类</text><view class="chips"><view wx:for="{{categories}}" wx:key="*this" class="chip {{category===item?'active':''}}" data-value="{{item}}" bindtap="chooseCategory">{{item}}</view></view></view>
+  </view>
+
+  <button class="submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">{{submitting ? '正在发布…' : '发布'}}</button>
+
+  <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose"/>
+</view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

@@ -1,0 +1,29 @@
+@import '../../utils/food.wxss';
+.order-page{padding-bottom:calc(170rpx + env(safe-area-inset-bottom))}
+.address-card{margin:18rpx 28rpx 0;padding:28rpx 24rpx;display:flex;gap:18rpx;align-items:center;border:1rpx solid #E2EFE7}
+.address-symbol{width:70rpx;height:70rpx;line-height:70rpx;text-align:center;flex:none;border-radius:22rpx;background:#EAF6EE;color:#249B70;font-size:40rpx}
+.address-main{flex:1;min-width:0}
+.address-eyebrow{display:block;color:#249B70;font-size:20rpx;margin-bottom:10rpx}
+.address-detail{display:block;font-size:30rpx;line-height:1.5;word-break:break-all}
+.address-contact{display:block;margin-top:10rpx;color:#98A2AC;font-size:22rpx}
+.address-arrow{color:#91AC9B;font-size:36rpx}
+.arrival{display:flex;align-items:center;gap:10rpx;margin:20rpx 44rpx 24rpx;font-size:22rpx;color:#5F8972}
+.arrival-dot{height:10rpx;width:10rpx;border-radius:50%;background:#249B70}
+.order-card{margin:0 28rpx;padding:26rpx}
+.order-heading{display:flex;align-items:center;justify-content:space-between;gap:10rpx;padding-bottom:10rpx;font-size:29rpx}
+.order-heading .muted{font-size:20rpx;flex:none;font-weight:400}
+.order-item{display:flex;align-items:center;gap:18rpx;padding:20rpx 0;border-bottom:1rpx solid #F0F4F1}
+.order-image{width:94rpx;height:94rpx;flex:none;border-radius:14rpx}
+.order-item-copy{flex:1;min-width:0}
+.item-name{display:block;font-size:25rpx;line-height:1.5;margin-bottom:8rpx}
+.item-total{font-size:25rpx;font-weight:600;flex:none}
+.fee-row{display:flex;justify-content:space-between;padding-top:22rpx;font-size:24rpx;color:#788A80}
+.discount-row{color:#249B70}
+.total-row{display:flex;justify-content:space-between;align-items:center;margin-top:24rpx;padding-top:24rpx;border-top:1rpx solid #EAF0EC;font-size:27rpx;font-weight:700}
+.total-row .price{font-size:37rpx}
+.remark-card{margin:22rpx 28rpx 0;padding:26rpx}
+.remark-title{display:flex;justify-content:space-between;font-size:27rpx}
+.remark-title .muted{font-weight:400}
+.remark-input{margin-top:18rpx;width:100%;height:136rpx;font-size:24rpx;line-height:1.7;color:#2B3540}
+.remark-placeholder{color:#98A2AC}
+.order-tip{text-align:center;margin-top:28rpx;font-size:21rpx;color:#98A2AC}

@@ -1,0 +1,104 @@
+<page-meta page-style="background:#F7F9FC;" />
+<view class="messages-page">
+  <view class="messages-navbar" style="padding-top: {{statusBarHeight}}px;">
+    <view class="messages-navbar-row" style="height: {{navBarHeight}}px; padding-right: {{capsuleReservedRight}}px;">
+      <text class="messages-title">消息</text>
+      <text class="read-all" bindtap="markAllRead">全部已读</text>
+    </view>
+  </view>
+  <offline-banner />
+
+  <view class="messages-content">
+    <view class="quick-grid">
+      <view class="quick-card" bindtap="openQuick" data-label="赞和收藏">
+        <view class="quick-icon heart-icon">♥</view>
+        <text class="quick-name">赞和收藏</text>
+        <text class="quick-desc">查看互动</text>
+        <view wx:if="{{likeUnread}}" class="quick-dot"></view>
+      </view>
+      <view class="quick-card" bindtap="openQuick" data-label="评论和回复">
+        <view class="quick-icon reply-icon">•••</view>
+        <text class="quick-name">评论和回复</text>
+        <text class="quick-desc">{{commentUnread}}条新消息</text>
+        <view wx:if="{{commentUnread}}" class="quick-badge">{{commentUnread}}</view>
+      </view>
+      <view class="quick-card" bindtap="openQuick" data-label="系统通知">
+        <view class="quick-icon notice-icon">✦</view>
+        <text class="quick-name">系统通知</text>
+        <text class="quick-desc">校园提醒</text>
+      </view>
+    </view>
+
+    <view class="message-tabs">
+      <view class="message-tab {{activeTab === 'chat' ? 'selected' : ''}}" bindtap="switchMessageTab" data-tab="chat">聊天</view>
+      <view class="message-tab {{activeTab === 'notice' ? 'selected' : ''}}" bindtap="switchMessageTab" data-tab="notice">通知</view>
+    </view>
+
+    <view wx:if="{{loading}}" class="message-state">正在加载消息…</view>
+    <view wx:if="{{error}}" class="message-state" bindtap="loadMessages">{{error}} · 点击重试</view>
+    <view wx:if="{{!loading && !error && activeTab === 'chat' && !conversations.length}}" class="message-state">还没有聊天，去论坛认识新同学吧</view>
+    <view wx:if="{{!loading && !error && activeTab === 'notice' && !visibleNotifications.length}}" class="message-state">暂无相关通知</view>
+    <view class="conversation-list" wx:if="{{activeTab === 'chat'}}">
+      <view
+        wx:for="{{conversations}}"
+        wx:key="id"
+        class="conversation-item"
+        bindtap="openChat"
+        data-id="{{item.id}}"
+        data-name="{{item.name}}"
+        data-color="{{item.color}}"
+        data-avatar="{{item.avatarText}}"
+      >
+        <view class="conversation-avatar" style="background:{{item.color}}">
+          <text>{{item.avatarText}}</text>
+          <view class="online-dot" wx:if="{{item.online}}"></view>
+        </view>
+        <view class="conversation-copy">
+          <view class="conversation-top">
+            <text class="conversation-name">{{item.name}}{{item.muted ? ' · 免打扰' : ''}}</text>
+            <text class="conversation-time">{{item.time}}</text>
+          </view>
+          <view class="conversation-bottom">
+            <text class="conversation-preview">{{item.preview}}</text>
+            <text class="conversation-unread" wx:if="{{item.unread}}">{{item.unread}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="notice-list" wx:else>
+      <view wx:for="{{visibleNotifications}}" wx:key="id" class="notice-item" data-post-id="{{item.postId}}" bindtap="openNotice">
+        <view class="notice-symbol {{item.tone}}">✦</view>
+        <view class="notice-copy">
+          <text class="notice-title">{{item.unread ? '• ' : ''}}{{item.title}}</text>
+          <text class="notice-content">{{item.content}}</text>
+          <text class="notice-time">{{item.time}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  <bottom-nav active="messages" unread="{{unreadTotal}}" />
+
+  <ui-popup
+    id="ui-popup"
+    visible="{{uiPopup.visible}}"
+    mode="{{uiPopup.mode}}"
+    tone="{{uiPopup.tone}}"
+    title="{{uiPopup.title}}"
+    message="{{uiPopup.message}}"
+    editable="{{uiPopup.editable}}"
+    placeholder="{{uiPopup.placeholder}}"
+    inputValue="{{uiPopup.inputValue}}"
+    actions="{{uiPopup.actions}}"
+    show-cancel="{{uiPopup.showCancel}}"
+    cancel-text="{{uiPopup.cancelText}}"
+    confirm-text="{{uiPopup.confirmText}}"
+    bindconfirm="onPopupConfirm"
+    bindcancel="onPopupCancel"
+    bindaction="onPopupAction"
+    bindinput="onPopupInput"
+    bindclose="onPopupClose"
+  />
+</view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="260" />

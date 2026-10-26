@@ -1,0 +1,64 @@
+/* 狐友同款：整页白底，通栏feed，帖子间只有细分割线 */
+.community-page{min-height:100vh;background:#fff;color:#18212b}
+.nav{box-sizing:content-box;display:flex;align-items:center;justify-content:space-between;padding:0 32rpx;background:#fff
+  box-shadow: 0 2rpx 0 #eef1f4; /* 白导航压在浅底上，加分隔线否则边界看不清 */
+}
+.nav-title{font-size:36rpx;font-weight:700}
+/* 狐友同款返回键：仅文字箭头，细体近黑 */
+.back{flex:none;margin-right:20rpx;padding:0 10rpx;font-size:40rpx;font-weight:400;color:#1a2330}
+.post-entry{padding:10rpx 20rpx;border-radius:26rpx;background:#378be7;color:#fff;font-size:24rpx;font-weight:500}
+/* 本校/全部切换：分段控件，选中态用主题蓝 */
+.scope-switch{display:flex;margin-left:auto;margin-right:20rpx;padding:4rpx;border-radius:22rpx;background:#f0f2f4}
+.scope-opt{padding:8rpx 22rpx;border-radius:18rpx;color:#737e88;font-size:22rpx;transition:all .2s}
+.scope-opt.on{background:#fff;color:#378be7;font-weight:600;box-shadow:0 2rpx 6rpx rgba(36,62,96,.08)}
+.post-entry text{font-size:28rpx;vertical-align:-2rpx}
+.offline{margin:16rpx 28rpx 0;padding:12rpx 20rpx;border-radius:12rpx;background:#fff5db;color:#a56a10;font-size:22rpx}
+
+/* 狐友式主tab：大字号，选中加粗变黑，无下划线，密度紧凑 */
+.tabs{margin-top:20rpx;white-space:nowrap;background:#fff}
+.tab-row{display:inline-flex;gap:52rpx;padding:0 32rpx 20rpx}
+.tab{font-size:32rpx;color:#8b959f;padding:4rpx 0;position:relative}
+.tab.active{color:#1a2330;font-weight:700}
+.tab.active:after{content:'';position:absolute;left:50%;bottom:-8rpx;width:40rpx;height:8rpx;transform:translateX(-50%);border-radius:6rpx;background:#378be7}
+
+/* 通栏feed：无卡片浮起，帖子间只有一条细分割线 */
+.feed{height:calc(100vh - 160rpx);padding:0 0 calc(120rpx + env(safe-area-inset-bottom));box-sizing:border-box}
+.card{padding:28rpx 32rpx;background:#fff;margin:0;border-bottom:1rpx solid #f0f1f3}
+
+/* 作者行：头像60rpx，昵称加粗近黑，小号关注胶囊 */
+.author-row{display:flex;align-items:center;justify-content:space-between}
+.author-left{display:flex;align-items:center;flex:1;min-width:0}
+/* 狐友式头像：88rpx，正圆形，无描边 */
+.avatar{width:88rpx;height:88rpx;border-radius:50%;background:#dcecff;flex:none}
+.fallback{display:flex;align-items:center;justify-content:center;background:#e6f5ef;color:#3a9b76;font-weight:700;font-size:32rpx}
+.author-meta{display:flex;flex-direction:column;margin-left:20rpx;min-width:0}
+.nickname{font-size:30rpx;font-weight:700;color:#1a2330}
+.time{margin-top:6rpx;color:#a2aab2;font-size:22rpx}
+/* 狐友式小胶囊：细边框浅蓝字，已关注变灰字 */
+.follow{flex:none;margin:0;padding:0 22rpx;height:52rpx;line-height:50rpx;border:1rpx solid #9ec6f0;border-radius:26rpx;color:#378be7;font-size:22rpx;font-weight:500}
+.follow.following{border-color:#dfe3e8;color:#9aa2aa;background:transparent}
+
+/* 正文：标题大字近黑，正文30rpx行高松，接近纯黑 */
+.title{margin-top:20rpx;font-size:32rpx;line-height:46rpx;font-weight:700;color:#1a2330}
+.summary{display:-webkit-box;overflow:hidden;margin-top:10rpx;color:#2b3540;font-size:29rpx;line-height:46rpx;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+
+/* 单图固定3:2比例裁切，圆角小 */
+.post-image{display:block;width:100%;height:400rpx;margin-top:16rpx;border-radius:12rpx;background:#eef1f5}
+
+/* 话题蓝字内联可点 */
+.topic{display:inline-block;margin-top:16rpx;color:#378be7;font-size:24rpx;font-weight:500}
+.location{display:block;margin-top:8rpx;color:#99a3ad;font-size:21rpx}
+
+/* 互动条：三等分居中，扁平无框无分割线，图标描边感 */
+.actions{display:flex;margin-top:22rpx;padding-top:6rpx}
+.action{flex:1;display:flex;align-items:center;justify-content:center;color:#8a949e;font-size:23rpx;background:transparent;padding:0;margin:0;font-weight:500}
+.action:after{border:0}
+.icon{margin-right:8rpx;color:#95a0ab;font-size:29rpx;font-weight:400}
+.icon.liked{color:#ec6e83}
+.share-btn{line-height:inherit}
+.feed-end{height:20rpx;background:#fff}
+
+.fab{position:fixed;right:30rpx;bottom:calc(40rpx + env(safe-area-inset-bottom));width:108rpx;height:108rpx;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#378be7;color:#fff;box-shadow:0 10rpx 28rpx rgba(55,139,231,.4)}
+.fab text{font-size:38rpx;line-height:40rpx}
+.fab label{font-size:19rpx}
+.empty,.loading{text-align:center;padding:90rpx 0;color:#a5adb5;font-size:24rpx;background:transparent}

@@ -1,0 +1,44 @@
+<view class="learn-page">
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px;">
+    <view class="nav-back" catchtap="goBack" aria-label="返回"><view class="back-stroke"></view></view>
+    <text class="nav-title">学习专区</text>
+    <view class="nav-publish" catchtap="openPublish">＋ 发帖</view>
+  </view>
+  <offline-banner local="{{offline}}" />
+  <view class="content">
+    <view class="intro-row">
+      <view><text class="eyebrow">LEARN TOGETHER</text><text class="page-title">成长的路上，一起。</text></view>
+      <view class="school-pill"><image class="pin-icon" src="/assets/icons/pin.svg" /><text class="school-name">{{schoolName || '校园学习社区'}}</text></view>
+    </view>
+    <view class="hero" catchtap="openGuide">
+      <image class="hero-art" src="/assets/learn/hero.jpg" mode="aspectFill" />
+      <view class="hero-copy"><text class="hero-kicker">让好奇心，多走一步</text><text class="hero-title">每一份努力，<text class="hero-line">都有回响。</text></text><view class="hero-link">寻找学习的同路人 <text class="hero-arrow">↗</text></view></view>
+    </view>
+    <view class="ai-card" catchtap="openAiChat">
+      <view class="ai-icon">✦</view><view class="ai-copy"><text class="ai-title">卡住的时候，问问小助手</text><text class="ai-subtitle">学习规划、备考思路，陪你一起理清</text></view><view class="ai-arrow">›</view>
+    </view>
+    <view class="section-head"><text class="section-title">给学习一点灵感</text><text class="section-aside">从这里开始</text></view>
+    <view class="guide-grid">
+      <view class="guide-card" catchtap="openGuide"><image class="guide-photo" src="/assets/learn/desk.jpg" mode="aspectFill" /><view class="guide-copy"><text class="guide-label">{{current.badge}}</text><text class="guide-title">{{current.guide}}</text><text class="guide-bottom">读一份入门建议 <text class="inline-arrow">↗</text></text></view></view>
+      <view class="plan-card" catchtap="openPlan"><text class="plan-kicker">慢慢来，也很快</text><text class="plan-title">专注当下<text class="plan-line">就是在向前</text></text><image class="plan-art" src="/assets/learn/books.png" mode="aspectFit" /><view class="plan-bottom">今天，也学一点 <text class="inline-arrow">↗</text></view></view>
+    </view>
+    <view class="section-head discussion-head"><text class="section-title">同学在聊</text><text class="section-aside">{{current.hint}}</text></view>
+    <scroll-view class="category-scroll" scroll-x="true" enhanced="true" show-scrollbar="false" scroll-into-view="tab-{{category}}" scroll-with-animation="true">
+      <view class="category-row"><view wx:for="{{categories}}" wx:key="key" id="tab-{{item.key}}" class="category-tab {{category === item.key ? 'category-active' : ''}}" data-key="{{item.key}}" catchtap="onTabTap"><text>{{item.label}}</text><text wx:if="{{counts[item.key] > 0}}" class="tab-count">{{counts[item.key]}}</text></view></view>
+    </scroll-view>
+    <view class="feed-caption"><text class="feed-dot"></text><text>{{current.label}} · {{offline ? '等待网络恢复' : '最新交流'}}</text><text class="feed-total" wx:if="{{!offline && !loading}}">{{total}} 条讨论</text></view>
+    <view wx:if="{{error}}" class="error-card" catchtap="retry"><text>{{error}}</text><text class="retry-label">点击重试 ↻</text></view>
+    <view wx:if="{{loading && !posts.length}}" class="skeleton-card"><view class="skeleton-author"></view><view class="skeleton-line"></view><view class="skeleton-line skeleton-short"></view><text class="loading-text">正在寻找同路人的分享…</text></view>
+    <view wx:elif="{{!posts.length && !error}}" class="empty-card"><image class="empty-art" src="/assets/learn/books.png" mode="aspectFit" /><text class="empty-title">{{offline ? '先积蓄一点能量' : '这个板块还没有内容，来发第一条吧'}}</text><text class="empty-subtitle">{{offline ? '网络暂不可用，入门建议依然可以阅读' : '一个问题、一份经验，都可能帮到同学'}}</text><view class="empty-action" catchtap="onEmptyAction">{{offline ? '读读学习建议' : '分享我的第一条'}} <text>↗</text></view></view>
+    <view wx:for="{{posts}}" wx:key="id" class="post-card">
+      <view class="author-row"><view class="author-info" data-id="{{item.authorId}}" catchtap="openAuthor"><image wx:if="{{item.authorAvatar}}" class="avatar" src="{{item.authorAvatar}}" mode="aspectFill" data-id="{{item.id}}" binderror="onAvatarError" /><view wx:else class="avatar avatar-fallback">{{item.avatarText}}</view><view class="author-copy"><text class="author-name">{{item.authorName}}</text><text class="post-time">{{item.timeText}} · {{item.crossSchool ? '跨校分享' : '校园分享'}}</text></view></view><text class="post-badge">{{current.short}}</text></view>
+      <view class="post-body" data-id="{{item.id}}" catchtap="openDetail"><text class="post-title">{{item.title}}</text><text class="post-summary">{{item.content}}</text><image wx:if="{{item.image}}" class="post-image" src="{{item.image}}" mode="aspectFill" data-id="{{item.id}}" binderror="onPostImageError" /></view>
+      <view class="post-footer"><text class="post-topic"># {{current.label}}</text><view class="post-actions"><view class="post-action" data-id="{{item.id}}" catchtap="openDetail"><image class="action-icon" src="/assets/icons/message.svg" />{{item.commentCount || 0}}</view><view class="post-action {{item.liked ? 'action-liked' : ''}}" data-id="{{item.id}}" catchtap="onLike"><text class="heart">{{item.liked ? '♥' : '♡'}}</text>{{item.likeCount || 0}}</view></view></view>
+    </view>
+    <view wx:if="{{posts.length}}" class="feed-end">{{loading ? '正在加载更多…' : hasMore ? '上拉，看看更多交流' : '已经看到这里啦，分享也从你开始'}}</view>
+    <view class="page-footer"><view class="footer-rule"></view><text>保持好奇 · 自有收获</text><view class="footer-rule"></view></view>
+  </view>
+  <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" editable="{{uiPopup.editable}}" placeholder="{{uiPopup.placeholder}}" inputValue="{{uiPopup.inputValue}}" actions="{{uiPopup.actions}}" show-cancel="{{uiPopup.showCancel}}" confirm-text="{{uiPopup.confirmText}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose" />
+</view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

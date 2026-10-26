@@ -1,0 +1,44 @@
+page{background:#f7f9fc}
+.publish-page{min-height:100vh;padding-bottom:44rpx;color:#18212b}
+.nav{box-sizing:content-box;display:flex;align-items:center;padding-left:28rpx;background:#f7f9fc
+  box-shadow: 0 2rpx 0 #eef1f4; /* 白导航压在浅底上，加分隔线否则边界看不清 */
+}
+.nav-title{font-size:34rpx;font-weight:700;color:#111820}
+.back{padding:0 12rpx;margin-right:16rpx;font-size:42rpx;color:#111820}
+
+/* 渐变头卡：与论坛发布页「分享此刻」同款版式 */
+.publish-intro{position:relative;margin:14rpx 32rpx 0;height:128rpx;padding:25rpx 24rpx;overflow:hidden;border-radius:22rpx;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#deedff,#e7f8f0 63%,#fff0f5)}
+.intro-title,.intro-subtitle{display:block}
+.intro-title{font-size:30rpx;line-height:39rpx;font-weight:700;color:#17314b}
+.intro-subtitle{margin-top:5rpx;font-size:17rpx;line-height:24rpx;color:#73889a}
+.intro-mark{width:64rpx;height:64rpx;border-radius:22rpx;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#69adff,#3b7ff0);color:#fff;font-size:31rpx;box-shadow:0 8rpx 18rpx rgba(56,123,228,.2)}
+
+/* 表单卡：标题/描述/图片宫格，论坛同款 */
+.form-card{position:relative;margin:18rpx 32rpx 0;padding:6rpx 21rpx 21rpx;border-radius:22rpx;background:#fff;box-shadow:0 5rpx 18rpx rgba(46,65,86,.045)}
+.title-input{height:76rpx;font-size:24rpx;font-weight:600;color:#1b252e}
+.form-divider{height:1rpx;background:#edf0f3}
+.content-input{width:100%;height:170rpx;padding:16rpx 0;font-size:23rpx;line-height:1.6;color:#3b4650}
+.content-count{display:block;text-align:right;color:#a7adb3;font-size:18rpx;margin-bottom:14rpx}
+.media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12rpx}
+.media-item{position:relative;height:196rpx;border-radius:14rpx;overflow:hidden}
+.media-item image{width:100%;height:100%}
+.media-remove{position:absolute;right:6rpx;top:6rpx;width:40rpx;height:40rpx;line-height:36rpx;border-radius:50%;background:rgba(24,33,43,.62);color:#fff;text-align:center;font-size:26rpx}
+.media-add{height:196rpx;border:2rpx dashed #cfd8e1;border-radius:14rpx;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#9aa4ad;font-size:21rpx}
+.plus{font-size:54rpx;line-height:60rpx;color:#3476f6}
+
+/* 设置卡：价格/成色/分类，论坛「所在位置」卡同款 */
+.setting-card{margin:18rpx 32rpx 0;border-radius:22rpx;background:#fff;box-shadow:0 5rpx 18rpx rgba(46,65,86,.045);overflow:hidden}
+.setting-row{min-height:88rpx;padding:16rpx 20rpx;display:flex;align-items:center;justify-content:space-between;gap:16rpx}
+.setting-row + .setting-row{border-top:1rpx solid #edf0f3}
+.setting-title{flex:none;font-size:24rpx;font-weight:600;color:#222d36}
+.price-input{display:flex;align-items:center;gap:8rpx}
+.price-input>text{color:#ef5b55;font-size:30rpx;font-weight:700}
+.price-field{width:220rpx;height:64rpx;padding:0 16rpx;border:1rpx solid #e5ebf0;border-radius:12rpx;font-size:26rpx;text-align:right}
+.segments,.chips{display:flex;gap:12rpx;flex-wrap:wrap;justify-content:flex-end}
+.segment,.chip{padding:10rpx 16rpx;border-radius:12rpx;background:#f2f5f8;color:#7d8790;font-size:22rpx}
+.segment.active,.chip.active{background:#e7f0ff;color:#3476f6;font-weight:600}
+
+/* 提交按钮：论坛渐变同款；用 flex 居中，避免依赖 button 默认 line-height 导致文字偏上 */
+.submit{display:flex;align-items:center;justify-content:center;width:calc(100% - 64rpx);height:88rpx;margin:26rpx auto 0;padding:0;border-radius:44rpx;background:linear-gradient(135deg,#4b91fb,#2f6ff4);color:#fff;font-size:27rpx;line-height:1;font-weight:600;box-shadow:0 8rpx 20rpx rgba(52,111,249,.22)}
+.submit:after{border:0}
+.submit[disabled]{opacity:.75;color:#fff}

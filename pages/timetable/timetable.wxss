@@ -1,0 +1,64 @@
+.tt-page{min-height:100vh;background:#f6f8fb;box-sizing:border-box}
+.nav{box-sizing:content-box;display:flex;align-items:center;padding:0 32rpx;background:#f6f8fb
+  box-shadow: 0 2rpx 0 #eef1f4; /* 白导航压在浅底上，加分隔线否则边界看不清 */
+}
+.nav-title{font-size:36rpx;font-weight:700;flex:1}
+.back{flex:none;margin-right:20rpx;padding:0 10rpx;font-size:40rpx;font-weight:400;color:#1a2330}
+.tt-edit-hint{flex:none;padding:6rpx 16rpx;border-radius:999rpx;background:#e5f7ed;color:#2a9a67;font-size:19rpx}
+
+.tt-head{margin:14rpx 32rpx 0;padding:22rpx 26rpx;border-radius:22rpx;background:linear-gradient(135deg,#d8ebff,#e8f8f1 70%)}
+.tt-term{display:block;font-size:21rpx;font-weight:600;color:#33566f}
+.tt-today{display:block;margin-top:8rpx;font-size:27rpx;font-weight:700;color:#15334e}
+/* 周次切换：看第 N 周（调休课只在对应周出现） */
+.tt-week-switch{display:flex;align-items:center;gap:14rpx;margin-top:12rpx}
+.tt-week-btn{width:52rpx;height:52rpx;line-height:48rpx;text-align:center;border-radius:50%;background:rgba(255,255,255,.75);color:#2f6fd8;font-size:30rpx;font-weight:700}
+.tt-week-btn:active{background:#fff}
+.tt-week-now{font-size:25rpx;font-weight:700;color:#15334e;min-width:120rpx;text-align:center}
+
+/* 周视图：首列节次 + 7 天 */
+.tt-grid{margin:18rpx 32rpx 0;padding:12rpx;border-radius:20rpx;background:#fff;box-shadow:0 5rpx 18rpx rgba(46,65,86,.045)}
+.tt-row{display:flex}
+.tt-row + .tt-row{margin-top:10rpx}
+.tt-time-cell{flex:none;width:74rpx;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.tt-period{font-size:18rpx;font-weight:600;color:#41505c}
+.tt-clock{margin-top:4rpx;font-size:15rpx;color:#a2aab2}
+.tt-head-row{padding-bottom:6rpx;border-bottom:1rpx solid #eef1f5}
+.tt-day{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;font-size:19rpx;color:#41505c;padding:8rpx 0;border-radius:12rpx}
+.tt-day-date{margin-top:2rpx;font-size:14rpx;color:#a2aab2}
+.tt-day.today{background:#e3edff;color:#2f6fd8;font-weight:700}
+.tt-day.today .tt-day-date{color:#7ea6e8}
+.tt-cell{flex:1;min-width:0;min-height:104rpx;padding:0 3rpx}
+.tt-cell.today{background:#f3f8ff;border-radius:12rpx}
+/* 课程块：可点击删除 */
+.tt-course{height:100%;min-height:104rpx;box-sizing:border-box;padding:10rpx 8rpx;border-radius:12rpx;display:flex;flex-direction:column;overflow:hidden}
+.tt-course:active{opacity:.7}
+.tt-course-name{font-size:17rpx;line-height:22rpx;font-weight:600}
+.tt-course-room{margin-top:6rpx;font-size:14rpx;line-height:18rpx;opacity:.75}
+.tt-course.blue{background:#e3edff;color:#2f6fd8}
+.tt-course.green{background:#e2f7ea;color:#2f9e68}
+.tt-course.amber{background:#fff3e0;color:#c07b1d}
+.tt-course.pink{background:#ffe9f1;color:#d4587f}
+.tt-course.purple{background:#efeaff;color:#6d55c8}
+/* 空格：可点击添加 */
+.tt-cell-add{height:100%;min-height:104rpx;display:flex;align-items:center;justify-content:center;color:#c4ccd4;font-size:30rpx;border:2rpx dashed #e3e9ef;border-radius:12rpx;box-sizing:border-box}
+.tt-cell-add:active{background:#f6f9fc;color:#8fa8c8}
+
+.tt-tip{margin:26rpx 0 40rpx;text-align:center;font-size:17rpx;color:#a5adb5}
+
+/* 添加课程表单 */
+.tt-mask{position:fixed;inset:0;z-index:50;background:rgba(24,33,43,.45);display:flex;align-items:center;justify-content:center;padding:40rpx}
+.tt-modal{width:100%;max-width:600rpx;background:#fff;border-radius:26rpx;padding:34rpx 32rpx 28rpx}
+.tt-modal-title{font-size:29rpx;font-weight:700;color:#18212b;margin-bottom:24rpx}
+.tt-field{margin-bottom:20rpx}
+.tt-field-label{display:block;margin-bottom:10rpx;font-size:22rpx;color:#63707c;font-weight:600}
+.tt-field-input{height:80rpx;padding:0 24rpx;border:1rpx solid #e5ebf0;border-radius:16rpx;font-size:26rpx;color:#1b252e;background:#fafbfc}
+.tt-compose-error{margin:-6rpx 0 14rpx;color:#c76156;font-size:22rpx}
+.tt-modal-btns{display:flex;gap:18rpx;margin-top:26rpx}
+.tt-modal-btn{flex:1;height:82rpx;line-height:82rpx;text-align:center;border-radius:40rpx;font-size:26rpx;font-weight:600}
+.tt-modal-btn.cancel{background:#f2f5f8;color:#63707c}
+.tt-modal-btn.ok{background:#3476f6;color:#fff}
+.tt-modal-btn.ok.disabled{opacity:.6}
+
+/* 恢复默认作息：清掉学生本地覆盖 */
+.tt-reset{margin:16rpx auto 0;padding:12rpx 28rpx;width:max-content;border-radius:24rpx;background:#f0f2f4;color:#5d6875;font-size:23rpx}
+.tt-reset:active{background:#e4e8ec}

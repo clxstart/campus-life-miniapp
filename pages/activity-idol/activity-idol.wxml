@@ -1,0 +1,71 @@
+
+<view class="idol-page">
+  <!-- 自定义导航 -->
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px">
+    <view class="back" catchtap="goBack">‹</view>
+    <view class="nav-title">校园人气王</view>
+  </view>
+  <offline-banner />
+
+  <!-- 活动头图 -->
+  <view class="idol-hero">
+    <view class="hero-glow glow-a"></view>
+    <view class="hero-glow glow-b"></view>
+    <text class="idol-eyebrow">CAMPUS IDOL · 2026 秋季赛</text>
+    <text class="idol-hero-title">校草校花评选</text>
+    <view class="idol-chips">
+      <text class="idol-chip live">投票进行中</text>
+      <text class="idol-chip" wx:if="{{countdown}}">{{countdown}}</text>
+    </view>
+    <view class="idol-stats">
+      <view class="idol-stat"><text class="num">{{stats.contestants}}</text><text class="label">人参选</text></view>
+      <view class="stat-divider"></view>
+      <view class="idol-stat"><text class="num">{{stats.votes}}</text><text class="label">累计票数</text></view>
+      <view class="stat-divider"></view>
+      <view class="idol-stat"><text class="num">1</text><text class="label">每人每选手限投</text></view>
+    </view>
+  </view>
+
+  <!-- 分组 tab -->
+  <view class="idol-tabs">
+    <view class="idol-tab {{gender === 2 ? 'active' : ''}}" bindtap="switchGender" data-gender="2">校花组</view>
+    <view class="idol-tab {{gender === 1 ? 'active' : ''}}" bindtap="switchGender" data-gender="1">校草组</view>
+  </view>
+
+  <!-- 选手卡片 -->
+  <view class="idol-grid">
+    <view wx:for="{{contestants}}" wx:key="id" class="idol-card">
+      <view class="idol-photo-wrap">
+        <image class="idol-photo" src="{{item.photo}}" mode="aspectFill" />
+        <view wx:if="{{item.rank <= 3}}" class="idol-rank r{{item.rank}}">TOP{{item.rank}}</view>
+      </view>
+      <view class="idol-info">
+        <text class="idol-name">{{item.name}}</text>
+        <text class="idol-college">{{item.college}}</text>
+        <text class="idol-slogan">{{item.slogan}}</text>
+        <view class="idol-card-bottom">
+          <text class="idol-votes">{{item.voteCount}} 票</text>
+          <view class="idol-vote-btn {{item.voted ? 'voted' : ''}}" catchtap="onVote" data-index="{{index}}">
+            {{item.voted ? '已投' : '投TA'}}
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view wx:if="{{!loading && !contestants.length}}" class="idol-empty">暂无选手，快来报名抢占首位</view>
+  <view wx:if="{{loading}}" class="idol-empty">选手加载中…</view>
+
+  <!-- 活动规则 -->
+  <view class="idol-rules">
+    <text class="rules-title">活动规则</text>
+    <text class="rules-item">1. 活动时间 10.10 - 10.31，得票最高者获「校园人气王」称号与定制周边礼盒</text>
+    <text class="rules-item">2. 每人给同一位选手限投 1 票，票数实时更新</text>
+    <text class="rules-item">3. 参选照片须为本人在校照片，严禁刷票，违者取消资格</text>
+  </view>
+  <view class="bottom-pad"></view>
+
+  <!-- 报名入口 -->
+  <view class="idol-join-fab" bindtap="goJoin">＋ 我要报名</view>
+</view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

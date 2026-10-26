@@ -1,0 +1,100 @@
+<!-- 领养页：顶部学校 + 中间场景选蛋 + 底部性格与确认 -->
+<nav-bar title="领养搭子" back="/pages/campus-home/campus-home" />
+
+<view class="cp-page cp-page--flush adopt">
+
+  <!-- 顶部 -->
+  <view class="adopt-head">
+    <text class="cp-hint">{{schoolName}}</text>
+    <text class="cp-page-title adopt-title">领一位校园搭子</text>
+    <text class="cp-hint adopt-sub">选一个合眼缘的小家伙，它会陪你度过这个学期</text>
+  </view>
+
+  <!-- 中间：场景 + 可选宠物蛋 -->
+  <view class="adopt-stage">
+    <pet-stage
+      appearance="{{previewAppearance}}"
+      motion="idle"
+      size="{{220}}"
+      compact="{{false}}"
+      bubble="{{true}}"
+    >
+      <view slot="bubble" class="adopt-bubble">
+        <text class="adopt-bubble-text">{{currentHint}}</text>
+      </view>
+    </pet-stage>
+
+    <!-- 三个候选：抽签前能看到预览，不是纯随机 -->
+    <view class="egg-row">
+      <view
+        wx:for="{{candidates}}"
+        wx:key="key"
+        class="egg {{selected === index ? 'egg--on' : ''}}"
+        data-index="{{index}}"
+        bindtap="onSelect"
+      >
+        <pet-avatar appearance="{{item.appearance}}" size="{{58}}" />
+        <text class="egg-name">{{item.name}}</text>
+        <!-- 选中：边框 + 勾 + 文字三重表达 -->
+        <text class="egg-check" wx:if="{{selected === index}}">✓</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部 -->
+  <view class="adopt-foot">
+    <view class="cp-card adopt-card">
+      <text class="cp-card-title">{{current.name}}</text>
+      <text class="cp-body adopt-desc">{{current.desc}}</text>
+
+      <!-- 性格：标签式，带勾 -->
+      <view class="persona-row">
+        <view
+          wx:for="{{personas}}"
+          wx:key="id"
+          class="persona {{persona === item.id ? 'cp-selected' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onPersona"
+        >
+          <text class="persona-text">{{item.name}}</text>
+          <text class="persona-check" wx:if="{{persona === item.id}}">✓</text>
+        </view>
+      </view>
+    </view>
+
+    <t-button
+      theme="primary"
+      size="large"
+      block
+      loading="{{submitting}}"
+      disabled="{{submitting}}"
+      bind:tap="onAdopt"
+      class="adopt-btn"
+    >就选它啦</t-button>
+
+    <text class="cp-hint adopt-tip">领养后可以在「捏脸」里随时换外观</text>
+  </view>
+
+  <!-- 破壳演出（图片 + CSS 动画，跳过入口常驻） -->
+  <t-popup visible="{{hatching}}" placement="center" bind:visible-change="onPopupChange">
+    <view class="hatch hatch--{{hatchStage}}">
+      <view class="hatch-stage">
+        <!-- 蛋壳上半 -->
+        <view class="hatch-shell hatch-shell--top"></view>
+        <!-- 宠物 -->
+        <image
+          class="hatch-pet"
+          src="{{hatchImage}}"
+          mode="aspectFit"
+          style="filter:{{hatchFilter}};"
+        />
+        <!-- 蛋壳下半 -->
+        <view class="hatch-shell hatch-shell--bottom"></view>
+      </view>
+      <text class="hatch-title">{{hatchTitle}}</text>
+      <t-button theme="light" size="medium" bind:tap="onSkipHatch">跳过</t-button>
+    </view>
+  </t-popup>
+</view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

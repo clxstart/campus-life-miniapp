@@ -1,0 +1,45 @@
+<!-- 宠物互动页
+     形象固定为小橘猫（成套动画贴图，无法换装），所以这里不是捏脸，
+     而是让它表演五个动作 + 摸头互动 -->
+<nav-bar title="小橘" back="/pages/campus-home/campus-home" />
+
+<view class="cp-page cp-page--flush appear">
+  <view class="appear-head">
+    <text class="cp-hint appear-sub">点它一下，或者让它做点什么</text>
+  </view>
+
+  <!-- 舞台 -->
+  <pet-stage
+    appearance="{{appearance}}"
+    motion="{{previewMotion}}"
+    size="{{240}}"
+    reduce-motion="{{reduceMotion}}"
+    bind:pettap="onPetTap"
+  />
+
+  <!-- 动作选择：对应引擎的五个动作 -->
+  <view class="appear-panel">
+    <text class="cp-hint action-label">让它试试</text>
+    <view class="action-grid">
+      <view
+        wx:for="{{actions}}"
+        wx:key="key"
+        class="action-btn {{currentAction === item.key ? 'cp-selected' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onAction"
+      >
+        <text class="action-icon">{{item.icon}}</text>
+        <text class="action-name">{{item.name}}</text>
+        <text class="action-check" wx:if="{{currentAction === item.key}}">✓</text>
+      </view>
+    </view>
+
+    <view class="appear-tip">
+      <text class="cp-hint">{{tip}}</text>
+    </view>
+  </view>
+
+  <t-toast id="t-toast" />
+</view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

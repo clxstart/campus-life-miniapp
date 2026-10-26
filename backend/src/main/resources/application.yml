@@ -1,0 +1,80 @@
+server:
+  port: ${CAMPUS_PORT:8080}
+  # 生产环境建议：Tomcat 最大线程数（默认 200 够用，高并发可调至 300）
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    accept-count: 200
+    max-connections: 8192
+
+spring:
+  # 没显式指定 profile 时按 dev 跑（等价于原来的「本机默认配置」）。
+  # 生产部署必须显式：--spring.profiles.active=prod
+  profiles:
+    default: dev
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 连接池：默认 10 个撑不住 1000 同时在线，按 4C4G 机器调到 25
+    # 计算依据：单请求占用时长约 20ms，25 连接 ≈ 1250 QPS 上限
+    hikari:
+      maximum-pool-size: 25
+      minimum-idle: 5
+      connection-timeout: 10000      # 获取连接超时 10s
+      idle-timeout: 600000           # 空闲连接 10 分钟回收
+      max-lifetime: 1800000          # 连接最长存活 30 分钟（小于 MySQL wait_timeout）
+      connection-test-query: SELECT 1
+  jackson:
+    time-zone: Asia/Shanghai
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+
+# 本文件只放「与环境无关」的开关与默认值；
+# 数据库地址、密钥、回调域名这类东西一律放 application-{dev,prod}.yml。
+campus:
+  auth:
+    # 写接口与「我的数据」接口是否强制校验 token。
+    # 关掉会退回「谁传 userId 就代表谁」的旧行为（任何人可冒充任意用户），只允许本机调试时临时关闭。
+    enforce: ${CAMPUS_AUTH_ENFORCE:true}
+  jwt:
+    ttl-seconds: 604800
+    # 管理端 token 有效期：8 小时（比小程序短，管理权限更敏感）
+    admin-ttl-seconds: 28800
+  web:
+    # 管理端（web/）跨域白名单，逗号分隔，支持 http://127.0.0.1:* 这种端口通配。
+    # 部署到真实域名后必须换成自己的前端域名，否则浏览器会拦掉所有接口。
+    allowed-origins: ${CAMPUS_WEB_ORIGINS:http://127.0.0.1:*,http://localhost:*}
+  pay:
+    # 微信支付未开启时，是否允许「模拟支付」把订单直接标记为已付款。
+    # 只用于本地演示：prod profile 下代码会拒绝模拟支付，写 true 也没用。
+    simulate: ${CAMPUS_PAY_SIMULATE:true}
+  wx:
+    appid: ${CAMPUS_WX_APPID:}
+    secret: ${CAMPUS_WX_SECRET:}
+  upload:
+    dir: ${CAMPUS_UPLOAD_DIR:uploads}
+    public-prefix: /uploads
+    # 上传接口返回的图片基址：必须是小程序可访问的 http(s) 地址
+    base-url: ${CAMPUS_UPLOAD_BASE_URL:http://127.0.0.1:8080}
+
+# 微信支付：下单 + 退款 + 退款回调的唯一配置源
+# （历史上存在过 campus.wxpay 第二套前缀，两套 enabled 开关会拼出「能下单不能退款」的半配置状态，已合并）
+wxpay:
+  enabled: ${WXPAY_ENABLED:false}
+  app-id: ${WXPAY_APP_ID:}
+  mch-id: ${WXPAY_MCH_ID:}
+  api-v3-key: ${WXPAY_API_V3_KEY:}
+  cert-serial-no: ${WXPAY_CERT_SERIAL_NO:}
+  private-key-path: ${WXPAY_PRIVATE_KEY_PATH:}
+  notify-url: ${WXPAY_NOTIFY_URL:https://your-domain.example/api/pay/notify}
+  refund-notify-url: ${WXPAY_REFUND_NOTIFY_URL:https://your-domain.example/api/pay/refund/notify}
+  sandbox: false

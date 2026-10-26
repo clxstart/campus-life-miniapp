@@ -1,0 +1,36 @@
+<view class="cal-page">
+  <!-- 自定义导航：与帖子详情页同款 -->
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px">
+    <view class="back" catchtap="goBack">‹</view>
+    <view class="nav-title">校历</view>
+  </view>
+  <offline-banner local="{{offline}}" />
+
+  <view wx:if="{{loading}}" class="cal-state">正在加载校历…</view>
+  <view wx:if="{{error}}" class="cal-state" bindtap="loadCalendar">{{error}} · 点击重试</view>
+  <view class="cal-hero" wx:if="{{!loading && !error}}">
+    <text class="cal-term">{{termLabel}}</text>
+    <text class="cal-week">第{{weekNo}}教学周 · {{headline}}</text>
+    <view class="cal-bar"><view class="cal-bar-inner" style="width:{{progress}}%"></view></view>
+    <view class="cal-bar-meta"><text>{{termStartLabel}} 开学</text><text>已过 {{progress}}%</text><text>{{termEndLabel}} 放假</text></view>
+  </view>
+
+  <view class="cal-list" wx:if="{{!loading && !error}}">
+    <view wx:for="{{events}}" wx:key="title" class="cal-item">
+      <view class="cal-rail">
+        <view class="cal-dot {{item.status}}"></view>
+        <view wx:if="{{index < events.length - 1}}" class="cal-line"></view>
+      </view>
+      <view class="cal-card">
+        <view class="cal-card-top">
+          <text class="cal-title">{{item.title}}</text>
+          <text class="cal-chip {{item.status}}">{{item.statusLabel}}</text>
+        </view>
+        <text class="cal-date">{{item.dateLabel}}</text>
+        <text class="cal-note">{{item.note}}</text>
+      </view>
+    </view>
+  </view>
+</view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

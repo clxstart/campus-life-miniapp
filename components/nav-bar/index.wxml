@@ -1,0 +1,22 @@
+<!-- nav-bar：自定义返回导航
+     项目页面均为 navigationStyle: custom，没有原生返回按钮，
+     故统一用本组件提供返回入口 + 右侧胶囊位留白 -->
+<view class="navbar" style="padding-top:{{statusBarHeight}}px;">
+  <view class="navbar-inner" style="height:{{navHeight}}px;">
+    <!-- 左：返回 -->
+    <view class="navbar-left" bindtap="onBack" hover-class="navbar-left--hover">
+      <text class="navbar-back">‹</text>
+    </view>
+
+    <!-- 中：标题 -->
+    <view class="navbar-center">
+      <text class="navbar-title">{{title}}</text>
+    </view>
+
+    <!-- 右：占位，避开微信胶囊按钮 -->
+    <view class="navbar-right" style="width:{{capsuleWidth}}px;"></view>
+  </view>
+</view>
+
+<!-- 占位：避免固定导航遮住内容 -->
+<view wx:if="{{placeholder}}" style="height:{{statusBarHeight + navHeight}}px;"></view>

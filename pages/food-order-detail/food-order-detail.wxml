@@ -1,0 +1,26 @@
+<view class="track-page">
+  <view class="track-nav"><view class="back" bindtap="goBack">‹</view><text>订单详情</text><view class="nav-action" bindtap="refresh">刷新</view></view>
+  <offline-banner />
+  <view wx:if="{{loading}}" class="track-state">正在获取订单状态…</view>
+  <view wx:elif="{{error}}" class="track-state"><text class="error">{{error}}</text><view class="refresh" bindtap="refresh">重新加载</view></view>
+  <block wx:elif="{{order}}">
+    <view class="status-block">
+      <view class="status-mark">{{order.status==='completed'?'✓':'·'}}</view>
+      <text class="status-title">{{statusTitle}}</text>
+      <text class="status-hint">{{statusHint}}</text>
+    </view>
+    <view class="section">
+      <text class="section-title">配送信息</text>
+      <view class="info-row"><text class="label">订单编号</text><text class="value">#{{order.id}}</text></view>
+      <view class="info-row"><text class="label">取餐店铺</text><text class="value">{{order.shopName}}</text></view>
+      <view class="info-row"><text class="label">店铺地址</text><text class="value">{{order.shopAddress||'店铺地址待补充'}}</text></view>
+      <view class="info-row"><text class="label">送达地址</text><text class="value">{{order.address}}</text></view>
+      <view wx:if="{{order.contactName}}" class="info-row"><text class="label">收件人</text><text class="value">{{order.contactName}} {{order.contactPhone}}</text></view>
+      <view wx:if="{{order.riderName}}" class="rider-row"><view><text class="label">配送骑手</text><text class="rider-name">{{order.riderName}}</text></view><text class="value">{{order.riderPhone}}</text></view>
+    </view>
+    <view class="section"><text class="section-title">订单商品</text><text class="items">{{itemSummary||'暂无商品明细'}}</text><view class="fee-row"><text>配送费</text><text>¥{{order.deliveryFee}}</text></view></view>
+    <view wx:if="{{offline}}" class="offline-note">当前为离线演示订单</view>
+  </block>
+</view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

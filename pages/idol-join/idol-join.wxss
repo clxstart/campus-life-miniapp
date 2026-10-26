@@ -1,0 +1,37 @@
+.join-page{min-height:100vh;background:#fff5f8;box-sizing:border-box;padding-bottom:80rpx}
+.nav{box-sizing:content-box;display:flex;align-items:center;padding:0 32rpx;background:#fff5f8
+  box-shadow: 0 2rpx 0 #eef1f4; /* 白导航压在浅底上，加分隔线否则边界看不清 */
+}
+.nav-title{font-size:36rpx;font-weight:700;color:#3d1f2e}
+.back{flex:none;margin-right:20rpx;padding:0 10rpx;font-size:40rpx;font-weight:400;color:#3d1f2e}
+
+.join-hero{margin:14rpx 32rpx 0;padding:26rpx 28rpx;border-radius:24rpx;background:linear-gradient(135deg,#ffe9f2 0%,#fff0e9 52%,#f3ecff 100%);box-shadow:0 8rpx 24rpx rgba(240,96,143,.12)}
+.join-hero-title{display:block;font-size:32rpx;line-height:44rpx;font-weight:800;color:#3d1f2e}
+.join-hero-sub{display:block;margin-top:8rpx;font-size:17rpx;line-height:26rpx;color:#a08390}
+
+.join-card{margin:20rpx 32rpx 0;padding:26rpx 26rpx 30rpx;border-radius:24rpx;background:#ffffff;box-shadow:0 6rpx 20rpx rgba(120,70,90,.06)}
+
+/* 照片：3:4 竖版，居中 */
+.join-photo{position:relative;width:375rpx;height:500rpx;margin:0 auto;border-radius:20rpx;overflow:hidden;background:#fbeef3;border:2rpx dashed #f0c2d2}
+.join-photo-img{width:100%;height:100%}
+.join-photo-add{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#c98aa4}
+.join-photo-add .plus{font-size:64rpx;line-height:70rpx;font-weight:300}
+.join-photo-add .tip{margin-top:10rpx;font-size:20rpx;font-weight:600}
+.join-photo-add .sub{margin-top:6rpx;font-size:16rpx;color:#d9aec0}
+.join-photo-edit{position:absolute;left:0;right:0;bottom:0;padding:14rpx 0;text-align:center;background:rgba(61,31,46,.55);color:#ffffff;font-size:18rpx}
+
+.join-label{display:block;margin-top:26rpx;font-size:20rpx;font-weight:600;color:#3d1f2e}
+.join-label:first-of-type{margin-top:28rpx}
+
+/* 组别分段选择 */
+.join-segment{margin-top:14rpx;padding:6rpx;border-radius:22rpx;background:#fbeef3;display:flex}
+.join-seg{flex:1;height:60rpx;line-height:60rpx;text-align:center;border-radius:18rpx;font-size:21rpx;font-weight:600;color:#b18d9c}
+.join-seg.active{background:linear-gradient(135deg,#ff9fbe,#f0608f);color:#ffffff}
+
+.join-input{margin-top:14rpx;height:74rpx;padding:0 22rpx;box-sizing:border-box;border-radius:18rpx;background:#fbeef3;font-size:21rpx;color:#3d1f2e}
+.join-placeholder{color:#d9aec0}
+
+.join-submit{display:block;width:100%;height:80rpx;margin:34rpx auto 0;padding:0;border-radius:40rpx;background:linear-gradient(135deg,#ff9fbe,#f0608f);color:#ffffff;font-size:24rpx;font-weight:700;line-height:80rpx;box-shadow:0 10rpx 24rpx rgba(240,96,143,.32)}
+.join-submit:after{border:0}
+.join-submit[disabled]{opacity:.75;color:#ffffff}
+.join-note{display:block;margin-top:14rpx;text-align:center;font-size:15rpx;color:#c9a8b6}

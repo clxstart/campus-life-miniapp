@@ -1,0 +1,62 @@
+<page-meta page-style="background:#F3F6FA;" />
+<view class="chat-page">
+  <view class="chat-navbar" style="padding-top: {{statusBarHeight}}px;">
+    <view class="chat-navbar-row" style="height: {{navBarHeight}}px; padding-right: {{capsuleReservedRight}}px;">
+      <view class="back-button" bindtap="goBack">‹</view>
+      <view class="chat-title-wrap">
+        <text class="chat-name">{{name}}</text>
+        <text class="chat-status">{{offline ? '本机演示' : (muted ? '已开启免打扰' : '校园私信')}}</text>
+      </view>
+      <view class="more-button" bindtap="more">•••</view>
+    </view>
+  </view>
+  <offline-banner local="{{offline}}" />
+
+  <scroll-view class="message-scroll" style="height:calc(100vh - {{statusBarHeight + navBarHeight}}px - 150rpx - env(safe-area-inset-bottom));" scroll-y scroll-into-view="{{scrollTo}}" enhanced>
+    <view wx:if="{{hasMore}}" class="chat-date" bindtap="loadOlder">加载更早消息</view>
+    <view wx:if="{{loading}}" class="chat-date">正在加载…</view>
+    <view wx:if="{{error}}" class="chat-date" bindtap="retry">{{error}} · 点击重试</view>
+    <view wx:if="{{!loading && !error && !messages.length}}" class="chat-date">还没有消息，打个招呼吧</view>
+    <view wx:for="{{messages}}" wx:key="id" id="message-{{item.id}}" class="message-row {{item.mine ? 'mine' : 'theirs'}}">
+      <view wx:if="{{!item.mine}}" class="chat-avatar" style="background:{{color}}">{{avatar}}</view>
+      <view class="message-bubble {{item.type === 'image' ? 'image-bubble' : ''}}">
+        <text wx:if="{{item.type === 'text'}}">{{item.content}}</text>
+        <image wx:else src="{{item.image}}" mode="aspectFill" />
+      </view>
+      <text wx:if="{{item.offline && item.mine}}" class="local-label">仅本机</text>
+    </view>
+    <view id="message-end" class="message-end"></view>
+  </scroll-view>
+
+  <view class="chat-composer">
+    <view class="voice-button">⌁</view>
+    <input class="message-input" value="{{inputValue}}" placeholder="发消息…" maxlength="1000" disabled="{{sending}}" confirm-type="send" bindinput="inputMessage" bindconfirm="sendMessage" />
+    <view class="emoji-button">☺</view>
+    <view class="send-button {{inputValue ? 'ready' : ''}}" bindtap="sendMessage">{{sending ? '保存中' : '发送'}}</view>
+    <view class="composer-safe"></view>
+  </view>
+
+  <ui-popup
+    id="ui-popup"
+    visible="{{uiPopup.visible}}"
+    mode="{{uiPopup.mode}}"
+    tone="{{uiPopup.tone}}"
+    title="{{uiPopup.title}}"
+    message="{{uiPopup.message}}"
+    editable="{{uiPopup.editable}}"
+    placeholder="{{uiPopup.placeholder}}"
+    inputValue="{{uiPopup.inputValue}}"
+    actions="{{uiPopup.actions}}"
+    show-cancel="{{uiPopup.showCancel}}"
+    cancel-text="{{uiPopup.cancelText}}"
+    confirm-text="{{uiPopup.confirmText}}"
+    bindconfirm="onPopupConfirm"
+    bindcancel="onPopupCancel"
+    bindaction="onPopupAction"
+    bindinput="onPopupInput"
+    bindclose="onPopupClose"
+  />
+</view>
+
+<!-- 全局悬浮宠物（抬高避开输入框） -->
+<pet-float bottom="220" />

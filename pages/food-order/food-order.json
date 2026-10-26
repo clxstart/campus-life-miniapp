@@ -1,0 +1,10 @@
+{
+  "navigationStyle": "custom",
+  "enablePullDownRefresh": false,
+  "backgroundColor": "#F7F9FC",
+  "navigationBarTitleText": "确认订单",
+  "usingComponents": {
+    "ui-popup": "/components/ui-popup/index",
+    "pet-float": "/components/pet-float/index"
+  }
+}

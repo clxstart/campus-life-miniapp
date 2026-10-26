@@ -1,0 +1,42 @@
+<!-- chat-message：一条消息。宠物消息=卡片底色，用户消息=浅绿，正文自然换行 -->
+<view class="msg msg--{{role}}">
+  <!-- 宠物头像 -->
+  <view class="msg-avatar" wx:if="{{role === 'pet'}}">
+    <pet-avatar appearance="{{appearance}}" size="{{48}}" crop="{{true}}" />
+  </view>
+
+  <view class="msg-main">
+    <!-- 发送者标识 -->
+    <view class="msg-meta" wx:if="{{role === 'pet'}}">
+      <text class="msg-name">{{petName}}</text>
+      <text class="msg-badge">AI</text>
+    </view>
+
+    <!-- 正文：不做固定高度，长文自然换行 -->
+    <view class="msg-bubble">
+      <text class="msg-text" user-select>{{content}}</text>
+      <!-- 发送中 -->
+      <view class="msg-typing" wx:if="{{status === 'sending'}}">
+        <view class="dot"></view><view class="dot"></view><view class="dot"></view>
+      </view>
+    </view>
+
+    <!-- 校园数据结果卡片 -->
+    <campus-result-card
+      wx:if="{{result}}"
+      result="{{result}}"
+      bind:open="onOpenResult"
+    />
+
+    <!-- 失败与重试 -->
+    <view class="msg-fail" wx:if="{{status === 'failed'}}">
+      <text class="msg-fail-text">{{failReason || '发送失败'}}</text>
+      <text class="msg-retry" catchtap="onRetry">重试</text>
+    </view>
+
+    <!-- Mock 演示标记 -->
+    <view class="msg-mock" wx:if="{{mock}}">
+      <text class="msg-mock-text">演示数据 · 未连接真实模型</text>
+    </view>
+  </view>
+</view>

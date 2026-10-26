@@ -1,0 +1,60 @@
+<page-meta page-style="background:#FCFCFC;" />
+<view class="search-page">
+  <view class="search-navbar" style="padding-top:{{statusBarHeight}}px;">
+    <view class="search-navbar-row" style="height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px;">
+      <view class="back" bindtap="goBack">‹</view>
+      <view class="search-box">
+        <image src="/assets/icons/search.svg" mode="aspectFit" />
+        <input value="{{draft}}" placeholder="搜帖子、圈子、闲置、活动…" maxlength="64" confirm-type="search" bindinput="inputKeyword" bindconfirm="submitSearch" />
+      </view>
+      <text class="search-submit" bindtap="submitSearch">搜索</text>
+    </view>
+  </view>
+  <offline-banner local="{{offline}}" />
+
+  <!-- 分类 Tab：显示各类命中数，点按只看某一类 -->
+  <scroll-view wx:if="{{searched}}" class="type-tabs" scroll-x enhanced show-scrollbar="{{false}}">
+    <view class="type-tab-row">
+      <view
+        wx:for="{{tabs}}"
+        wx:key="key"
+        class="type-tab {{activeTab === index ? 'selected' : ''}}"
+        data-index="{{index}}"
+        bindtap="switchTab"
+      >{{item.label}}<text wx:if="{{item.key !== 'all' && counts[item.key]}}" class="type-count">{{counts[item.key]}}</text></view>
+    </view>
+  </scroll-view>
+
+  <view class="result-caption" wx:if="{{searched}}">“{{keyword}}” · 共 {{total}} 条结果</view>
+  <view class="search-state" wx:if="{{!searched}}">输入关键词，发现校园里的新鲜事</view>
+  <view class="search-state" wx:elif="{{!loading && !error && !cards.length}}">没有找到相关内容，试试其他关键词吧</view>
+
+  <view
+    wx:for="{{cards}}"
+    wx:key="key"
+    class="result-card"
+    data-key="{{item.key}}"
+    bindtap="openCard"
+  >
+    <view class="card-head">
+      <text class="type-badge {{item.type}}">{{item.typeLabel}}</text>
+      <text wx:if="{{item.author}}" class="card-author">{{item.author}}</text>
+    </view>
+    <view class="card-body">
+      <view class="card-copy">
+        <view class="title">{{item.title}}</view>
+        <view wx:if="{{item.desc}}" class="summary">{{item.desc}}</view>
+        <view class="card-meta">{{item.meta}}</view>
+      </view>
+      <image wx:if="{{item.image}}" class="card-image" src="{{item.image}}" mode="aspectFill" />
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="search-state">正在搜索…</view>
+  <view wx:elif="{{error}}" class="search-state"><text class="error-text">{{error}}</text><view class="retry" bindtap="retry">重新加载</view></view>
+  <view wx:elif="{{hasMore}}" class="load-more" bindtap="loadMore">加载更多</view>
+
+  <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" editable="{{uiPopup.editable}}" placeholder="{{uiPopup.placeholder}}" inputValue="{{uiPopup.inputValue}}" actions="{{uiPopup.actions}}" show-cancel="{{uiPopup.showCancel}}" confirm-text="{{uiPopup.confirmText}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose" />
+</view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

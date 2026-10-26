@@ -1,0 +1,43 @@
+<view class="community-page">
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px"><view class="back" catchtap="goBack">‹</view><view class="nav-title">校园论坛</view><view class="scope-switch"><view class="scope-opt {{postScope==='local'?'on':''}}" data-scope="local" catchtap="switchPostScope">本校</view><view class="scope-opt {{postScope==='all'?'on':''}}" data-scope="all" catchtap="switchPostScope">全部</view></view><view class="post-entry" catchtap="openPublish">发帖 <text>＋</text></view></view>
+  <offline-banner local="{{offline}}" />
+  <view wx:if="{{offline}}" class="offline">离线演示模式 · 接入后端即可同步真实帖子</view>
+  <!-- 狐友式大号主tab：active加粗变黑，无下划线 -->
+  <scroll-view class="tabs" scroll-x="true" enhanced="true" show-scrollbar="false"><view class="tab-row"> <view wx:for="{{tabs}}" wx:key="*this" class="tab {{activeTab===index?'active':''}}" data-index="{{index}}" catchtap="onTabTap">{{item}}</view></view></scroll-view>
+  <!-- 通栏白底feed，帖子之间只有一条细分割线 -->
+  <scroll-view class="feed" scroll-y="true" enable-back-to-top="true">
+    <view wx:if="{{!posts.length && !loading}}" class="empty">{{activeTab===0?'还没有关注的动态，去推荐里关注感兴趣的人吧':'暂时没有帖子，来发布第一条吧'}}</view>
+    <view wx:for="{{posts}}" wx:key="id" class="card">
+      <!-- 作者行：点头像/昵称 → 个人主页；右侧小号关注胶囊 -->
+      <view class="author-row">
+        <view class="author-left" data-author-id="{{item.authorId}}" catchtap="openAuthor">
+          <image wx:if="{{item.authorAvatar}}" class="avatar" src="{{item.authorAvatar}}" mode="aspectFill"/>
+          <view wx:else class="avatar fallback">{{item.avatarText}}</view>
+          <view class="author-meta"><text class="nickname">{{item.authorNickname}}</text><text class="time">{{item.createdAt}}</text></view>
+        </view>
+        <view class="follow {{item.followed?'following':''}}" data-index="{{index}}" catchtap="onFollow">{{item.followed?'已关注':'＋ 关注'}}</view>
+      </view>
+      <!-- 正文大字：标题粗体+正文近黑 -->
+      <view class="title" data-id="{{item.id}}" catchtap="openDetail">{{item.title}}</view>
+      <view class="summary" data-id="{{item.id}}" catchtap="openDetail">{{item.content}}</view>
+      <!-- 单图固定3:2裁切 -->
+      <image wx:if="{{item.image}}" class="post-image" src="{{item.image}}" mode="aspectFill" data-id="{{item.id}}" catchtap="openDetail"/>
+      <!-- 话题蓝字可点 -->
+      <view wx:if="{{item.tag}}" class="topic" data-id="{{item.id}}" catchtap="openDetail"># {{item.tag}}</view>
+      <view wx:if="{{item.location}}" class="location">⌖ {{item.location}}</view>
+      <!-- 互动条：转发/评论/赞 三等分居中，扁平无框 -->
+      <view class="actions">
+        <button class="action share-btn" open-type="share" data-id="{{item.id}}"><text class="icon">↗</text> 转发</button>
+        <view class="action" data-id="{{item.id}}" catchtap="openDetail"><text class="icon">◌</text> {{item.commentCount||0}}</view>
+        <view class="action" data-id="{{item.id}}" catchtap="onLike"><text class="icon {{item.liked?'liked':''}}">♥</text> {{item.likeCount||0}}</view>
+      </view>
+    </view>
+    <view wx:if="{{loading}}" class="loading">正在加载…</view>
+    <view class="feed-end"></view>
+  </scroll-view>
+  <view class="fab" catchtap="openPublish"><text>＋</text><label>发帖</label></view>
+</view>
+
+<ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" editable="{{uiPopup.editable}}" placeholder="{{uiPopup.placeholder}}" inputValue="{{uiPopup.inputValue}}" actions="{{uiPopup.actions}}" show-cancel="{{uiPopup.showCancel}}" confirm-text="{{uiPopup.confirmText}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose" />
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

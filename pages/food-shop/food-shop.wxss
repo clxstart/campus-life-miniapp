@@ -1,0 +1,34 @@
+@import '../../utils/food.wxss';
+.shop-page{height:100vh;min-height:0;display:flex;flex-direction:column;padding-bottom:calc(150rpx + env(safe-area-inset-bottom))}
+.shop-head{flex:none;margin:18rpx 28rpx 22rpx;padding:24rpx;display:flex;flex-wrap:wrap;gap:18rpx}
+.head-cover{width:112rpx;height:112rpx;border-radius:18rpx;flex:none}
+.head-main{flex:1;min-width:0}
+.head-title{display:block;font-size:34rpx;line-height:46rpx}
+.head-delivery{display:block;color:#7F9188;font-size:20rpx;margin:7rpx 0 12rpx;line-height:1.6}
+.notice{width:100%;font-size:21rpx;line-height:1.6;color:#98A2AC;border-top:1rpx solid #F0F4F1;padding-top:14rpx}
+.rest-notice{width:100%;border-radius:9rpx;background:#f1f3f1;color:#68766d;padding:12rpx 16rpx;font-size:20rpx}
+.menu-layout{flex:1;min-height:0;display:flex;overflow:hidden;background:#fff;margin:0 28rpx;border-radius:22rpx}
+.category-rail{width:154rpx;height:100%;flex:none;background:#EFF5F0}
+.menu-category{position:relative;padding:30rpx 14rpx;text-align:center;font-size:23rpx;color:#788A80;line-height:1.5}
+.menu-category.selected{background:#fff;color:#249B70;font-weight:700}
+.menu-category.selected::before{content:'';position:absolute;width:6rpx;height:32rpx;left:0;top:50%;margin-top:-16rpx;background:#249B70;border-radius:0 6rpx 6rpx 0}
+.goods-scroll{flex:1;width:0;height:100%}
+.goods-heading{padding:24rpx 20rpx 4rpx;font-size:27rpx}
+.goods-card{display:flex;gap:16rpx;margin:0 20rpx;padding:24rpx 0;border-bottom:1rpx solid #F0F4F1}
+.goods-image{width:124rpx;height:140rpx;border-radius:16rpx;flex:none}
+.goods-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.goods-name{font-size:25rpx;line-height:36rpx}
+.goods-sales{font-size:19rpx;margin-top:8rpx}
+.goods-bottom{margin-top:auto;padding-top:12rpx;display:flex;justify-content:space-between;align-items:center;gap:6rpx;flex-wrap:wrap}
+.goods-price{font-size:27rpx}
+.quantity{display:flex;align-items:center;gap:8rpx}
+.plus,.minus{width:46rpx;height:46rpx;line-height:44rpx;text-align:center;border-radius:50%;font-size:29rpx}
+.plus{background:#249B70;color:#fff}
+.minus{border:2rpx solid #B8D8C8;color:#249B70;line-height:40rpx}
+.quantity-num{min-width:22rpx;text-align:center;font-size:23rpx}
+.cart-icon{position:relative;width:58rpx;flex:none}
+.basket{width:43rpx;height:30rpx;border:3rpx solid #D9F3E3;border-top-width:5rpx;border-radius:4rpx 4rpx 9rpx 9rpx;transform:skew(-8deg);margin-left:6rpx}
+.basket-line{width:3rpx;height:18rpx;margin:3rpx auto;background:#D9F3E3}
+.wheel-row{display:flex;justify-content:space-between;width:32rpx;margin:5rpx 0 0 11rpx}
+.wheel-row view{width:6rpx;height:6rpx;background:#D9F3E3;border-radius:50%}
+.cart-badge{position:absolute;right:-1rpx;top:-15rpx;min-width:32rpx;line-height:32rpx;padding:0 6rpx;text-align:center;border-radius:20rpx;background:#F0B765;color:#193D32;font-weight:700;font-size:19rpx}

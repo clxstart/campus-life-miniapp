@@ -1,0 +1,53 @@
+<!-- task-card：派遣任务卡，可展开，显示耗时/奖励/状态 -->
+<view class="tc {{expanded ? 'tc--open' : ''}} {{status === 'running' ? 'tc--running' : ''}}">
+  <!-- 头部：点击展开 -->
+  <view class="tc-head" bindtap="onToggle">
+    <view class="tc-title-wrap">
+      <text class="tc-title">{{task.title}}</text>
+      <text class="tc-status tc-status--{{status}}">{{statusLabel}}</text>
+    </view>
+    <text class="tc-caret">{{expanded ? '−' : '+'}}</text>
+  </view>
+
+  <!-- 展开：说明 + 预计耗时 + 奖励范围 -->
+  <view class="tc-body" wx:if="{{expanded}}">
+    <text class="tc-desc">{{task.description}}</text>
+
+    <view class="tc-meta">
+      <view class="tc-meta-item">
+        <text class="tc-meta-label">预计耗时</text>
+        <text class="tc-meta-value">{{task.durationMin}} 分钟</text>
+      </view>
+      <view class="tc-meta-item">
+        <text class="tc-meta-label">奖励范围</text>
+        <text class="tc-meta-value">{{task.rewardMin}}–{{task.rewardMax}} 积分</text>
+      </view>
+    </view>
+
+    <!-- 进行中：剩余时间（仅展示，是否可领由服务端判断） -->
+    <view class="tc-running" wx:if="{{status === 'running'}}">
+      <text class="tc-running-text">小云在路上 · 剩余 {{countdownText}}</text>
+    </view>
+
+    <!-- 操作 -->
+    <view class="tc-action">
+      <button
+        wx:if="{{status === 'idle'}}"
+        class="tc-btn tc-btn--primary"
+        catchtap="onStart"
+      >派它去</button>
+
+      <button
+        wx:elif="{{status === 'claimable'}}"
+        class="tc-btn tc-btn--primary"
+        catchtap="onClaim"
+      >领取奖励</button>
+
+      <button
+        wx:elif="{{status === 'claimed'}}"
+        class="tc-btn tc-btn--flat"
+        disabled
+      >已完成</button>
+    </view>
+  </view>
+</view>

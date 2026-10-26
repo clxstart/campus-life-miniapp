@@ -1,0 +1,52 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/campus-home/campus-home",
+    "pages/appearance/appearance",
+    "pages/discover/discover",
+    "pages/circle-detail/circle-detail",
+    "pages/circle-chat/circle-chat",
+    "pages/circle-publish/circle-publish",
+    "pages/community/community",
+    "pages/learn/learn",
+    "pages/learn-publish/learn-publish",
+    "pages/ai-chat/ai-chat",
+    "pages/post-detail/post-detail",
+    "pages/activity-idol/activity-idol",
+    "pages/idol-join/idol-join",
+    "pages/timetable/timetable",
+    "pages/calendar/calendar",
+    "pages/user-home/user-home",
+    "pages/messages/messages",
+    "pages/chat/chat",
+    "pages/publish/publish",
+    "pages/profile/profile",
+    "pages/food-list/food-list",
+    "pages/food-shop/food-shop",
+    "pages/food-order/food-order",
+    "pages/food-orders/food-orders",
+    "pages/food-order-detail/food-order-detail",
+    "pages/market-list/market-list",
+    "pages/market-detail/market-detail",
+    "pages/market-publish/market-publish",
+    "pages/jobs/jobs",
+    "pages/activities/activities",
+    "pages/search/search",
+    "pages/campus-offer/campus-offer",
+    "pages/adopt/adopt",
+    "pages/wardrobe/wardrobe",
+    "pages/dispatch/dispatch",
+    "pages/companion/companion"
+  ],
+  "window": {
+    "navigationStyle": "custom",
+    "backgroundColor": "#FCFCFC",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "usingComponents": {
+    "ui-popup": "/components/ui-popup/index",
+    "offline-banner": "/components/offline-banner/index"
+  },
+  "sitemapLocation": "sitemap.json"
+}

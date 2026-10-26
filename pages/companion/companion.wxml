@@ -1,0 +1,83 @@
+<!-- 聊天页：宠物头像 + AI 身份 + 消息流 + 输入区（适配键盘） -->
+<nav-bar title="和小橘聊天" back="/pages/campus-home/campus-home" />
+
+<view class="cp-page chat">
+
+  <!-- 顶部：头像 + 名称 + AI 身份 -->
+  <view class="chat-head">
+    <pet-avatar appearance="{{appearance}}" size="{{56}}" />
+    <view class="chat-head-info">
+      <text class="chat-head-name">{{petName}}</text>
+      <text class="chat-head-role">校园 AI 搭子 · 由模型生成回复</text>
+    </view>
+  </view>
+
+  <!-- 消息流 -->
+  <scroll-view
+    scroll-y
+    class="chat-body"
+    scroll-into-view="{{scrollTo}}"
+    scroll-with-animation
+    enhanced
+    show-scrollbar="{{false}}"
+  >
+    <view wx:for="{{messages}}" wx:key="id" id="msg-{{item.id}}">
+      <chat-message
+        role="{{item.role}}"
+        content="{{item.content}}"
+        status="{{item.status}}"
+        fail-reason="{{item.failReason}}"
+        mock="{{item.mock}}"
+        pet-name="{{petName}}"
+        appearance="{{appearance}}"
+        result="{{item.result}}"
+        bind:retry="onRetry"
+        data-id="{{item.id}}"
+        bind:openresult="onOpenResult"
+      />
+    </view>
+
+    <!-- 无结果 -->
+    <view class="chat-empty" wx:if="{{messages.length === 0}}">
+      <text class="cp-hint">问点关于校园的事吧，比如「今天二食堂有什么」</text>
+    </view>
+    <view style="height:24rpx;"></view>
+  </scroll-view>
+
+  <!-- 快捷提问 -->
+  <view class="chat-quick">
+    <view
+      wx:for="{{quickAsk}}"
+      wx:key="*this"
+      class="chat-quick-item"
+      data-text="{{item}}"
+      bindtap="onQuickAsk"
+    >
+      <text class="chat-quick-text">{{item}}</text>
+    </view>
+  </view>
+
+  <!-- 输入区 -->
+  <view class="chat-input" style="padding-bottom: calc(16rpx + env(safe-area-inset-bottom));">
+    <input
+      class="chat-input-box"
+      value="{{input}}"
+      placeholder="和小云聊聊…"
+      confirm-type="send"
+      adjust-position="{{true}}"
+      bindinput="onInput"
+      bindconfirm="onSend"
+      cursor-spacing="20"
+    />
+    <button
+      class="chat-send {{canSend ? '' : 'chat-send--off'}}"
+      disabled="{{!canSend}}"
+      bindtap="onSend"
+    >发送</button>
+  </view>
+
+  <t-toast id="t-toast" />
+</view>
+
+<!-- 全局悬浮宠物（抬高避开输入框） -->
+<pet-float bottom="200" />

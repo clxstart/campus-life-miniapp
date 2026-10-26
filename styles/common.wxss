@@ -1,0 +1,143 @@
+/* 校园搭子 · 通用样式
+ * 依赖 styles/theme.wxss 的变量。页面引入顺序：theme → common。
+ */
+
+/* ===== 页面容器 ===== */
+.cp-page {
+  min-height: 100vh;
+  background: var(--c-bg);
+  padding: 0 var(--sp-page);
+  box-sizing: border-box;
+  /* 短屏允许纵向滚动 */
+  overflow-y: auto;
+}
+
+.cp-page--flush {
+  padding-bottom: calc(var(--sp-page) + var(--safe-bottom));
+}
+
+/* ===== 标题 ===== */
+.cp-page-title {
+  font-size: var(--fs-page-title);
+  font-weight: 600;
+  color: var(--c-text);
+  line-height: 1.35;
+  letter-spacing: 0.5rpx;
+}
+
+.cp-card-title {
+  font-size: var(--fs-card-title);
+  font-weight: 600;
+  color: var(--c-text);
+  line-height: 1.4;
+}
+
+.cp-body {
+  font-size: var(--fs-body);
+  color: var(--c-text);
+  line-height: 1.65;
+}
+
+/* 辅助信息保持足够对比度，不用浅灰糊弄 */
+.cp-hint {
+  font-size: var(--fs-hint);
+  color: var(--c-text-sub);
+  line-height: 1.55;
+}
+
+/* ===== 卡片 ===== */
+.cp-card {
+  background: var(--c-card);
+  border: var(--bw) solid var(--c-line);
+  border-radius: var(--radius-card);
+  padding: var(--sp-card);
+  box-sizing: border-box;
+}
+
+.cp-card + .cp-card {
+  margin-top: var(--sp-gap);
+}
+
+/* ===== 主按钮（森林绿底 + 卡片底色字 + 胶囊） ===== */
+.cp-btn-primary {
+  height: var(--h-button);
+  line-height: var(--h-button);
+  border-radius: var(--radius-pill);
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  text-align: center;
+  border: none;
+  padding: 0 48rpx;
+}
+
+.cp-btn-primary--disabled {
+  opacity: 0.45;
+}
+
+/* 次级按钮：描边，不上强调色 */
+.cp-btn-ghost {
+  height: var(--h-button);
+  line-height: var(--h-button);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--c-primary);
+  border: var(--bw) solid var(--c-primary);
+  font-size: var(--fs-body);
+  text-align: center;
+  padding: 0 48rpx;
+}
+
+/* ===== 标签 ===== */
+.cp-tag {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: var(--radius-pill);
+  background: var(--c-soft);
+  color: var(--c-text);
+  font-size: var(--fs-hint);
+  line-height: 1.5;
+}
+
+/* ===== 分割线 ===== */
+.cp-divider {
+  height: var(--bw);
+  background: var(--c-line);
+  margin: var(--sp-gap) 0;
+}
+
+/* ===== 两列等分 ===== */
+.cp-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-col);
+}
+
+.cp-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-col);
+}
+
+/* ===== 选中态：不只靠颜色，配边框 + 勾 ===== */
+.cp-selected {
+  border: 2rpx solid var(--c-primary) !important;
+  background: var(--c-soft) !important;
+}
+
+/* ===== 空态 ===== */
+.cp-empty {
+  padding: 80rpx 0;
+  text-align: center;
+  color: var(--c-text-sub);
+  font-size: var(--fs-body);
+}
+
+/* ===== 减少动画（跟随系统） ===== */
+@media (prefers-reduced-motion: reduce) {
+  .cp-anim {
+    animation: none !important;
+    transition: none !important;
+  }
+}
