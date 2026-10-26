@@ -142,6 +142,7 @@ import NoModal from '../components/NoModal.vue'
 import NoImageUpload from '../components/NoImageUpload.vue'
 import http from '../api'
 import { useAuthStore } from '../stores/auth'
+import { useAutoRefresh } from '../utils/auto-refresh'
 
 const auth = useAuthStore()
 const isSuper = computed(() => auth.isSuper)
@@ -308,4 +309,8 @@ onMounted(async () => {
   await loadSchools()
   load(1)
 })
+
+// 切回本页自动刷新
+useAutoRefresh(() => load(page.value))
 </script>
+

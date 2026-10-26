@@ -208,6 +208,7 @@ import NoModal from '../components/NoModal.vue'
 import NoImageUpload from '../components/NoImageUpload.vue'
 import http from '../api'
 import { useAuthStore } from '../stores/auth'
+import { useAutoRefresh } from '../utils/auto-refresh'
 
 const SHOP_CATEGORIES = ['快餐便当', '奶茶饮品', '水果轻食', '零食', '其他']
 
@@ -395,4 +396,8 @@ onMounted(async () => {
   await loadSchools()
   await load(1)
 })
+
+// 切回本页自动刷新
+useAutoRefresh(() => load(page.value))
 </script>
+

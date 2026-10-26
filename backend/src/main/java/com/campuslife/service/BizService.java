@@ -311,6 +311,13 @@ public class BizService {
         params.put("timeDesc", timeDesc); params.put("location", location); params.put("description", description);
         // 活动归属发布者学校：不写会导致新活动在本校视图消失
         params.put("schoolId", userSchoolId(userId));
+        // 报名模式：默认一键报名；发布时也可以直接选「材料+审核」
+        String enrollMode = "material".equals(text(body.get("enrollMode"))) ? "material" : "simple";
+        String enrollHint = text(body.get("enrollHint")).trim();
+        if (enrollHint.length() > 200) throw new IllegalArgumentException("报名须知不能超过200字");
+        params.put("enrollMode", enrollMode);
+        params.put("enrollHint", enrollHint);
+        params.put("enrollMaxFiles", Math.min(9, Math.max(1, intOr(body.get("enrollMaxFiles"), 3))));
         moduleMapper.insertActivity(params);
         return Map.of("id", params.get("id"));
     }
@@ -333,18 +340,138 @@ public class BizService {
         return rows;
     }
 
+    /**
+     * 报名活动。按活动自己的报名模式分流：
+     *   simple   → 一键报名，直接计入报名数（原行为）
+     *   material → 必须带表单字段与材料，落库为 pending 待审核，审核通过才计入报名数
+     *
+     * 这个开关由管理端在活动编辑里按活动单独设置，不影响其他活动。
+     */
     @Transactional
-    public Map<String, Object> enrollActivity(Long activityId, Long userId) {
-        if (moduleMapper.selectActivity(activityId) == null) throw new IllegalArgumentException("活动不存在或已结束");
+    public Map<String, Object> enrollActivity(Long activityId, Long userId, Map<String, Object> body) {
+        Map<String, Object> activity = moduleMapper.selectActivity(activityId);
+        if (activity == null) throw new IllegalArgumentException("活动不存在或已结束");
         if (userMapper.selectById(userId) == null) throw new IllegalArgumentException("用户不存在");
         if (moduleMapper.countEnrollment(activityId, userId) > 0) throw new IllegalStateException("已经报名过啦");
+
+        String mode = text(activity.get("enrollMode"));
+        if ("material".equals(mode)) {
+            return submitMaterialEnrollment(activityId, userId, activity, body);
+        }
+
+        // 一键报名
         try {
             moduleMapper.insertEnrollment(activityId, userId);
         } catch (DuplicateKeyException e) {
             throw new IllegalStateException("已经报名过啦");
         }
         if (moduleMapper.incrementEnrollment(activityId) != 1) throw new IllegalArgumentException("活动不存在或已结束");
-        return Map.of("enrolled", true);
+        return Map.of("enrolled", true, "mode", "simple", "status", "approved");
+    }
+
+    /** 材料模式报名：校验表单 + 材料，落 pending，等管理员审核 */
+    private Map<String, Object> submitMaterialEnrollment(Long activityId, Long userId, Map<String, Object> activity, Map<String, Object> body) {
+        Map<String, Object> input = body == null ? Map.of() : body;
+        String realName = text(input.get("realName")).trim();
+        String studentNo = text(input.get("studentNo")).trim();
+        String phone = text(input.get("phone")).trim();
+        String remark = text(input.get("remark")).trim();
+
+        if (realName.isEmpty() || realName.length() > 32) throw new IllegalArgumentException("请填写真实姓名（1-32 字）");
+        if (phone.isEmpty() || phone.length() > 20) throw new IllegalArgumentException("请填写联系电话");
+        if (studentNo.length() > 32) throw new IllegalArgumentException("学号不能超过 32 字");
+        if (remark.length() > 200) throw new IllegalArgumentException("自我介绍不能超过 200 字");
+
+        List<String> materials = new ArrayList<>();
+        Object raw = input.get("materials");
+        if (raw instanceof List<?> list) {
+            for (Object item : list) {
+                String url = text(item).trim();
+                if (!url.isEmpty()) materials.add(url);
+            }
+        }
+        int maxFiles = intOr(activity.get("enrollMaxFiles"), 3);
+        if (materials.isEmpty()) throw new IllegalArgumentException("请至少上传 1 份材料");
+        if (materials.size() > maxFiles) throw new IllegalArgumentException("最多上传 " + maxFiles + " 份材料");
+        for (String url : materials) {
+            if (url.length() > 255) throw new IllegalArgumentException("材料地址过长");
+            if (!url.startsWith("/uploads/") && !url.startsWith("http")) {
+                throw new IllegalArgumentException("材料必须是已上传成功的文件");
+            }
+        }
+
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("activityId", activityId);
+        row.put("userId", userId);
+        row.put("status", "pending");
+        row.put("realName", realName);
+        row.put("studentNo", studentNo);
+        row.put("phone", phone);
+        row.put("remark", remark);
+        moduleMapper.insertEnrollmentWithForm(row);
+        Long enrollId = row.get("id") instanceof Number n ? n.longValue() : null;
+        if (enrollId == null) throw new IllegalStateException("报名提交失败，请重试");
+        for (String url : materials) {
+            String fileName = url.substring(url.lastIndexOf('/') + 1);
+            moduleMapper.insertEnrollMaterial(enrollId, url, fileName);
+        }
+        // 注意：这里不累加 enrolled —— 审核通过时才计入报名数
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("enrolled", true);
+        out.put("mode", "material");
+        out.put("status", "pending");
+        out.put("enrollId", enrollId);
+        return out;
+    }
+
+    private static String text(Object value) { return value == null ? "" : String.valueOf(value); }
+    private static int intOr(Object value, int fallback) {
+        if (value instanceof Number n) return n.intValue();
+        try { return Integer.parseInt(String.valueOf(value).trim()); } catch (Exception e) { return fallback; }
+    }
+
+    // ---- 管理端：报名审核 ----
+
+    public Map<String, Object> enrollments(Long activityId, String status, Long schoolId, int page, int size) {
+        int safeSize = Math.min(100, Math.max(1, size));
+        int safePage = Math.max(1, page);
+        List<Map<String, Object>> rows = moduleMapper.enrollments(activityId, status, schoolId, safeSize, (safePage - 1) * safeSize);
+        for (Map<String, Object> row : rows) {
+            Object id = row.get("id");
+            row.put("materials", id instanceof Number n ? moduleMapper.enrollMaterials(n.longValue()) : List.of());
+        }
+        long total = moduleMapper.countEnrollments(activityId, status, schoolId);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("list", rows); out.put("total", total); out.put("page", safePage); out.put("size", safeSize);
+        return out;
+    }
+
+    /** 审核报名：通过时把报名数 +1；驳回要填原因 */
+    @Transactional
+    public void decideEnrollment(Long enrollId, boolean approve, String reason, Long adminId) {
+        Map<String, Object> brief = moduleMapper.enrollBrief(enrollId);
+        if (brief == null) throw new IllegalArgumentException("报名记录不存在");
+        if (!"pending".equals(text(brief.get("status")))) throw new IllegalStateException("该报名已处理过");
+        String why = approve ? "" : text(reason).trim();
+        if (!approve && why.isEmpty()) throw new IllegalArgumentException("请填写驳回原因");
+        if (why.length() > 200) throw new IllegalArgumentException("驳回原因不能超过 200 字");
+        int changed = moduleMapper.decideEnrollment(enrollId, approve ? "approved" : "rejected", why, adminId);
+        if (changed != 1) throw new IllegalStateException("该报名已处理过");
+        if (approve) {
+            Long activityId = brief.get("activityId") instanceof Number n ? n.longValue() : null;
+            if (activityId != null) moduleMapper.incrementEnrollment(activityId);
+        }
+    }
+
+    /** 活动报名设置（管理端按活动开关） */
+    public void updateEnrollConfig(Long activityId, String mode, String hint, int maxFiles) {
+        Map<String, Object> activity = moduleMapper.selectActivity(activityId);
+        if (activity == null) throw new IllegalArgumentException("活动不存在");
+        String m = "material".equals(mode) ? "material" : "simple";
+        String h = hint == null ? "" : hint.trim();
+        if (h.length() > 200) throw new IllegalArgumentException("报名须知不能超过 200 字");
+        int max = Math.min(9, Math.max(1, maxFiles));
+        moduleMapper.updateActivityEnrollConfig(activityId, m, h, max);
     }
 
     private Map<String, Object> goodListView(Map<String, Object> row) {
@@ -378,7 +505,6 @@ public class BizService {
         return out;
     }
 
-    private static String text(Object value) { return value == null ? "" : String.valueOf(value); }
     private static String textOr(Object value, String fallback) { String valueText = text(value).trim(); return valueText.isEmpty() ? fallback : valueText; }
     private static Long requiredLong(Object value, String message) { try { long number = Long.parseLong(text(value)); if (number < 1) throw new NumberFormatException(); return number; } catch (NumberFormatException e) { throw new IllegalArgumentException(message); } }
     private static Long longValue(Object value) { if (value instanceof Number number) return number.longValue(); try { return Long.valueOf(String.valueOf(value)); } catch (Exception error) { throw new IllegalStateException("内容编号生成失败", error); } }

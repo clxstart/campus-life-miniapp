@@ -90,6 +90,7 @@ import NoModal from '../components/NoModal.vue'
 import NoImageUpload from '../components/NoImageUpload.vue'
 import http from '../api'
 import { useAuthStore } from '../stores/auth'
+import { useAutoRefresh } from '../utils/auto-refresh'
 
 const auth = useAuthStore()
 const isSuper = computed(() => auth.isSuper)
@@ -189,4 +190,8 @@ onMounted(async () => {
   await loadSchools()
   load(1)
 })
+
+// 切回本页时自动重新拉取：小程序里点了赞/发了帖，管理端不用手点「刷新」也能看到
+useAutoRefresh(() => load(page.value))
 </script>
+

@@ -91,6 +91,19 @@ public class AdminAuditController {
         return ApiResponse.ok(auditService.importWords(parsed, textOr(body.get("category"), "custom")));
     }
 
+    /**
+     * 敏感词检测试接口（联调 / 回归用）
+     *
+     * 传入一段文本，返回命中的敏感词列表，便于验证词表与引擎行为。
+     * 只读操作，不落库。
+     */
+    @PostMapping("/sensitive-words/check")
+    public ApiResponse<Map<String,Object>> checkText(@RequestBody Map<String,Object> body) {
+        String value = text(body.get("text"));
+        java.util.List<String> hits = auditService.matchWords(value);
+        return ApiResponse.ok(Map.of("text", value, "hits", hits, "hit", !hits.isEmpty()));
+    }
+
     private static Long scope(HttpServletRequest request) {
         if ("super".equals(request.getAttribute(AdminInterceptor.ADMIN_ROLE))) return null;
         Object value = request.getAttribute(AdminInterceptor.ADMIN_SCHOOL);

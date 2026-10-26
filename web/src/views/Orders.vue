@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="space-y-6">
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div><h2 class="font-serif text-2xl text-stone-800">订单管理</h2><p class="text-sm text-stone-500 mt-1">处理外卖订单流转与售后</p></div>
@@ -44,6 +44,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import NoModal from '../components/NoModal.vue'
 import http from '../api'
+import { useAutoRefresh } from '../utils/auto-refresh'
 
 const columns = ['订单号', '用户', '店铺', '商品', '金额', '状态', '下单时间', '操作']
 const statuses = [{ value: 'created', label: '待支付' }, { value: 'paid', label: '待接单' }, { value: 'accepted', label: '已接单' }, { value: 'delivering', label: '配送中' }, { value: 'completed', label: '已完成' }, { value: 'cancelled', label: '已取消' }, { value: 'refunded', label: '已退款' }]
@@ -72,6 +73,11 @@ async function execute() {
   } catch (e) { modal.hint = e.message || '操作失败' } finally { modal.submitting = false }
 }
 onMounted(() => load(1))
+
+// 切回本页自动刷新（小程序下单后订单列表自动更新）
+useAutoRefresh(() => load(page.value))
 </script>
+
+
 
 

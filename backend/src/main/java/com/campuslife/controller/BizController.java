@@ -158,6 +158,7 @@ public class BizController {
             try { claimed = Long.parseLong(String.valueOf(body.get("userId"))); }
             catch (NumberFormatException error) { throw new IllegalArgumentException("用户不存在"); }
         }
-        return ApiResponse.ok(service.enrollActivity(id, requireUser(request, claimed)));
+        // 报名模式由活动自己决定：simple 一键报名；material 需要表单 + 材料
+        return ApiResponse.ok(service.enrollActivity(id, requireUser(request, claimed), body));
     }
 }
