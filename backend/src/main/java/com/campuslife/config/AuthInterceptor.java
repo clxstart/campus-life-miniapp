@@ -56,7 +56,10 @@ public class AuthInterceptor implements HandlerInterceptor {
         "/api/notifications",
         "/api/timetable",
         "/api/calendar",
-        "/api/pet"
+        "/api/pet",
+        // 圈子群聊历史与未读数也是「我的数据」：之前没拦住，未登录会走到 400「参数无效」，
+        // 前端看不出是没登录，也不会去重新登录。现在统一成 401。
+        "/api/circle-messages"
     );
 
     /** /api/users/{id}/xxx 里属于「我的数据」的子资源。 */

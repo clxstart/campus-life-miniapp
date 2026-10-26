@@ -1,6 +1,7 @@
 package com.campuslife.controller;
 
 import com.campuslife.config.AuthInterceptor;
+import com.campuslife.config.UnauthorizedException;
 import com.campuslife.dto.ApiResponse;
 import com.campuslife.service.PayService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,5 +40,16 @@ public class PayController {
     @PostMapping("/orders/{id}/refund")
     public ApiResponse<Map<String, Object>> refund(@PathVariable Long id, @RequestBody(required = false) Map<String, Object> body, HttpServletRequest request) { return ApiResponse.ok(payService.refund(id, requestUserId(request), body == null ? "" : String.valueOf(body.getOrDefault("reason", "")))); }
 
-    private static Long requestUserId(HttpServletRequest request) { Object value = request.getAttribute(AuthInterceptor.USER_ID); return value instanceof Number n ? n.longValue() : null; }
+    /**
+     * 取下单人身份：必须已登录。
+     *
+     * 之前这里可能返回 null，而 PayService 里的归属校验写成 `if (userId != null && !userId.equals(...))`，
+     * 于是「不带 token」正好让校验整体短路 —— 任何人可以支付/取消/退款别人的订单。
+     * 现在没有身份直接 401，服务层再把 null 当异常处理，两层都堵。
+     */
+    private static Long requestUserId(HttpServletRequest request) {
+        Object value = request.getAttribute(AuthInterceptor.USER_ID);
+        if (value instanceof Number n && n.longValue() > 0) return n.longValue();
+        throw new UnauthorizedException("请先登录后操作订单");
+    }
 }

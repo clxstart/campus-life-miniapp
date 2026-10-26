@@ -150,7 +150,7 @@ Page({
       if (type === 'idle') {
         // 闲置：走真实的二手市场发布（goods 表），而不是给帖子打个标签
         await api.publishGoods({
-          userId: api.CURRENT_USER_ID,
+          userId: api.currentUserId(),
           title: title.trim(),
           price: String(Number(this.data.price) || 0),
           conditionLevel: this.data.conditionLevel,

@@ -11,7 +11,7 @@ Page({
       await api.ensureLogin()
       const pending = wx.getStorageSync('pending_order')
       if (!pending || !Number.isSafeInteger(Number(pending.shopId)) || Number(pending.shopId) < 1) throw new Error('暂时没有待结算订单')
-      const [shops, menu, addresses] = await Promise.all([api.getFoodShops(), api.getFoodMenu(pending.shopId), api.getAddresses(api.CURRENT_USER_ID)])
+      const [shops, menu, addresses] = await Promise.all([api.getFoodShops(), api.getFoodMenu(pending.shopId), api.getAddresses(api.currentUserId())])
       if (!this._alive) return
       const shop = shops.find(s => Number(s.id) === Number(pending.shopId))
       if (!shop) throw new Error('店铺不存在，请重新选购')
@@ -29,7 +29,7 @@ Page({
     popup.sheet(this, { title: '送到哪里？', tone: 'success', actions: addresses.map(a => ({ label: a.detail + (a.contact ? ' · ' + a.contact : '') })).concat([{ label: '＋ 新增收货地址' }]), action: ({ index }) => { if (index === addresses.length) this.addAddress(); else if (addresses[index]) this.setData({ address: addresses[index] }) } })
   },
   addAddress() {
-    popup.modal(this, { title: '新增收货地址', message: '请填写宿舍楼、房间号和收件信息', tone: 'success', editable: true, placeholder: '例如：学生公寓 6 号楼312 · 林同学', confirm: async res => { const detail = (res.inputValue || '').trim(); if (!detail || detail.length > 128) { popup.toast(this, '地址请填写 1 至 128 个字', { tone: 'warn' }); return } try { const address = await api.addAddress(api.CURRENT_USER_ID, detail); if (!this._alive) return; this.setData({ addresses: [address].concat(this.data.addresses), address }); popup.toast(this, '地址已添加', { tone: 'success' }) } catch (error) { if (this._alive) popup.toast(this, error.message || '地址添加失败', { tone: 'error' }) } } })
+    popup.modal(this, { title: '新增收货地址', message: '请填写宿舍楼、房间号和收件信息', tone: 'success', editable: true, placeholder: '例如：学生公寓 6 号楼312 · 林同学', confirm: async res => { const detail = (res.inputValue || '').trim(); if (!detail || detail.length > 128) { popup.toast(this, '地址请填写 1 至 128 个字', { tone: 'warn' }); return } try { const address = await api.addAddress(api.currentUserId(), detail); if (!this._alive) return; this.setData({ addresses: [address].concat(this.data.addresses), address }); popup.toast(this, '地址已添加', { tone: 'success' }) } catch (error) { if (this._alive) popup.toast(this, error.message || '地址添加失败', { tone: 'error' }) } } })
   },
   editRemark(e) { this.setData({ remark: e.detail.value }) },
   async submit() {

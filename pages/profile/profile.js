@@ -4,7 +4,7 @@ const { getTermWeek, daysUntil } = require('../../utils/term')
 const { formatTime } = require('../../utils/format-time')
 const popup = require('../../utils/ui-popup-helper')
 
-const CURRENT_USER_ID = 1
+// 当前登录用户：登录了就是真实用户 id，未登录回落到演示账号（api.DEMO_USER_ID）
 
 Page({
   data: {
@@ -43,18 +43,21 @@ Page({
   },
 
   // 各入口的真实计数：收藏/浏览/地址/优惠券
+  // 这几个接口在未登录/无权限时会抛错（不再伪装成空列表），这里退化成「—」而不是整个页面报错
   async loadCounts() {
+    const safe = (promise) => promise.catch(() => null)
     const [favorites, views, addresses, coupons] = await Promise.all([
-      api.getFavorites(CURRENT_USER_ID),
-      api.getMyViews(CURRENT_USER_ID),
-      api.getAddresses(CURRENT_USER_ID),
-      api.getCoupons(CURRENT_USER_ID)
+      safe(api.getFavorites(api.currentUserId())),
+      safe(api.getMyViews(api.currentUserId())),
+      safe(api.getAddresses(api.currentUserId())),
+      safe(api.getCoupons(api.currentUserId()))
     ])
+    const count = (list, unit) => (Array.isArray(list) ? `${list.length}${unit}` : '—')
     this.setData({
-      'services[1].desc': `${(favorites || []).length}个收藏`,
-      'services[2].desc': `最近${(views || []).length}条`,
-      'menus[4].value': `${(addresses || []).length}个地址`,
-      'menus[5].value': `${(coupons || []).length}张可用`
+      'services[1].desc': count(favorites, '个收藏'),
+      'services[2].desc': Array.isArray(views) ? `最近${views.length}条` : '—',
+      'menus[4].value': count(addresses, '个地址'),
+      'menus[5].value': count(coupons, '张可用')
     })
   },
 
@@ -77,7 +80,7 @@ Page({
   openService(event) {
     const key = event.currentTarget.dataset.key
     if (key === 'publish') {
-      wx.navigateTo({ url: `/pages/user-home/user-home?id=${CURRENT_USER_ID}` })
+      wx.navigateTo({ url: `/pages/user-home/user-home?id=${api.currentUserId()}` })
       return
     }
     if (key === 'favorites') this.openFavorites()
@@ -97,7 +100,9 @@ Page({
 
   // 收藏列表：点标题直达帖子详情
   async openFavorites() {
-    const list = (await api.getFavorites(CURRENT_USER_ID)) || []
+    let list
+    try { list = (await api.getFavorites(api.currentUserId())) || [] }
+    catch (error) { popup.toast(this, error.message || '收藏加载失败', { tone: 'error' }); return }
     if (!list.length) { popup.toast(this, '还没有收藏，去帖子详情点「☆ 收藏」'); return }
     this._favorites = list
     popup.sheet(this, {
@@ -112,7 +117,9 @@ Page({
 
   // 浏览记录：最近看过的帖子（同帖去重，按时间倒序）
   async openViews() {
-    const list = (await api.getMyViews(CURRENT_USER_ID)) || []
+    let list
+    try { list = (await api.getMyViews(api.currentUserId())) || [] }
+    catch (error) { popup.toast(this, error.message || '浏览记录加载失败', { tone: 'error' }); return }
     if (!list.length) { popup.toast(this, '暂无浏览记录'); return }
     this._views = list
     popup.sheet(this, {
@@ -127,7 +134,9 @@ Page({
 
   // 地址管理：列表 + 新增
   async openAddresses() {
-    const list = (await api.getAddresses(CURRENT_USER_ID)) || []
+    let list
+    try { list = (await api.getAddresses(api.currentUserId())) || [] }
+    catch (error) { popup.toast(this, error.message || '地址加载失败', { tone: 'error' }); return }
     this._addresses = list
     popup.sheet(this, {
       title: `地址管理 · ${list.length}个`,
@@ -149,16 +158,20 @@ Page({
       confirm: async (res) => {
         const detail = (res.inputValue || '').trim()
         if (!detail) return
-        await api.addAddress(CURRENT_USER_ID, detail)
-        popup.toast(this, '地址已保存', { tone: 'success' })
-        this.loadCounts()
+        try {
+          await api.addAddress(api.currentUserId(), detail)
+          popup.toast(this, '地址已保存', { tone: 'success' })
+          this.loadCounts()
+        } catch (error) { popup.toast(this, error.message || '地址保存失败', { tone: 'error' }) }
       }
     })
   },
 
   // 优惠券：真实数据列表
   async openCoupons() {
-    const list = (await api.getCoupons(CURRENT_USER_ID)) || []
+    let list
+    try { list = (await api.getCoupons(api.currentUserId())) || [] }
+    catch (error) { popup.toast(this, error.message || '优惠券加载失败', { tone: 'error' }); return }
     if (!list.length) { popup.toast(this, '暂无可用优惠'); return }
     popup.sheet(this, {
       title: `优惠与权益 · ${list.length}张可用`,
@@ -179,8 +192,10 @@ Page({
       confirm: async (res) => {
         const content = (res.inputValue || '').trim()
         if (!content) return
-        await api.submitFeedback(CURRENT_USER_ID, content)
-        popup.toast(this, '已收到你的反馈，感谢！', { tone: 'success' })
+        try {
+          await api.submitFeedback(api.currentUserId(), content)
+          popup.toast(this, '已收到你的反馈，感谢！', { tone: 'success' })
+        } catch (error) { popup.toast(this, error.message || '反馈提交失败', { tone: 'error' }) }
       }
     })
   },
@@ -195,7 +210,7 @@ Page({
       confirm: async (res) => {
         const name = (res.inputValue || '').trim()
         if (!name) return
-        await api.updateUserProfile(CURRENT_USER_ID, name)
+        await api.updateUserProfile(api.currentUserId(), name)
         this.setData({ 'profile.name': name })
         popup.toast(this, '昵称已保存', { tone: 'success' })
       }

@@ -11,9 +11,14 @@
    - `backend/src/main/resources/db/module-circle-chat.sql`（圈子群聊，+2 张并给 circle 加 last_message 字段）
    - `backend/src/main/resources/db/module-auth.sql`（给 user 加 openid）
    共 30 张表。已有数据库只执行尚未跑过的脚本即可，上述脚本都必须按顺序执行。
-2. 修改 `backend/src/main/resources/application.yml` 中的数据库账号密码。
-3. 进入 `backend` 目录执行 `mvn spring-boot:run`，接口地址为 `http://127.0.0.1:8080/api`。
+2. 数据库账号密码不要写在 `application.yml` 里。配置按 profile 分开：
+   - 本机开发直接用 `application-dev.yml` 的默认值（127.0.0.1 / root / 演示密码），也可以覆盖环境变量 `DB_URL`、`DB_USERNAME`、`DB_PASSWORD`。
+   - 生产必须 `--spring.profiles.active=prod`，此时 `application-prod.yml` 的敏感项全部没有默认值，缺环境变量会**启动失败**（这是故意的）。
+3. 进入 `backend` 目录执行 `mvn spring-boot:run`（默认 profile = dev），接口地址为 `http://127.0.0.1:8080/api`。
 4. 用微信开发者工具打开项目根目录，AppID 保持 `touristappid`。本地开发配置已关闭合法域名校验。
+
+> 接口鉴权已收紧：写操作与「我的数据」读接口必须带 token（否则 401），身份一律以 token 为准，客户端传的 `userId` 不再可信。
+> 规则与例外清单见 `docs/生产部署与性能优化指南.md` §3.4。
 
 ### 编译注意（JDK 版本与 Lombok）
 
@@ -103,7 +108,7 @@ mvn spring-boot:run -P "!jdk-1.8"
 - 服务端每 30 秒推送 `{"type":"ping"}`，90 秒未收到客户端 `pong` 会关闭连接；小程序端在 `app.js` 统一维护连接、25 秒心跳、3 秒退避重连（最多 5 次），页面只订阅事件。
 - 消息字段：`{type:"message",data:{id,circleId,senderId,senderName,senderAvatar,messageType,content,image,createdAt}}`；另有 `online`（在线人数与名单）、`join`、`leave`、`error`。
 - 内容审核先走本地词库，配置了 `campus.wx.appid/secret` 时再调用微信 `msg_sec_check`；`touristappid` 开发环境只走本地词库。
-- 小程序真机必须使用 `wss://`。`app.js` 会根据 `utils/api.js` 的 `BASE_URL` 自动切换 ws/wss，上线时把 `BASE_URL` 换成 HTTPS 域名并在微信公众平台配置合法域名。
+- 小程序真机必须使用 `wss://`。`app.js` 会根据 `utils/config.js` 的 `BASE_URL` 自动切换 ws/wss，上线时把 `utils/config.js` 的 `ENV` 改成 `'prod'` 并填真实 HTTPS 域名，同时在微信公众平台配置合法域名。
 
 ## 教务数据
 

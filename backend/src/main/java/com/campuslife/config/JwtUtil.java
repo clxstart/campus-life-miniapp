@@ -3,6 +3,7 @@ package com.campuslife.config;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +12,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 
-// JWT 签发与校验。密钥从配置读取；未配置时用开发默认值并打印告警。
+// JWT 签发与校验。密钥来自 campus.jwt.secret（dev 有默认值，prod profile 强制从环境变量注入）。
+@Slf4j
 @Component
 public class JwtUtil {
     private final SecretKey key;
@@ -21,7 +23,8 @@ public class JwtUtil {
                    @Value("${campus.jwt.ttl-seconds:604800}") long ttlSeconds) {
         String value = (secret == null || secret.isBlank()) ? "campus-life-dev-secret-change-me-in-production-0123456789" : secret;
         if (secret == null || secret.isBlank()) {
-            System.out.println("[campus] 未配置 campus.jwt.secret，正在使用开发默认密钥，请勿用于生产");
+            log.warn("[campus] 未配置 campus.jwt.secret，正在使用开发默认密钥；prod profile 下启动会直接失败，"
+                + "本地调试可忽略");
         }
         this.key = Keys.hmacShaKeyFor(value.getBytes(StandardCharsets.UTF_8));
         this.ttlSeconds = ttlSeconds;
@@ -51,3 +54,4 @@ public class JwtUtil {
 
     public long ttlSeconds() { return ttlSeconds; }
 }
+

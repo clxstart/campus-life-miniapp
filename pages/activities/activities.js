@@ -13,7 +13,7 @@ Page({
     const seq = this._seq = (this._seq || 0) + 1
     this.setData({ loading: true })
     try {
-      const activities = await api.getActivities(api.CURRENT_USER_ID, this.data.schoolScope, school.getSelectedId())
+      const activities = await api.getActivities(api.currentUserId(), this.data.schoolScope, school.getSelectedId())
       if (!this._alive || seq !== this._seq) return
       this.setData({ activities: (activities || []).map((item, index) => ({ ...item, isFeatured: index === 0 })) })
     } catch (error) {
@@ -28,7 +28,7 @@ Page({
     if (!item || item.enrolledByMe || this.data.enrollingId) return
     this.setData({ enrollingId: id })
     try {
-      await api.enrollActivity(id, api.CURRENT_USER_ID)
+      await api.enrollActivity(id, api.currentUserId())
       const activities = this.data.activities.map(activity => Number(activity.id) === id ? { ...activity, enrolled: Number(activity.enrolled || 0) + 1, enrolledByMe: true } : activity)
       this.setData({ activities })
       popup.toast(this, '报名成功', { tone: 'success' })

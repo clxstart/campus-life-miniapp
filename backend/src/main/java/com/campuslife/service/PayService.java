@@ -2,6 +2,8 @@ package com.campuslife.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.campuslife.config.ForbiddenException;
+import com.campuslife.config.UnauthorizedException;
 import com.campuslife.config.WxPayProperties;
 import com.campuslife.entity.PaymentRecord;
 import com.campuslife.entity.RefundRecord;
@@ -26,7 +28,9 @@ import com.github.binarywang.wxpay.bean.result.enums.TradeTypeEnum;
 import com.github.binarywang.wxpay.exception.WxPayException;
 import com.github.binarywang.wxpay.service.WxPayService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +47,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PayService {
     private final UserOrderMapper orderMapper;
     private final PaymentRecordMapper paymentRecordMapper;
@@ -55,14 +60,20 @@ public class PayService {
     private final ObjectMapper json;
     private final WxPayProperties properties;
     private final ObjectProvider<WxPayService> wxPayProvider;
+    private final org.springframework.core.env.Environment environment;
+
+    /** 是否允许在「微信支付未开启」时用模拟支付跑通流程；生产 profile 下永远不允许。 */
+    @Value("${campus.pay.simulate:false}")
+    private boolean simulate;
 
     @Transactional
     public Map<String, Object> createPayment(Long orderId, Long userId) {
         UserOrder order = requireOrder(orderId);
-        if (userId != null && !userId.equals(order.getUserId())) throw new IllegalArgumentException("无权操作该订单");
+        requireOwner(order, userId);
         if ("paid".equals(order.getPayStatus()) || OrderStatus.PAID.value().equals(order.getStatus())) return Map.of("simulated", !properties.isEnabled(), "payStatus", "paid", "outTradeNo", order.getOutTradeNo());
         if (!OrderStatus.CREATED.value().equals(order.getStatus()) || !"unpaid".equals(order.getPayStatus())) throw new IllegalStateException("订单当前不可支付");
         if (!properties.isEnabled()) {
+            requireSimulationAllowed(orderId);
             markPaid(order, "SIM-" + order.getOutTradeNo(), "SUCCESS", "{\"simulated\":true}", true);
             return Map.of("simulated", true, "payStatus", "paid", "outTradeNo", order.getOutTradeNo());
         }
@@ -131,7 +142,7 @@ public class PayService {
     @Transactional
     public Map<String, Object> cancel(Long orderId, Long userId, String reason) {
         UserOrder order = requireOrder(orderId);
-        if (userId != null && !userId.equals(order.getUserId())) throw new IllegalArgumentException("无权操作该订单");
+        requireOwner(order, userId);
         if (!OrderStatus.CREATED.value().equals(order.getStatus()) || !"unpaid".equals(order.getPayStatus())) throw new IllegalStateException("只有待支付订单可以取消");
         transition(order, OrderStatus.CANCELLED.value());
         order.setPayStatus("closed"); order.setCancelledAt(LocalDateTime.now()); order.setCancelReason(reason == null ? "用户取消" : reason.trim()); orderMapper.updateById(order);
@@ -152,7 +163,7 @@ public class PayService {
     @Transactional
     public Map<String, Object> refund(Long orderId, Long userId, String reason) {
         UserOrder order = requireOrder(orderId);
-        if (userId != null && !userId.equals(order.getUserId())) throw new IllegalArgumentException("无权操作该订单");
+        requireOwner(order, userId);
         if ("refunding".equals(order.getStatus()) || "refunded".equals(order.getStatus())) throw new IllegalStateException("订单已在退款流程中");
         // 以 OrderStatus 状态机为准：paid / accepted / delivering / picked / completed 均可进入退款。
         // 不再用手写列表，避免与状态机规则脱节（历史上 picked 可退但这里漏了）。
@@ -175,6 +186,7 @@ public class PayService {
 
         // 未配置真实支付时走模拟完成
         if (!properties.isEnabled()) {
+            requireSimulationAllowed(order.getId());
             completeRefund(order, record, "SIM-REFUND-" + record.getId());
             return detail(order);
         }
@@ -250,6 +262,35 @@ public class PayService {
     }
 
     private void transition(UserOrder order, String target) { OrderStatus.requireTransition(order.getStatus(), target); order.setStatus(target); }
+
+    /** 订单必须属于下单人；userId 为空直接拒绝（不能让「没有身份」变成「跳过校验」）。 */
+    private void requireOwner(UserOrder order, Long userId) {
+        if (userId == null || userId < 1) throw new UnauthorizedException("请先登录后操作订单");
+        if (!userId.equals(order.getUserId())) throw new ForbiddenException("无权操作该订单");
+    }
+
+    /**
+     * 模拟支付/退款的准入。
+     *
+     * 以前只要 wxpay.enabled=false 就直接把订单标记成已付款，配置漏改就等于线上白送货。
+     * 现在必须显式打开 campus.pay.simulate，且生产 profile 下一律拒绝。
+     */
+    private void requireSimulationAllowed(Long orderId) {
+        if (isProduction()) {
+            throw new IllegalStateException("生产环境禁止模拟支付（campus.pay.simulate），请配置微信支付商户参数并开启 wxpay.enabled");
+        }
+        if (!simulate) {
+            throw new IllegalStateException("微信支付未配置，暂不能在线支付或退款，请稍后再试");
+        }
+        log.warn("[campus] 模拟支付生效：订单 {} 未调用微信接口，直接按已付款/已退款处理", orderId);
+    }
+
+    private boolean isProduction() {
+        for (String profile : environment.getActiveProfiles()) {
+            if ("prod".equalsIgnoreCase(profile) || "production".equalsIgnoreCase(profile)) return true;
+        }
+        return false;
+    }
     private UserOrder requireOrder(Long id) { if (id == null || id < 1) throw new IllegalArgumentException("订单参数无效"); UserOrder order = orderMapper.selectById(id); if (order == null) throw new IllegalArgumentException("订单不存在"); if (order.getPayStatus() == null) order.setPayStatus("unpaid"); return order; }
     private WxPayService requireWxPay() { WxPayService service = wxPayProvider.getIfAvailable(); if (service == null) throw new IllegalStateException("微信支付未配置"); return service; }
     private List<?> parseItems(String raw) { try { return raw == null ? List.of() : json.readValue(raw, List.class); } catch (Exception e) { return List.of(); } }

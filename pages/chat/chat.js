@@ -25,10 +25,10 @@ Page({
       avatar: safeDecode(options.avatar, '同'),
       color: safeDecode(options.color, '#7EB6F6')
     })
-    if (!Number.isSafeInteger(this.peerId) || this.peerId < 1 || this.peerId === api.CURRENT_USER_ID) this.setData({ error: this.peerId === api.CURRENT_USER_ID ? '这是你自己的账号，无需发起私聊' : '聊天对象无效' })
+    if (!Number.isSafeInteger(this.peerId) || this.peerId < 1 || this.peerId === api.currentUserId()) this.setData({ error: this.peerId === api.currentUserId() ? '这是你自己的账号，无需发起私聊' : '聊天对象无效' })
   },
   onShow() {
-    if (!Number.isSafeInteger(this.peerId) || this.peerId < 1 || this.peerId === api.CURRENT_USER_ID) return
+    if (!Number.isSafeInteger(this.peerId) || this.peerId < 1 || this.peerId === api.currentUserId()) return
     clearInterval(this._poll)
     this.loadMessages()
     this._poll = setInterval(() => this.loadMessages(false, true), 5000)
@@ -53,7 +53,7 @@ Page({
       const changed = messages.length !== previous.length
       this.setData({ messages, offline: !!result.offline, muted: !!result.muted, error: '', hasMore: older || !previous.length ? !!result.hasMore : this.data.hasMore, ...(changed && !older ? { scrollTo: 'message-' + messages[messages.length - 1].id } : {}) })
       const last = messages[messages.length - 1]
-      if (last) await api.markChatRead(this.peerId, last.id, api.CURRENT_USER_ID, !!result.offline)
+      if (last) await api.markChatRead(this.peerId, last.id, api.currentUserId(), !!result.offline)
     } catch (error) {
       if (this._alive && seq === this._seq) this.setData({ error: error.message || '消息加载失败，请重试' })
     } finally {
@@ -66,7 +66,7 @@ Page({
   async sendMessage() {
     const content = this.data.inputValue.trim()
     if (!content || this.data.sending || this._mutating) return
-    if (!Number.isSafeInteger(this.peerId) || this.peerId < 1 || this.peerId === api.CURRENT_USER_ID) { popup.toast(this, '聊天对象无效'); return }
+    if (!Number.isSafeInteger(this.peerId) || this.peerId < 1 || this.peerId === api.currentUserId()) { popup.toast(this, '聊天对象无效'); return }
     this._seq = (this._seq || 0) + 1
     this._busy = false
     this.setData({ sending: true, loading: false })
@@ -96,7 +96,7 @@ Page({
   },
   async toggleMute() {
     const muted = !this.data.muted
-    await api.muteChat(this.peerId, muted, api.CURRENT_USER_ID, this.data.offline)
+    await api.muteChat(this.peerId, muted, api.currentUserId(), this.data.offline)
     if (this._alive) this.setData({ muted })
   },
   async clearMessages() {
@@ -104,7 +104,7 @@ Page({
     this._mutating = true
     this._seq = (this._seq || 0) + 1
     try {
-      await api.clearChatMessages(this.peerId, api.CURRENT_USER_ID, this.data.offline)
+      await api.clearChatMessages(this.peerId, api.currentUserId(), this.data.offline)
       if (this._alive) this.setData({ messages: [], hasMore: false, error: '', loading: false })
     } finally { this._mutating = false; this._busy = false }
   },

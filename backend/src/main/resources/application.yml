@@ -45,6 +45,9 @@ campus:
     # 写接口与「我的数据」接口是否强制校验 token。
     # 关掉会退回「谁传 userId 就代表谁」的旧行为（任何人可冒充任意用户），只允许本机调试时临时关闭。
     enforce: ${CAMPUS_AUTH_ENFORCE:true}
+    # 开发登录默认只能登录 1 号演示账号。需要切换成其他账号调试多用户场景时打开这个开关；
+    # prod profile 下即使配了 true 也不生效。
+    dev-login-any-user: ${CAMPUS_DEV_LOGIN_ANY_USER:false}
   jwt:
     ttl-seconds: 604800
     # 管理端 token 有效期：8 小时（比小程序短，管理权限更敏感）

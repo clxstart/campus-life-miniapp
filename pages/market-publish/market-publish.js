@@ -35,7 +35,7 @@ Page({
       // 必须先上传，拿到服务端地址再提交
       const uploaded = await this.uploadMedia(this.data.images)
       if (!uploaded.length) throw new Error('图片上传失败，请重试')
-      const result = await api.publishGoods({ userId: api.CURRENT_USER_ID, title, price, conditionLevel: this.data.conditionLevel, category: this.data.category, images: uploaded, image: uploaded[0], description })
+      const result = await api.publishGoods({ userId: api.currentUserId(), title, price, conditionLevel: this.data.conditionLevel, category: this.data.category, images: uploaded, image: uploaded[0], description })
       popup.toast(this, result.offline ? '已保存到本机演示，未发布到后端' : '发布成功', { tone: result.offline ? 'warn' : 'success' })
       setTimeout(() => wx.navigateBack(), 550)
     } catch (error) {

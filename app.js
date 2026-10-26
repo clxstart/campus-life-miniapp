@@ -47,7 +47,8 @@ App({
       return this._socketOpenPromise || Promise.resolve()
     }
     const token = api.getToken()
-    const base = (api.BASE_URL || 'http://127.0.0.1:8080/api').replace(/\/api\/?$/, '')
+    // 群聊 WS 与 HTTP 同源：地址只有 utils/config.js 一处配置
+    const base = String(api.BASE_URL || '').replace(/\/api\/?$/, '')
     const scheme = base.indexOf('https://') === 0 ? 'wss://' : 'ws://'
     const host = base.replace(/^https?:\/\//, '')
     const url = `${scheme}${host}/ws/circle?token=${encodeURIComponent(token)}&circleId=${encodeURIComponent(circleId)}`
