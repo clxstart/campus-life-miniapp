@@ -1,0 +1,35 @@
+# 生产配置：--spring.profiles.active=prod
+#
+# 这里刻意不给任何密钥默认值：环境变量缺失时 Spring 启动直接失败，
+# 而不是悄悄用开发默认值跑起来（那才是真正会出事的场景）。
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+campus:
+  jwt:
+    secret: ${CAMPUS_JWT_SECRET}
+  wx:
+    appid: ${CAMPUS_WX_APPID}
+    secret: ${CAMPUS_WX_SECRET}
+  auth:
+    enforce: true
+  web:
+    allowed-origins: ${CAMPUS_WEB_ORIGINS}
+  pay:
+    # 生产禁止模拟支付：PayService 会同时校验 profile，写 true 也只会启动失败
+    simulate: false
+  upload:
+    base-url: ${CAMPUS_UPLOAD_BASE_URL}
+
+wxpay:
+  enabled: ${WXPAY_ENABLED:false}
+  app-id: ${WXPAY_APP_ID:}
+  mch-id: ${WXPAY_MCH_ID:}
+  api-v3-key: ${WXPAY_API_V3_KEY:}
+  cert-serial-no: ${WXPAY_CERT_SERIAL_NO:}
+  private-key-path: ${WXPAY_PRIVATE_KEY_PATH:}
+  notify-url: ${WXPAY_NOTIFY_URL}
+  refund-notify-url: ${WXPAY_REFUND_NOTIFY_URL}

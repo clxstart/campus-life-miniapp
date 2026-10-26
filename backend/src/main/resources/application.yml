@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${CAMPUS_PORT:8080}
   # 生产环境建议：Tomcat 最大线程数（默认 200 够用，高并发可调至 300）
   tomcat:
     threads:
@@ -7,11 +7,13 @@ server:
       min-spare: 10
     accept-count: 200
     max-connections: 8192
+
 spring:
+  # 没显式指定 profile 时按 dev 跑（等价于原来的「本机默认配置」）。
+  # 生产部署必须显式：--spring.profiles.active=prod
+  profiles:
+    default: dev
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/campus_life?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false
-    username: root
-    password: chang090011
     driver-class-name: com.mysql.cj.jdbc.Driver
     # 连接池：默认 10 个撑不住 1000 同时在线，按 4C4G 机器调到 25
     # 计算依据：单请求占用时长约 20ms，25 连接 ≈ 1250 QPS 上限
@@ -28,43 +30,51 @@ spring:
     multipart:
       max-file-size: 5MB
       max-request-size: 10MB
+
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
   global-config:
     db-config:
       id-type: auto
-# 登录鉴权：未配置微信 AppID 时启用开发登录（/api/auth/dev-login），便于 touristappid 下跑通流程。
+
+# 本文件只放「与环境无关」的开关与默认值；
+# 数据库地址、密钥、回调域名这类东西一律放 application-{dev,prod}.yml。
 campus:
+  auth:
+    # 写接口与「我的数据」接口是否强制校验 token。
+    # 关掉会退回「谁传 userId 就代表谁」的旧行为（任何人可冒充任意用户），只允许本机调试时临时关闭。
+    enforce: ${CAMPUS_AUTH_ENFORCE:true}
   jwt:
-    # ⌈生产环境必须改为环境变量注入的随机密钥⌋
-    secret: campus-life-local-dev-secret-please-change-in-production
     ttl-seconds: 604800
     # 管理端 token 有效期：8 小时（比小程序短，管理权限更敏感）
     admin-ttl-seconds: 28800
+  web:
+    # 管理端（web/）跨域白名单，逗号分隔，支持 http://127.0.0.1:* 这种端口通配。
+    # 部署到真实域名后必须换成自己的前端域名，否则浏览器会拦掉所有接口。
+    allowed-origins: ${CAMPUS_WEB_ORIGINS:http://127.0.0.1:*,http://localhost:*}
+  pay:
+    # 微信支付未开启时，是否允许「模拟支付」把订单直接标记为已付款。
+    # 只用于本地演示：prod profile 下代码会拒绝模拟支付，写 true 也没用。
+    simulate: ${CAMPUS_PAY_SIMULATE:true}
   wx:
-    appid: ''
-    secret: ''
-  wxpay:
-    enabled: false
-    merchant-id: ''
-    merchant-serial-number: ''
-    private-key-path: ''
-    api-v3-key: ''
-    refund-notify-url: ''
+    appid: ${CAMPUS_WX_APPID:}
+    secret: ${CAMPUS_WX_SECRET:}
   upload:
-    dir: uploads
+    dir: ${CAMPUS_UPLOAD_DIR:uploads}
     public-prefix: /uploads
     # 上传接口返回的图片基址：必须是小程序可访问的 http(s) 地址
-    # 生产环境改为真实域名（如 https://api.example.com）
-    base-url: http://127.0.0.1:8080
+    base-url: ${CAMPUS_UPLOAD_BASE_URL:http://127.0.0.1:8080}
+
+# 微信支付：下单 + 退款 + 退款回调的唯一配置源
+# （历史上存在过 campus.wxpay 第二套前缀，两套 enabled 开关会拼出「能下单不能退款」的半配置状态，已合并）
 wxpay:
-  enabled: false
-  app-id: ''
-  mch-id: ''
-  api-v3-key: ''
-  cert-serial-no: ''
-  private-key-path: ''
-  notify-url: 'https://your-domain.example/api/pay/notify'
+  enabled: ${WXPAY_ENABLED:false}
+  app-id: ${WXPAY_APP_ID:}
+  mch-id: ${WXPAY_MCH_ID:}
+  api-v3-key: ${WXPAY_API_V3_KEY:}
+  cert-serial-no: ${WXPAY_CERT_SERIAL_NO:}
+  private-key-path: ${WXPAY_PRIVATE_KEY_PATH:}
+  notify-url: ${WXPAY_NOTIFY_URL:https://your-domain.example/api/pay/notify}
+  refund-notify-url: ${WXPAY_REFUND_NOTIFY_URL:https://your-domain.example/api/pay/refund/notify}
   sandbox: false
-# 生产环境请将前端基址切换为 HTTPS，并在微信公众平台配置 request 合法域名。

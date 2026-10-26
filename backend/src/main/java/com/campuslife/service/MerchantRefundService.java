@@ -1,6 +1,6 @@
 package com.campuslife.service;
 
-import com.campuslife.config.RefundWxPayProperties;
+import com.campuslife.config.WxPayProperties;
 import com.campuslife.mapper.MerchantMapper;
 import com.wechat.pay.java.service.refund.RefundService;
 import com.wechat.pay.java.service.refund.model.AmountReq;
@@ -18,7 +18,7 @@ import java.util.Map;
 public class MerchantRefundService {
     private final MerchantMapper mapper;
     private final ObjectProvider<RefundService> refundServiceProvider;
-    private final RefundWxPayProperties properties;
+    private final WxPayProperties properties;
     private final MerchantRefundStatusService statusService;
 
     public String submitAfterCommit(Long orderId) {

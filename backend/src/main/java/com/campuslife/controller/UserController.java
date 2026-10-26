@@ -1,16 +1,100 @@
 package com.campuslife.controller;
-import com.campuslife.dto.*; import com.campuslife.entity.UserAddress; import com.campuslife.service.UserService; import jakarta.validation.Valid; import lombok.RequiredArgsConstructor; import org.springframework.web.bind.annotation.*;
+
+import com.campuslife.config.CurrentUser;
+import com.campuslife.config.ForbiddenException;
+import com.campuslife.dto.*;
+import com.campuslife.entity.UserAddress;
+import com.campuslife.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.*;
-@RestController @RequestMapping("/api") @RequiredArgsConstructor public class UserController { private final UserService service;
- @GetMapping("/users/{id}/profile") public ApiResponse<Map<String,Object>> profile(@PathVariable Long id){return ApiResponse.ok(service.profile(Math.max(id,1)));}
- @PostMapping("/users/{id}/profile") public ApiResponse<Map<String,Object>> updateProfile(@PathVariable Long id,@Valid @RequestBody ProfileUpdateRequest r){return ApiResponse.ok(service.updateProfile(Math.max(id,1),r));}
- @GetMapping("/users/{id}/posts") public ApiResponse<Map<String,Object>> posts(@PathVariable Long id,@RequestParam(defaultValue="1") Long viewerId,@RequestParam(defaultValue="1") int page,@RequestParam(defaultValue="10") int size){return ApiResponse.ok(service.postsByAuthor(Math.max(id,1),Math.max(viewerId,1),Math.max(page,1),Math.min(Math.max(size,1),50)));}
- @GetMapping("/users/{id}/stats") public ApiResponse<Map<String,Object>> stats(@PathVariable Long id){return ApiResponse.ok(service.stats(Math.max(id,1)));}
- @GetMapping("/users/{id}/favorites") public ApiResponse<List<Map<String,Object>>> favorites(@PathVariable Long id){return ApiResponse.ok(service.favorites(Math.max(id,1)));}
- @GetMapping("/users/{id}/views") public ApiResponse<List<Map<String,Object>>> views(@PathVariable Long id){return ApiResponse.ok(service.views(Math.max(id,1)));}
- @PostMapping("/users/{id}/favorites") public ApiResponse<Map<String,Object>> toggleFavorite(@PathVariable Long id,@Valid @RequestBody FavoriteToggleRequest r){return ApiResponse.ok(service.toggleFavorite(Math.max(id,1),r.getPostId()));}
- @GetMapping("/users/{id}/coupons") public ApiResponse<List<Map<String,Object>>> coupons(@PathVariable Long id){return ApiResponse.ok(service.coupons(Math.max(id,1)));}
- @GetMapping("/users/{id}/addresses") public ApiResponse<List<Map<String,Object>>> addresses(@PathVariable Long id){return ApiResponse.ok(service.addresses(Math.max(id,1)));}
- @PostMapping("/users/{id}/addresses") public ApiResponse<UserAddress> addAddress(@PathVariable Long id,@Valid @RequestBody AddressAddRequest r){return ApiResponse.ok(service.addAddress(Math.max(id,1),r));}
- @PostMapping("/feedback") public ApiResponse<Map<String,Object>> feedback(@Valid @RequestBody FeedbackRequest r){return ApiResponse.ok(service.feedback(r.getUserId(),r.getContent()));}
+
+@RestController
+@RequestMapping("/api")
+@RequiredArgsConstructor
+public class UserController {
+    private final UserService service;
+
+    /** 只能操作自己的数据：路径里的 {id} 必须与登录身份一致。 */
+    private static Long requireSelf(Long pathId, HttpServletRequest request) {
+        Long authed = CurrentUser.optional(request);
+        if (authed == null) throw new ForbiddenException("请先登录");
+        if (pathId != null && !pathId.equals(authed)) throw new ForbiddenException("只能查看自己的数据");
+        return authed;
+    }
+
+    // 公开：看别人的主页资料
+    @GetMapping("/users/{id}/profile")
+    public ApiResponse<Map<String, Object>> profile(@PathVariable Long id) {
+        return ApiResponse.ok(service.profile(Math.max(id, 1)));
+    }
+
+    // 改自己的资料
+    @PostMapping("/users/{id}/profile")
+    public ApiResponse<Map<String, Object>> updateProfile(@PathVariable Long id,
+                                                          @Valid @RequestBody ProfileUpdateRequest r,
+                                                          HttpServletRequest request) {
+        return ApiResponse.ok(service.updateProfile(requireSelf(id, request), r));
+    }
+
+    // 公开：看某人发布过的帖子
+    @GetMapping("/users/{id}/posts")
+    public ApiResponse<Map<String, Object>> posts(@PathVariable Long id,
+                                                  @RequestParam(defaultValue = "1") Long viewerId,
+                                                  @RequestParam(defaultValue = "1") int page,
+                                                  @RequestParam(defaultValue = "10") int size,
+                                                  HttpServletRequest request) {
+        return ApiResponse.ok(service.postsByAuthor(Math.max(id, 1), Math.max(CurrentUser.resolve(request, viewerId), 1),
+            Math.max(page, 1), Math.min(Math.max(size, 1), 50)));
+    }
+
+    // 公开：主页统计数字
+    @GetMapping("/users/{id}/stats")
+    public ApiResponse<Map<String, Object>> stats(@PathVariable Long id) {
+        return ApiResponse.ok(service.stats(Math.max(id, 1)));
+    }
+
+    // ---- 以下都是「我的数据」，必须登录且只能是自己 ----
+    @GetMapping("/users/{id}/favorites")
+    public ApiResponse<List<Map<String, Object>>> favorites(@PathVariable Long id, HttpServletRequest request) {
+        return ApiResponse.ok(service.favorites(requireSelf(id, request)));
+    }
+
+    @GetMapping("/users/{id}/views")
+    public ApiResponse<List<Map<String, Object>>> views(@PathVariable Long id, HttpServletRequest request) {
+        return ApiResponse.ok(service.views(requireSelf(id, request)));
+    }
+
+    @PostMapping("/users/{id}/favorites")
+    public ApiResponse<Map<String, Object>> toggleFavorite(@PathVariable Long id,
+                                                           @Valid @RequestBody FavoriteToggleRequest r,
+                                                           HttpServletRequest request) {
+        return ApiResponse.ok(service.toggleFavorite(requireSelf(id, request), r.getPostId()));
+    }
+
+    @GetMapping("/users/{id}/coupons")
+    public ApiResponse<List<Map<String, Object>>> coupons(@PathVariable Long id, HttpServletRequest request) {
+        return ApiResponse.ok(service.coupons(requireSelf(id, request)));
+    }
+
+    @GetMapping("/users/{id}/addresses")
+    public ApiResponse<List<Map<String, Object>>> addresses(@PathVariable Long id, HttpServletRequest request) {
+        return ApiResponse.ok(service.addresses(requireSelf(id, request)));
+    }
+
+    @PostMapping("/users/{id}/addresses")
+    public ApiResponse<UserAddress> addAddress(@PathVariable Long id,
+                                               @Valid @RequestBody AddressAddRequest r,
+                                               HttpServletRequest request) {
+        return ApiResponse.ok(service.addAddress(requireSelf(id, request), r));
+    }
+
+    @PostMapping("/feedback")
+    public ApiResponse<Map<String, Object>> feedback(@Valid @RequestBody FeedbackRequest r, HttpServletRequest request) {
+        r.setUserId(CurrentUser.resolve(request, r.getUserId()));
+        return ApiResponse.ok(service.feedback(r.getUserId(), r.getContent()));
+    }
 }

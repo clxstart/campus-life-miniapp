@@ -1,0 +1,22 @@
+# 本机开发配置（spring.profiles.default=dev，直接 mvn spring-boot:run 就会加载）
+# 这里的值都是本地默认值，不要在这个文件里写任何线上密钥。
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/campus_life?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:chang090011}
+
+campus:
+  jwt:
+    secret: ${CAMPUS_JWT_SECRET:campus-life-local-dev-secret-please-change-in-production}
+  wx:
+    appid: ''
+    secret: ''
+  auth:
+    enforce: ${CAMPUS_AUTH_ENFORCE:true}
+  pay:
+    # 本地没有商户号，外卖下单走模拟支付，方便跑通「下单→已付款→配送」全链路
+    simulate: true
+
+wxpay:
+  enabled: false

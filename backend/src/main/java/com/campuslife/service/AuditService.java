@@ -105,12 +105,65 @@ public class AuditService {
         List<String> deny = new ArrayList<>(configured);
         if (deny.isEmpty()) deny.addAll(FALLBACK_WORDS);
 
+        // 关掉引擎自带的数字/邮箱/链接检查。
+        // 这三项不看词表，只要文本里出现连续数字（实测 ≥8 位）、邮箱或链接就直接判定命中，
+        // 于是「台灯123456789」「E2E测试-1730123456789」这类正常内容全被拦截。
+        // 本项目的审核口径是「词表驱动的校园诈骗/学术不端」，不是联系方式审查，因此全部关闭。
         SensitiveWordBs engine = SensitiveWordBs.newInstance()
             .wordAllow(WordAllows.chains(WordAllows.system(), () -> COMMON_ALLOW))
             .wordDeny(() -> deny)
+            .enableNumCheck(false)
+            .enableEmailCheck(false)
+            .enableUrlCheck(false)
             .ignoreCase(true).ignoreWidth(true).ignoreNumStyle(true).init();
         words.set(engine);
         log.info("Sensitive-word engine loaded with {} deny words, {} allow words", deny.size(), COMMON_ALLOW.size());
+    }
+
+    /**
+     * 取出一段文本里真正需要拦截的词。
+     *
+     * 引擎自带的 wordAllow 只按「整词相等」剔除，管不了「违规词是白名单词的子串」这种情况：
+     * 词表里有「押金」，白名单里写了「押金退还」，但「押金退还」照样会被判违规。
+     * 这里补一层按出现位置的白名单覆盖判断：命中词在文本里的每一处都被某个白名单词包住，
+     * 才算误判并放行；只要有一处露在外面（例如「先交押金」）就仍然拦截。
+     */
+    public List<String> matchWords(String text) {
+        String value = text == null ? "" : text;
+        if (value.isEmpty()) return List.of();
+        return words.get().findAll(value).stream()
+            .filter(hit -> hit != null && !hit.isBlank())
+            .filter(hit -> hit.codePoints().anyMatch(Character::isLetterOrDigit))
+            .distinct()
+            .filter(hit -> !isCoveredByAllowWord(value, hit))
+            .toList();
+    }
+
+    /** 命中词在文本中的所有出现位置是否都被白名单词覆盖。 */
+    private static boolean isCoveredByAllowWord(String text, String hit) {
+        int from = 0;
+        boolean seen = false;
+        while (true) {
+            int at = text.indexOf(hit, from);
+            if (at < 0) break;
+            seen = true;
+            if (!coveredAt(text, hit, at)) return false;
+            from = at + 1;
+        }
+        return seen;
+    }
+
+    private static boolean coveredAt(String text, String hit, int at) {
+        int end = at + hit.length();
+        for (String allow : COMMON_ALLOW) {
+            if (allow.length() <= hit.length() || !allow.contains(hit)) continue;
+            int pos = text.indexOf(allow);
+            while (pos >= 0) {
+                if (pos <= at && pos + allow.length() >= end) return true;
+                pos = text.indexOf(allow, pos + 1);
+            }
+        }
+        return false;
     }
 
     public AuditResult checkText(String text, String targetType) {
@@ -119,7 +172,7 @@ public class AuditService {
 
     public AuditResult checkText(String text, String targetType, Long userId) {
         String value = text == null ? "" : text;
-        List<String> hits = words.get().findAll(value).stream().distinct().toList();
+        List<String> hits = matchWords(value);
         if (!hits.isEmpty()) {
             return new AuditResult(false, false, "内容包含违规词：" + String.join("、", hits), hits);
         }

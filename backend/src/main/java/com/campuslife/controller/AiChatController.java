@@ -1,7 +1,9 @@
 package com.campuslife.controller;
 
+import com.campuslife.config.CurrentUser;
 import com.campuslife.dto.ApiResponse;
 import com.campuslife.service.AiChatService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,10 +21,10 @@ public class AiChatController {
 
     private final AiChatService service;
 
-    /** 发一条消息，拿到回复 */
+    /** 发一条消息，拿到回复。游客可用；已登录时以 token 身份为准，回复能带本校数据。 */
     @PostMapping("/chat")
-    public ApiResponse<Map<String, Object>> chat(@RequestBody Map<String, Object> body) {
-        Long userId = longOr(body.get("userId"), 1L);
+    public ApiResponse<Map<String, Object>> chat(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        Long userId = CurrentUser.resolve(request, longOr(body.get("userId"), null), 1L);
         Long schoolId = body.get("schoolId") == null ? null : longOr(body.get("schoolId"), 0L);
         String message = body.get("message") == null ? "" : String.valueOf(body.get("message"));
         return ApiResponse.ok(service.chat(userId, schoolId, message));

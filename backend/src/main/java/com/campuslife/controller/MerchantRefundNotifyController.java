@@ -1,6 +1,6 @@
 package com.campuslife.controller;
 
-import com.campuslife.config.RefundWxPayProperties;
+import com.campuslife.config.WxPayProperties;
 import com.campuslife.service.MerchantRefundStatusService;
 import com.wechat.pay.java.core.RSAAutoCertificateConfig;
 import com.wechat.pay.java.core.notification.NotificationParser;
@@ -23,7 +23,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MerchantRefundNotifyController {
     private final ObjectProvider<RSAAutoCertificateConfig> configProvider;
-    private final RefundWxPayProperties properties;
+    private final WxPayProperties properties;
     private final MerchantRefundStatusService statusService;
 
     @PostMapping("/notify")
