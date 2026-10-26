@@ -75,6 +75,15 @@ public class MerchantRefundStatusService {
         };
         mapper.updatePayStatus(orderId, payStatus);
 
+        // 同步订单主状态：退款成功 → refunded，退款中 → refunding。
+        // 之前这里只改 pay_status 不改 status，导致订单列表里仍显示「已完成/配送中」，
+        // 与退款单状态不一致。商家拒单与用户退款现在共用这一处逻辑。
+        if ("success".equals(status)) {
+            mapper.updateOrderStatusForRefund(orderId, "refunded");
+        } else if ("pending".equals(status)) {
+            mapper.updateOrderStatusForRefund(orderId, "refunding");
+        }
+
         String title;
         String content;
         switch (status) {

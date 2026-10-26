@@ -19,9 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.binarywang.wxpay.bean.notify.SignatureHeader;
 import com.github.binarywang.wxpay.bean.notify.WxPayNotifyV3Result;
-import com.github.binarywang.wxpay.bean.request.WxPayRefundV3Request;
 import com.github.binarywang.wxpay.bean.request.WxPayUnifiedOrderV3Request;
-import com.github.binarywang.wxpay.bean.result.WxPayRefundV3Result;
 import com.github.binarywang.wxpay.bean.result.WxPayUnifiedOrderV3Result;
 import com.github.binarywang.wxpay.bean.result.WxPayOrderQueryV3Result;
 import com.github.binarywang.wxpay.bean.result.enums.TradeTypeEnum;
@@ -52,6 +50,8 @@ public class PayService {
     private final UserMapper userMapper;
     private final ShopMapper shopMapper;
     private final RiderMapper riderMapper;
+    /** 退款统一实现（商家拒单与用户退款共用，避免两套逻辑分叉） */
+    private final MerchantRefundService merchantRefundService;
     private final ObjectMapper json;
     private final WxPayProperties properties;
     private final ObjectProvider<WxPayService> wxPayProvider;
@@ -138,6 +138,17 @@ public class PayService {
         return detail(order);
     }
 
+    /**
+     * 用户申请退款
+     *
+     * 与商家拒单退款统一走 MerchantRefundService：
+     *   - 同一套官方 APIv3 SDK（不再用 binarywang 的 refundV3）
+     *   - 同一套状态落库逻辑（MerchantRefundStatusService）
+     *   - 同一套「创建失败则查询兜底」的容错
+     *
+     * 历史问题：这里曾自己实现一套退款，与商家侧规则不一致，
+     * 改一处容易漏另一处，现合并为唯一实现。
+     */
     @Transactional
     public Map<String, Object> refund(Long orderId, Long userId, String reason) {
         UserOrder order = requireOrder(orderId);
@@ -150,21 +161,26 @@ public class PayService {
         }
         transition(order, OrderStatus.REFUNDING.value());
         order.setPayStatus("refunding"); orderMapper.updateById(order);
+
+        // 写入退款单（与商家侧格式一致：RF + 时间戳 + 随机串，便于对账）
         RefundRecord record = new RefundRecord();
-        record.setOrderId(order.getId()); record.setOutRefundNo("RF" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + UUID.randomUUID().toString().replace("-", "").substring(0, 10)); record.setAmountCents(order.getPayAmountCents()); record.setReason(reason == null ? "用户申请退款" : reason.trim()); record.setStatus("pending"); record.setCreatedAt(LocalDateTime.now()); refundRecordMapper.insert(record);
+        record.setOrderId(order.getId());
+        record.setOutRefundNo("RF" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+            + UUID.randomUUID().toString().replace("-", "").substring(0, 10));
+        record.setAmountCents(order.getPayAmountCents());
+        record.setReason(reason == null ? "用户申请退款" : reason.trim());
+        record.setStatus("pending");
+        record.setCreatedAt(LocalDateTime.now());
+        refundRecordMapper.insert(record);
+
+        // 未配置真实支付时走模拟完成
         if (!properties.isEnabled()) {
             completeRefund(order, record, "SIM-REFUND-" + record.getId());
             return detail(order);
         }
-        try {
-            WxPayRefundV3Request.Amount amount = new WxPayRefundV3Request.Amount().setRefund(order.getPayAmountCents()).setTotal(order.getPayAmountCents()).setCurrency("CNY");
-            WxPayRefundV3Request request = new WxPayRefundV3Request().setOutTradeNo(order.getOutTradeNo()).setTransactionId(order.getTransactionId()).setOutRefundNo(record.getOutRefundNo()).setReason(record.getReason()).setAmount(amount);
-            WxPayRefundV3Result result = requireWxPay().refundV3(request);
-            record.setRefundId(result.getRefundId());
-            if ("SUCCESS".equalsIgnoreCase(result.getStatus())) completeRefund(order, record, result.getRefundId()); else refundRecordMapper.updateById(record);
-        } catch (WxPayException e) {
-            record.setStatus("failed"); refundRecordMapper.updateById(record); throw new IllegalStateException("微信退款失败: " + e.getMessage(), e);
-        }
+
+        // 统一交给商家退款服务处理（内部含提交失败后查询兜底）
+        merchantRefundService.submitAfterCommit(order.getId());
         return detail(order);
     }
 

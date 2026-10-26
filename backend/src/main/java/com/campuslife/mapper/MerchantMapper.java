@@ -182,6 +182,20 @@ public interface MerchantMapper {
     @Update("UPDATE user_order SET pay_status=CASE WHEN pay_status='refunded' THEN pay_status ELSE #{status} END WHERE id=#{orderId}")
     int updatePayStatus(@Param("orderId") Long orderId, @Param("status") String status);
 
+    /**
+     * 同步订单主状态（退款流程专用）
+     *
+     * 退款成功 → status='refunded'；退款中 → status='refunding'。
+     * 只允许从「已付款之后的状态」流转，避免覆盖已取消/已结束的订单。
+     */
+    @Update("""
+        UPDATE user_order
+        SET status = #{targetStatus}
+        WHERE id=#{orderId}
+          AND status IN ('paid','accepted','delivering','picked','completed','refunding')
+        """)
+    int updateOrderStatusForRefund(@Param("orderId") Long orderId, @Param("targetStatus") String targetStatus);
+
     @Insert("INSERT INTO notification(user_id,title,content,category,tone) VALUES(#{userId},#{title},#{content},'food','blue')")
     int notifyUser(@Param("userId") Long userId, @Param("title") String title, @Param("content") String content);
 
