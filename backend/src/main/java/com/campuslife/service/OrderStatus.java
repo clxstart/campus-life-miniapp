@@ -32,7 +32,11 @@ public enum OrderStatus {
         Set<OrderStatus> allowed = switch (source) {
             case CREATED -> EnumSet.of(PAID, CANCELLED, CLOSED);
             case PAID -> EnumSet.of(ACCEPTED, REFUNDING);
-            case ACCEPTED -> EnumSet.of(DELIVERING, REFUNDING);
+            // accepted → completed 仅用于「商家自配送」场景：
+            // 订单未被任何骑手接单时，商家可直接标记完成。
+            // 已被骑手接单的订单，MerchantService.complete 会拒绝，必须走
+            // delivering → picked → completed。
+            case ACCEPTED -> EnumSet.of(DELIVERING, COMPLETED, REFUNDING);
             case DELIVERING -> EnumSet.of(PICKED, COMPLETED, REFUNDING);
             case PICKED -> EnumSet.of(COMPLETED, REFUNDING);
             case COMPLETED -> EnumSet.of(REFUNDING);

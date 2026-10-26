@@ -186,10 +186,18 @@ public class MerchantService {
         return Map.of("list",list,"total",mapper.countOrders(shopId,status),"page",p,"size",s);
     }
 
+    /**
+     * 商家接单
+     * 状态机校验：paid → accepted（OrderStatus 只允许这条边）
+     */
     @Transactional
     public void accept(Long shopId, Long id) {
-        requireOwnedOrder(shopId,id);
-        if (mapper.acceptOrder(id,shopId,"accepted") != 1) throw new IllegalStateException("订单状态不允许接单");
+        Map<String,Object> order = requireOwnedOrder(shopId, id);
+        // 显式走状态机，非法流转直接抛异常
+        OrderStatus.requireTransition(String.valueOf(order.get("status")), OrderStatus.ACCEPTED.value());
+        if (mapper.acceptOrder(id, shopId, OrderStatus.ACCEPTED.value()) != 1) {
+            throw new IllegalStateException("订单状态不允许接单（可能已被处理，请刷新）");
+        }
     }
 
     @Transactional
@@ -225,10 +233,34 @@ public class MerchantService {
         return result;
     }
 
+    /**
+     * 商家标记订单完成（仅限无骑手的自配送场景）
+     *
+     * 业务规则：
+     *   - 订单已经被骑手接单（rider_id 不为空）时，必须由骑手在骑手端点「送达」完成，
+     *     商家不能跳过骑手直接把订单标记完成，否则骑手侧的待抢/配送列表会与订单状态不一致。
+     *   - 只有尚未被任何骑手接单的订单，才允许商家自行完成（自配送兜底）。
+     *
+     * 状态流转：accepted → completed（仅当 rider_id IS NULL）
+     */
     @Transactional
     public void complete(Long shopId, Long id) {
-        requireOwnedOrder(shopId,id);
-        if (mapper.completeOrder(id,shopId) != 1) throw new IllegalStateException("订单状态不允许完成");
+        Map<String,Object> order = requireOwnedOrder(shopId, id);
+
+        // 已被骑手接单的订单，只能由骑手完成（RiderMapper.deliver 才会置 completed）
+        Object riderId = order.get("riderId");
+        boolean takenByRider = riderId != null && !String.valueOf(riderId).isBlank()
+            && !"0".equals(String.valueOf(riderId));
+        if (takenByRider) {
+            throw new IllegalStateException("该订单已由骑手接单，请等待骑手送达后再标记完成");
+        }
+
+        // 状态机校验：accepted → completed
+        OrderStatus.requireTransition(String.valueOf(order.get("status")), OrderStatus.COMPLETED.value());
+
+        if (mapper.completeOrder(id, shopId) != 1) {
+            throw new IllegalStateException("订单状态不允许完成（仅「已接单」状态的订单可完成）");
+        }
     }
 
     public Map<String,Object> userOrders(Long userId, int page, int size) {

@@ -40,14 +40,32 @@ public class RiderService {
         }
     }
 
+    /**
+     * 标记取餐：delivering → picked
+     * SQL 已带 status='delivering' 前置条件，这里补状态机校验做双保险。
+     */
     @Transactional
     public void pick(Long orderId, Long riderId) {
-        if (mapper.pick(orderId, riderId) != 1) throw new IllegalStateException("订单状态已变化，无法标记取货");
+        Map<String, Object> order = mapper.dispatchOf(orderId, riderId);
+        if (order == null) throw new IllegalStateException("订单不存在或不属于你");
+        OrderStatus.requireTransition(String.valueOf(order.get("status")), OrderStatus.PICKED.value());
+        if (mapper.pick(orderId, riderId) != 1) {
+            throw new IllegalStateException("订单状态已变化，无法标记取货");
+        }
     }
 
+    /**
+     * 标记送达：picked → completed
+     * 完成后重算骑手忙碌状态（可能还有其他进行中的订单）。
+     */
     @Transactional
     public void deliver(Long orderId, Long riderId) {
-        if (mapper.deliver(orderId, riderId) != 1) throw new IllegalStateException("订单状态已变化，无法标记送达");
+        Map<String, Object> order = mapper.dispatchOf(orderId, riderId);
+        if (order == null) throw new IllegalStateException("订单不存在或不属于你");
+        OrderStatus.requireTransition(String.valueOf(order.get("status")), OrderStatus.COMPLETED.value());
+        if (mapper.deliver(orderId, riderId) != 1) {
+            throw new IllegalStateException("订单状态已变化，无法标记送达");
+        }
         mapper.refreshRiderStatus(riderId);
     }
 

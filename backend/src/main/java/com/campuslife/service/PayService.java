@@ -10,6 +10,7 @@ import com.campuslife.entity.User;
 import com.campuslife.entity.UserOrder;
 import com.campuslife.mapper.PaymentRecordMapper;
 import com.campuslife.mapper.RefundRecordMapper;
+import com.campuslife.mapper.RiderMapper;
 import com.campuslife.mapper.ShopMapper;
 import com.campuslife.mapper.UserMapper;
 import com.campuslife.mapper.UserOrderMapper;
@@ -50,6 +51,7 @@ public class PayService {
     private final RefundRecordMapper refundRecordMapper;
     private final UserMapper userMapper;
     private final ShopMapper shopMapper;
+    private final RiderMapper riderMapper;
     private final ObjectMapper json;
     private final WxPayProperties properties;
     private final ObjectProvider<WxPayService> wxPayProvider;
@@ -141,7 +143,11 @@ public class PayService {
         UserOrder order = requireOrder(orderId);
         if (userId != null && !userId.equals(order.getUserId())) throw new IllegalArgumentException("无权操作该订单");
         if ("refunding".equals(order.getStatus()) || "refunded".equals(order.getStatus())) throw new IllegalStateException("订单已在退款流程中");
-        if (!List.of("paid", "accepted", "delivering", "completed").contains(order.getStatus())) throw new IllegalStateException("当前订单不能退款");
+        // 以 OrderStatus 状态机为准：paid / accepted / delivering / picked / completed 均可进入退款。
+        // 不再用手写列表，避免与状态机规则脱节（历史上 picked 可退但这里漏了）。
+        if (!OrderStatus.canTransit(order.getStatus(), OrderStatus.REFUNDING.value())) {
+            throw new IllegalStateException("当前订单状态（" + order.getStatus() + "）不能退款");
+        }
         transition(order, OrderStatus.REFUNDING.value());
         order.setPayStatus("refunding"); orderMapper.updateById(order);
         RefundRecord record = new RefundRecord();
@@ -220,6 +226,11 @@ public class PayService {
     private void completeRefund(UserOrder order, RefundRecord record, String refundId) {
         record.setRefundId(refundId); record.setStatus("success"); refundRecordMapper.updateById(record);
         transition(order, OrderStatus.REFUNDED.value()); order.setPayStatus("refunded"); orderMapper.updateById(order);
+        // 订单退款后不再计入骑手进行中的任务，需重算骑手忙碌状态，
+        // 否则骑手会一直停在 busy，抢不到新单。
+        if (order.getRiderId() != null) {
+            try { riderMapper.refreshRiderStatus(order.getRiderId()); } catch (Exception ignored) {}
+        }
     }
 
     private void transition(UserOrder order, String target) { OrderStatus.requireTransition(order.getStatus(), target); order.setStatus(target); }

@@ -56,6 +56,10 @@ public interface RiderMapper {
         """)
     int grab(@Param("orderId") Long orderId, @Param("riderId") Long riderId, @Param("riderName") String riderName);
 
+    /** 查询一条属于该骑手的订单（用于状态机校验） */
+    @Select("SELECT id, status, rider_id AS riderId FROM user_order WHERE id=#{orderId} AND rider_id=#{riderId}")
+    Map<String,Object> dispatchOf(@Param("orderId") Long orderId, @Param("riderId") Long riderId);
+
     @Update("UPDATE user_order SET status='picked', picked_at=NOW() WHERE id=#{orderId} AND rider_id=#{riderId} AND status='delivering'")
     int pick(@Param("orderId") Long orderId, @Param("riderId") Long riderId);
 

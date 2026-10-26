@@ -140,6 +140,7 @@ public interface MerchantMapper {
         SELECT o.id, o.user_id AS userId, u.nickname AS userName, o.shop_id AS shopId,
           s.name AS shopName, o.items, o.address, o.remark, o.subtotal, o.packing_fee AS packingFee,
           o.delivery_fee AS deliveryFee, o.discount_amount AS discountAmount, o.total, o.status,
+          o.rider_id AS riderId, o.rider_name AS riderName,
           o.created_at AS createdAt
         FROM user_order o JOIN `user` u ON u.id=o.user_id JOIN shop s ON s.id=o.shop_id
         WHERE o.shop_id=#{shopId} AND o.status != 'created'<if test="status != null and status != ''"> AND o.status=#{status}</if>
@@ -152,7 +153,7 @@ public interface MerchantMapper {
     @Select("SELECT COUNT(*) FROM user_order WHERE shop_id=#{shopId} AND status <> 'created' AND (#{status} IS NULL OR #{status}='' OR status=#{status})")
     long countOrders(@Param("shopId") Long shopId, @Param("status") String status);
 
-    @Select("SELECT id, user_id AS userId, items, total, status, pay_status AS payStatus, pay_amount_cents AS payAmountCents, out_trade_no AS outTradeNo, transaction_id AS transactionId FROM user_order WHERE id=#{id} AND shop_id=#{shopId}")
+    @Select("SELECT id, user_id AS userId, items, total, status, pay_status AS payStatus, pay_amount_cents AS payAmountCents, out_trade_no AS outTradeNo, transaction_id AS transactionId, rider_id AS riderId, rider_name AS riderName FROM user_order WHERE id=#{id} AND shop_id=#{shopId}")
     Map<String,Object> order(@Param("id") Long id, @Param("shopId") Long shopId);
 
     @Update("UPDATE user_order SET status=#{nextStatus} WHERE id=#{id} AND shop_id=#{shopId} AND status='paid'")
