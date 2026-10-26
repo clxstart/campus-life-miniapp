@@ -38,12 +38,18 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     /**
      * 无需 token 的写接口：
-     * - 登录本身（/api/auth/**，含开发登录）
+     * - 登录本身：小程序 /api/auth/**、管理端 /api/admin/login、商家与骑手也走这个入口
+     * - 商家入驻申请 /api/merchant/apply：还没账号的人也要能提交
      * - 微信服务器回调（支付、退款通知）
      * - AI 陪聊与图片上传：产品上刻意允许游客使用（上传有按 IP 的频率限制兜底）
+     *
+     * 注意：登录接口一旦漏在这份名单外，整个管理端/商家端/骑手端都会因为「请先登录」而打不开
+     * （本文件曾经漏掉 /api/admin/login，属于回归过的点，改动时请连带跑一遍登录冒烟）。
      */
     private static final List<String> PUBLIC_WRITE_PATHS = List.of(
         "/api/auth/",
+        "/api/admin/login",
+        "/api/merchant/apply",
         "/api/pay/notify",
         "/api/pay/refund/notify",
         "/api/ai/",
@@ -55,7 +61,6 @@ public class AuthInterceptor implements HandlerInterceptor {
         "/api/conversations",
         "/api/notifications",
         "/api/timetable",
-        "/api/calendar",
         "/api/pet",
         // 圈子群聊历史与未读数也是「我的数据」：之前没拦住，未登录会走到 400「参数无效」，
         // 前端看不出是没登录，也不会去重新登录。现在统一成 401。
@@ -77,6 +82,12 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        // 管理端/商家端/骑手端有自己的拦截器（AdminInterceptor / RiderInterceptor），
+        // 它们的 token 是 AdminJwtUtil 用另一套密钥签的，在这里一定解析不出来。
+        // 如果这里也要求登录，管理端所有写操作（PUT/POST）都会先被 401 掉，
+        // 连 GET 能过、PUT 不能过的怪现象也都是这个原因 —— 直接放行，交给下游拦截器判定。
+        if (isDelegatedPath(request.getRequestURI())) return true;
+
         Long userId = jwt.parse(token(request));
         if (userId != null) {
             request.setAttribute(USER_ID, userId);
@@ -87,6 +98,13 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (!requiresIdentity(request, path)) return true;
         reject(response);
         return false;
+    }
+
+    /** 由各自专用拦截器负责鉴权的路径，这里不参与。 */
+    private static boolean isDelegatedPath(String path) {
+        return path.startsWith("/api/admin/")
+            || path.startsWith("/api/merchant/")
+            || path.startsWith("/api/rider/");
     }
 
     private boolean requiresIdentity(HttpServletRequest request, String path) {

@@ -2,7 +2,14 @@
   <div class="space-y-6 organic-enter">
     <div class="flex items-center justify-between gap-4">
       <p class="text-sm text-stone-600">圈子按学校隔离。标记「热门」的圈子会出现在小程序圈子页轮播。</p>
-      <button class="no-btn-primary no-btn-sm" @click="openCreate">新建圈子</button>
+      <div class="flex items-center gap-2">
+        <!-- 多校 SaaS：超管可切到某一所学校；校管固定本校（后端按 token 限制） -->
+        <select v-if="isSuper" v-model.number="schoolId" class="no-input !w-auto min-w-[10rem]" @change="load(1)">
+          <option :value="0">全部学校</option>
+          <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
+        </select>
+        <button class="no-btn-primary no-btn-sm" @click="openCreate">新建圈子</button>
+      </div>
     </div>
 
     <NoTable
@@ -106,11 +113,22 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import NoTable from '../components/NoTable.vue'
 import NoModal from '../components/NoModal.vue'
 import NoImageUpload from '../components/NoImageUpload.vue'
 import http from '../api'
+import { useAuthStore } from '../stores/auth'
+
+const auth = useAuthStore()
+const isSuper = computed(() => auth.isSuper)
+const schools = ref([])
+const schoolId = ref(0)
+
+async function loadSchools() {
+  if (!isSuper.value) return
+  try { schools.value = (await http.get('/admin/schools')) || [] } catch { schools.value = [] }
+}
 
 const rows = ref([])
 const keyword = ref('')
@@ -141,7 +159,7 @@ function themeColor(theme) { return THEME_COLORS[theme] || '#8b9d77' }
 async function load(nextPage = 1) {
   try {
     const data = await http.get('/admin/circles', {
-      params: { keyword: keyword.value, page: nextPage, size: size.value }
+      params: { keyword: keyword.value, page: nextPage, size: size.value, schoolId: schoolId.value || undefined }
     })
     rows.value = data.list || []
     total.value = Number(data.total) || 0
@@ -198,5 +216,8 @@ async function toggleStatus(row) {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  await loadSchools()
+  load(1)
+})
 </script>

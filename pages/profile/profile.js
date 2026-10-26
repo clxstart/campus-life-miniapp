@@ -18,7 +18,6 @@ Page({
     menus: [
       { key: 'food-orders', icon: '餐', title: '我的外卖订单', value: '', tone: 'green' },
       { key: 'timetable', icon: '课', title: '我的课表', value: '', tone: 'blue' },
-      { key: 'calendar', icon: '历', title: '校历', value: '', tone: 'green' },
       { key: 'cert', icon: '✓', title: '校园身份认证', value: '已认证', tone: 'blue' },
       { key: 'address', icon: '⌖', title: '地址管理', value: '', tone: 'green' },
       { key: 'coupon', icon: '券', title: '优惠与权益', value: '', tone: 'yellow' },
@@ -61,7 +60,7 @@ Page({
     })
   },
 
-  // 课表/校历菜单行的动态值：教学周、今日课程数、距期中天数
+  // 课表菜单行的动态值：教学周、今日课程数（校历功能已下线）
   async applyScheduleMeta() {
     try {
       const { termInfo, courses } = await api.getTimetable()
@@ -71,10 +70,9 @@ Page({
       const weekNo = getTermWeek(today, termInfo.termStart)
       const todayCourses = courses.filter(course => course.day === todayIdx).length
       this.setData({
-        'menus[1].value': `第${weekNo}周 · 今天${todayCourses ? `${todayCourses}节` : '无课'}`,
-        'menus[2].value': `距期中还有${daysUntil(termInfo.midtermStart, today)}天`
+        'menus[1].value': `第${weekNo}周 · 今天${todayCourses ? `${todayCourses}节` : '无课'}`
       })
-    } catch (error) { this.setData({ 'menus[1].value': '点击查看课表', 'menus[2].value': '点击查看校历' }) }
+    } catch (error) { this.setData({ 'menus[1].value': '点击查看课表' }) }
   },
 
   openService(event) {
@@ -91,7 +89,6 @@ Page({
     const key = event.currentTarget.dataset.key
     if (key === 'food-orders') return wx.navigateTo({ url: '/pages/food-orders/food-orders' })
     if (key === 'timetable') return wx.navigateTo({ url: '/pages/timetable/timetable' })
-    if (key === 'calendar') return wx.navigateTo({ url: '/pages/calendar/calendar' })
     if (key === 'address') return this.openAddresses()
     if (key === 'coupon') return this.openCoupons()
     if (key === 'feedback') return this.openFeedback()

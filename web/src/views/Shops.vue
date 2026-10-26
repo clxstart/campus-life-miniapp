@@ -39,11 +39,17 @@
         <span class="no-badge bg-[#f0ece5] text-stone-600 border-stone-200">{{ row.schoolName || '跨校' }}</span>
       </template>
       <template #status="{ row }">
-        <span class="no-badge" :class="row.status === 1
-          ? 'bg-[#e6efe0] text-[#4d6b3c] border-[#cfdcc4]'
-          : 'bg-[#f6e7e0] text-[#a4553f] border-[#e3cbbf]'">
-          {{ row.status === 1 ? '营业中' : '已停用' }}
-        </span>
+        <!-- 状态列显示「真实可接单状态」：区分已下架 / 已打烊 / 已过营业时间 / 可接单 -->
+        <div class="flex flex-col gap-1">
+          <span class="no-badge" :class="row.orderable
+            ? 'bg-[#e6efe0] text-[#4d6b3c] border-[#cfdcc4]'
+            : 'bg-[#f6e7e0] text-[#a4553f] border-[#e3cbbf]'">
+            {{ row.orderable ? '营业中' : '休息中' }}
+          </span>
+          <span v-if="row.openStateText" class="text-[11px] leading-tight text-[#77847b]">
+            {{ row.openStateText }}
+          </span>
+        </div>
       </template>
       <template #ops="{ row }">
         <div class="flex items-center gap-2 whitespace-nowrap">

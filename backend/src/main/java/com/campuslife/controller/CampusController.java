@@ -89,11 +89,7 @@ public class CampusController {
         return ApiResponse.ok(service.timetable(CurrentUser.resolve(request, userId), week));
     }
 
-    @GetMapping("/calendar")
-    public ApiResponse<Map<String, Object>> calendar(@RequestParam(defaultValue = "1") Long userId,
-                                                     HttpServletRequest request) {
-        return ApiResponse.ok(service.calendar(CurrentUser.resolve(request, userId)));
-    }
+    // 校历接口（/api/calendar）已随「校历」功能下线移除
 
     // 学生自建课程：写入自己名下（挂当前学期），同格同名视为更新
     @PostMapping("/timetable/courses")

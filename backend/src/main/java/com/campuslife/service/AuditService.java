@@ -7,8 +7,6 @@ import com.campuslife.mapper.CampusMapper;
 import com.campuslife.mapper.UserMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.houbb.sensitive.word.bs.SensitiveWordBs;
-import com.github.houbb.sensitive.word.support.allow.WordAllows;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +26,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -47,7 +44,8 @@ public class AuditService {
     private final UploadService uploadService;
     private final org.springframework.transaction.PlatformTransactionManager transactionManager;
     @Qualifier("auditExecutor") private final Executor auditExecutor;
-    private final AtomicReference<SensitiveWordBs> words = new AtomicReference<>();
+    /** 敏感词引擎：ToolGood.Words（词表变更时整体重建） */
+    private final SensitiveWordEngine wordEngine;
 
     @Value("${campus.wx.appid:}") private String appid;
     @Value("${campus.wx.secret:}") private String secret;
@@ -99,25 +97,20 @@ public class AuditService {
         List<String> configured = list == null ? List.of() : list.stream()
             .filter(Objects::nonNull).map(String::trim).filter(value -> !value.isEmpty()).distinct().toList();
 
-        // 只使用数据库里配置的词表（+ 下面的 FALLBACK_WORDS 兜底），不加载 WordDenys.system()。
-        // 原因：system() 内置词典含大量单字（如「靠」），会误伤「靠窗」「依靠」等正常校园表达；
-        // 而本项目的审核重点是「校园诈骗/学术不端」，词表完全由业务方维护更可控。
+        // 只使用数据库里配置的词表（+ FALLBACK_WORDS 兜底）。
+        // 不加载第三方内置大词典：其中含大量单字（如「靠」），
+        // 会误伤「靠窗」「依靠」等正常校园表达；
+        // 本项目的审核重点是「校园诈骗/学术不端」，词表由业务方维护更可控。
         List<String> deny = new ArrayList<>(configured);
         if (deny.isEmpty()) deny.addAll(FALLBACK_WORDS);
 
-        // 关掉引擎自带的数字/邮箱/链接检查。
-        // 这三项不看词表，只要文本里出现连续数字（实测 ≥8 位）、邮箱或链接就直接判定命中，
-        // 于是「台灯123456789」「E2E测试-1730123456789」这类正常内容全被拦截。
-        // 本项目的审核口径是「词表驱动的校园诈骗/学术不端」，不是联系方式审查，因此全部关闭。
-        SensitiveWordBs engine = SensitiveWordBs.newInstance()
-            .wordAllow(WordAllows.chains(WordAllows.system(), () -> COMMON_ALLOW))
-            .wordDeny(() -> deny)
-            .enableNumCheck(false)
-            .enableEmailCheck(false)
-            .enableUrlCheck(false)
-            .ignoreCase(true).ignoreWidth(true).ignoreNumStyle(true).init();
-        words.set(engine);
-        log.info("Sensitive-word engine loaded with {} deny words, {} allow words", deny.size(), COMMON_ALLOW.size());
+        // 交给 ToolGood 引擎：内部做 DFA 多模式匹配 + 全角半角/大小写归一 + 跳过分隔符，
+        // 能拦住「刷 单」「刷-单」「Ｓ刷单」这类绕过写法。
+        // 白名单（COMMON_ALLOW）不交给引擎，仍由 isCoveredByAllowWord 按位置判断，
+        // 因为需要支持「违规词是白名单词子串」的场景（如词表「押金」vs 白名单「押金退还」）。
+        wordEngine.load(deny);
+        log.info("Sensitive-word engine (ToolGood) loaded with {} deny words, {} allow words",
+            deny.size(), COMMON_ALLOW.size());
     }
 
     /**
@@ -131,7 +124,9 @@ public class AuditService {
     public List<String> matchWords(String text) {
         String value = text == null ? "" : text;
         if (value.isEmpty()) return List.of();
-        return words.get().findAll(value).stream()
+        // ToolGood 已完成全角半角/大小写归一与跳字符，这里只做业务层过滤：
+        // 去掉纯符号命中，并按出现位置剔除被白名单词包住的误判。
+        return wordEngine.match(value).stream()
             .filter(hit -> hit != null && !hit.isBlank())
             .filter(hit -> hit.codePoints().anyMatch(Character::isLetterOrDigit))
             .distinct()

@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6 organic-enter">
     <!-- 分类切换 -->
-    <div class="flex flex-wrap gap-2">
+    <div class="flex flex-wrap items-center gap-2">
       <button
         v-for="tab in tabs"
         :key="tab.key"
@@ -9,6 +9,11 @@
         :class="active === tab.key ? 'bg-[#8b9d77] text-stone-900 border-transparent' : 'border-stone-300 text-stone-600 hover:bg-stone-200/60'"
         @click="switchTab(tab.key)"
       >{{ tab.label }}</button>
+      <!-- 多校 SaaS：超管可按校筛选二手/兼职/活动/轮播位 -->
+      <select v-if="isSuper" v-model.number="schoolId" class="no-input !w-auto min-w-[10rem] ml-auto" @change="load(1)">
+        <option :value="0">全部学校</option>
+        <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
+      </select>
     </div>
 
     <NoTable
@@ -136,6 +141,17 @@ import NoTable from '../components/NoTable.vue'
 import NoModal from '../components/NoModal.vue'
 import NoImageUpload from '../components/NoImageUpload.vue'
 import http from '../api'
+import { useAuthStore } from '../stores/auth'
+
+const auth = useAuthStore()
+const isSuper = computed(() => auth.isSuper)
+const schools = ref([])
+const schoolId = ref(0)
+
+async function loadSchools() {
+  if (!isSuper.value) return
+  try { schools.value = (await http.get('/admin/schools')) || [] } catch { schools.value = [] }
+}
 
 // 分类/成色与管理端其他地方保持一致
 const GOODS_CATEGORIES = ['数码', '图书', '生活', '运动', '其他']
@@ -247,7 +263,7 @@ async function load(nextPage = 1) {
   loading.value = true
   try {
     const data = await http.get(`/admin/${active.value}`, {
-      params: { page: nextPage, size: size.value, keyword: keyword.value }
+      params: { page: nextPage, size: size.value, keyword: keyword.value, schoolId: schoolId.value || undefined }
     })
     rows.value = data.list || []
     total.value = Number(data.total) || 0
@@ -288,5 +304,8 @@ async function remove(row) {
   }
 }
 
-onMounted(() => load(1))
+onMounted(async () => {
+  await loadSchools()
+  load(1)
+})
 </script>

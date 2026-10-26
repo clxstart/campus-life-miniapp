@@ -5,12 +5,22 @@
       <div class="flex items-center justify-between gap-4 mb-6">
         <div>
           <h2 class="font-serif text-xl md:text-2xl text-stone-800">学期</h2>
-          <p class="text-xs text-stone-500 mt-1">课表与校历都挂在学期下，学生端按当前学期读取</p>
+          <p class="text-xs text-stone-500 mt-1">课表挂在学期下，学生端按当前学期读取</p>
         </div>
-        <button class="no-btn-primary no-btn-sm" @click="openTerm()">新增学期</button>
+        <div class="flex items-center gap-2">
+          <!-- 多校 SaaS：超管必须先把学校选清楚，否则各校学期会混在一起 -->
+          <select v-if="isSuper" v-model.number="schoolId" class="no-input !w-auto min-w-[12rem]" @change="load">
+            <option :value="0" disabled>选择学校</option>
+            <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
+          </select>
+          <button class="no-btn-primary no-btn-sm" :disabled="!schoolId" @click="openTerm()">新增学期</button>
+        </div>
       </div>
 
-      <div v-if="!terms.length" class="py-10 text-center text-stone-500 text-sm">还没有配置学期</div>
+      <div v-if="isSuper && !schoolId" class="no-card-plain text-center py-12 text-stone-500 text-sm">
+        请先选择要管理的学校
+      </div>
+      <div v-else-if="!terms.length" class="py-10 text-center text-stone-500 text-sm">该学校还没有配置学期</div>
       <div v-else class="space-y-4">
         <div v-for="t in terms" :key="t.id" class="border border-stone-200 rounded-[1.5rem] p-5 flex flex-wrap items-center gap-4">
           <div class="flex-1 min-w-[12rem]">
@@ -21,37 +31,12 @@
             {{ t.active === 1 ? '当前学期' : '历史学期' }}
           </span>
           <button class="no-btn-ghost no-btn-sm" @click="openTerm(t)">编辑</button>
+          <button class="no-btn-ghost no-btn-sm !text-[#a4553f]" @click="removeTerm(t)">删除</button>
         </div>
       </div>
     </section>
 
-    <!-- 校历事件 -->
-    <section class="no-card-plain">
-      <div class="flex items-center justify-between gap-4 mb-6">
-        <div>
-          <h2 class="font-serif text-xl md:text-2xl text-stone-800">校历事件</h2>
-          <p class="text-xs text-stone-500 mt-1">学校统一维护，学生端只读</p>
-        </div>
-        <button class="no-btn-primary no-btn-sm" :disabled="!terms.length" @click="openEvent()">新增事件</button>
-      </div>
-
-      <div v-if="!events.length" class="py-10 text-center text-stone-500 text-sm">
-        {{ terms.length ? '还没有校历事件' : '请先配置学期' }}
-      </div>
-      <div v-else class="space-y-3">
-        <div v-for="e in events" :key="e.id" class="flex flex-wrap items-center gap-4 border border-stone-200 rounded-[1.5rem] px-5 py-4">
-          <div class="w-24 shrink-0 text-xs text-stone-500">{{ e.startDate }}</div>
-          <div class="flex-1 min-w-[10rem]">
-            <p class="text-stone-800 font-medium">{{ e.title }}</p>
-            <p class="text-xs text-stone-500 mt-0.5">{{ e.note || '—' }}</p>
-          </div>
-          <div class="flex gap-2">
-            <button class="no-btn-ghost no-btn-sm" @click="openEvent(e)">编辑</button>
-            <button class="no-btn-ghost no-btn-sm !text-[#a4553f]" @click="removeEvent(e)">删除</button>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- 校历事件：已随「校历」功能下线移除 -->
 
     <!-- 学期弹窗 -->
     <NoModal :open="termModal.open" :title="termModal.id ? '编辑学期' : '新增学期'" :submitting="termModal.submitting" @close="termModal.open = false" @confirm="saveTerm">
@@ -71,45 +56,21 @@
       </div>
     </NoModal>
 
-    <!-- 事件弹窗 -->
-    <NoModal :open="eventModal.open" :title="eventModal.id ? '编辑事件' : '新增事件'" :submitting="eventModal.submitting" @close="eventModal.open = false" @confirm="saveEvent">
-      <div class="space-y-5">
-        <div>
-          <label class="block mb-2 text-sm font-medium text-stone-700">所属学期</label>
-          <select v-model.number="eventModal.form.termId" class="no-input" :disabled="!!eventModal.id">
-            <option v-for="t in terms" :key="t.id" :value="t.id">{{ t.termLabel }}</option>
-          </select>
-        </div>
-        <div>
-          <label class="block mb-2 text-sm font-medium text-stone-700">事件名称</label>
-          <input v-model.trim="eventModal.form.title" class="no-input" placeholder="如 期中考试周" />
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block mb-2 text-sm font-medium text-stone-700">开始日期</label>
-            <input v-model="eventModal.form.startDate" class="no-input" type="date" />
-          </div>
-          <div>
-            <label class="block mb-2 text-sm font-medium text-stone-700">结束日期</label>
-            <input v-model="eventModal.form.endDate" class="no-input" type="date" />
-          </div>
-        </div>
-        <div>
-          <label class="block mb-2 text-sm font-medium text-stone-700">备注</label>
-          <input v-model.trim="eventModal.form.note" class="no-input" placeholder="选填" />
-        </div>
-      </div>
-    </NoModal>
   </div>
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import NoModal from '../components/NoModal.vue'
 import http from '../api'
+import { useAuthStore } from '../stores/auth'
 
+const auth = useAuthStore()
+const isSuper = computed(() => auth.isSuper)
+
+const schools = ref([])
+const schoolId = ref(0)
 const terms = ref([])
-const events = ref([])
 
 const dateFields = [
   { key: 'startDate', label: '开学日期' },
@@ -121,12 +82,29 @@ const dateFields = [
 
 const emptyTerm = () => ({ termLabel: '', startDate: '', endDate: '', midtermStart: '', midtermEnd: '', finalStart: '', active: 1 })
 const termModal = reactive({ open: false, id: null, submitting: false, form: emptyTerm() })
-const eventModal = reactive({ open: false, id: null, submitting: false, form: { termId: 0, title: '', startDate: '', endDate: '', note: '' } })
+
+// 超管需要先选学校：不选就不知道该管哪一所，后端也会把全校数据混着返回
+async function loadSchools() {
+  if (!isSuper.value) {
+    // 校管没有学校列表权限，用自己绑定的学校
+    schoolId.value = Number(auth.profile?.schoolId) || 0
+    return
+  }
+  try {
+    const list = await http.get('/admin/schools')
+    schools.value = list || []
+    if (schools.value.length) schoolId.value = Number(schools.value[0].id)
+  } catch (e) {
+    alert(e.message)
+  }
+}
 
 async function load() {
+  // 超管未选学校时不发请求，避免拿到跨校混合数据
+  if (isSuper.value && !schoolId.value) { terms.value = []; return }
   try {
-    terms.value = await http.get('/admin/terms')
-    events.value = await http.get('/admin/calendar-events')
+    const params = schoolId.value ? { schoolId: schoolId.value } : {}
+    terms.value = await http.get('/admin/terms', { params })
   } catch (e) {
     alert(e.message)
   }
@@ -146,8 +124,10 @@ async function saveTerm() {
   }
   termModal.submitting = true
   try {
-    if (termModal.id) await http.put(`/admin/terms/${termModal.id}`, f)
-    else await http.post('/admin/terms', f)
+    // 新增学期必须归属到学校，否则学生会看不到（多校 SaaS：学期表按 school_id 隔离）
+    const payload = { ...f, schoolId: schoolId.value }
+    if (termModal.id) await http.put(`/admin/terms/${termModal.id}`, payload)
+    else await http.post('/admin/terms', payload)
     termModal.open = false
     await load()
   } catch (e) {
@@ -157,41 +137,23 @@ async function saveTerm() {
   }
 }
 
-function openEvent(row) {
-  eventModal.id = row?.id ?? null
-  eventModal.form = row
-    ? { termId: row.termId, title: row.title, startDate: row.startDate, endDate: row.endDate, note: row.note || '' }
-    : { termId: terms.value[0]?.id ?? 0, title: '', startDate: '', endDate: '', note: '' }
-  eventModal.open = true
-}
+// 校历事件（openEvent / saveEvent / removeEvent）已随「校历」功能下线移除
 
-async function saveEvent() {
-  const f = eventModal.form
-  if (!f.termId) { alert('请选择学期'); return }
-  if (!f.title) { alert('请填写事件名称'); return }
-  if (!f.startDate || !f.endDate) { alert('请填写起止日期'); return }
-  eventModal.submitting = true
+// 删除学期
+async function removeTerm(row) {
+  if (!confirm(`确定删除学期「${row.termLabel}」？`)) return
   try {
-    if (eventModal.id) await http.put(`/admin/calendar-events/${eventModal.id}`, f)
-    else await http.post('/admin/calendar-events', f)
-    eventModal.open = false
-    await load()
-  } catch (e) {
-    alert(e.message)
-  } finally {
-    eventModal.submitting = false
-  }
-}
-
-async function removeEvent(row) {
-  if (!confirm(`确定删除事件「${row.title}」？`)) return
-  try {
-    await http.delete(`/admin/calendar-events/${row.id}`)
+    await http.delete(`/admin/terms/${row.id}`)
     await load()
   } catch (e) {
     alert(e.message)
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  await loadSchools()
+  await load()
+})
 </script>
+
+

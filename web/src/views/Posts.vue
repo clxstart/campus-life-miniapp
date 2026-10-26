@@ -14,6 +14,11 @@
       @page="load"
     >
       <template #actions>
+        <!-- 多校 SaaS：超管可以切到某一所学校只看它的帖子 -->
+        <select v-if="isSuper" v-model.number="schoolId" class="no-input !w-auto min-w-[10rem]" @change="load(1)">
+          <option :value="0">全部学校</option>
+          <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
+        </select>
         <label class="flex items-center gap-2 text-sm text-stone-600 cursor-pointer select-none">
           <input type="checkbox" v-model="offlineOnly" class="accent-[#8b9d77]" @change="load(1)" />
           只看已下架
@@ -79,11 +84,22 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import NoTable from '../components/NoTable.vue'
 import NoModal from '../components/NoModal.vue'
 import NoImageUpload from '../components/NoImageUpload.vue'
 import http from '../api'
+import { useAuthStore } from '../stores/auth'
+
+const auth = useAuthStore()
+const isSuper = computed(() => auth.isSuper)
+const schools = ref([])
+const schoolId = ref(0)
+
+async function loadSchools() {
+  if (!isSuper.value) return
+  try { schools.value = (await http.get('/admin/schools')) || [] } catch { schools.value = [] }
+}
 
 const rows = ref([])
 const total = ref(0)
@@ -133,7 +149,10 @@ async function load(nextPage = 1) {
   loading.value = true
   try {
     const data = await http.get('/admin/posts', {
-      params: { page: nextPage, size: size.value, keyword: keyword.value, offlineOnly: offlineOnly.value }
+      params: {
+        page: nextPage, size: size.value, keyword: keyword.value, offlineOnly: offlineOnly.value,
+        schoolId: schoolId.value || undefined
+      }
     })
     rows.value = data.list || []
     total.value = Number(data.total) || 0
@@ -166,5 +185,8 @@ async function remove(row) {
   }
 }
 
-onMounted(() => load(1))
+onMounted(async () => {
+  await loadSchools()
+  load(1)
+})
 </script>

@@ -96,7 +96,7 @@ function muteChat(peerId, muted, userId = currentUserId(), offline = false) {
   return request(`/conversations/${peerId}/mute?userId=${userId}&muted=${!!muted}`, 'POST').catch(error => { if (error.server) throw error; return local() })
 }
 
-// ---- 课表 / 校历 ----
+// ---- 课表 ----
 function getTimetable(params = {}, userId = currentUserId()) {
   const week = params.week ? `&week=${encodeURIComponent(params.week)}` : ''
   return request(`/timetable?userId=${userId}${week}`).catch(error => {
@@ -105,12 +105,8 @@ function getTimetable(params = {}, userId = currentUserId()) {
     return wait({ termInfo: mock.termInfo, week: currentWeek, courses: currentWeek <= 21 ? mock.timetableCourses : [], offline: true })
   })
 }
-function getCalendar(userId = currentUserId()) {
-  return request(`/calendar?userId=${userId}`).catch(error => {
-    if (error.server) throw error
-    return wait({ termInfo: mock.termInfo, events: mock.calendarEvents, offline: true })
-  })
-}
+// 校历（getCalendar）已随「校历」功能下线移除
+
 // 学生自建课程：写入自己名下（挂当前学期），同格同名视为更新
 function addCourse(payload) {
   const body = {
@@ -141,5 +137,6 @@ module.exports = {
   getConversations, getNotifications,
   chatKey, localMessages, rememberConversation,
   getChatMessages, sendChatMessage, markChatRead, markAllMessagesRead, clearChatMessages, muteChat,
-  getTimetable, getCalendar, addCourse, removeCourse
+  getTimetable, addCourse, removeCourse
 }
+

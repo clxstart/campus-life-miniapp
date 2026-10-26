@@ -9,7 +9,7 @@
  *   core.js    请求内核：地址、登录态、鉴权门、401/403 处理、离线兜底规则
  *   local.js   跨域共用：localStorage 读写、LIKE 关键词匹配、图片地址补全
  *   forum.js   论坛：帖子流、详情、点赞评论关注、搜索、热门话题、轮播、发帖
- *   chat.js    消息 + 课表：会话、通知、私聊、课表、校历
+ *   chat.js    消息 + 课表：会话、通知、私聊、课表
  *   market.js  交易：外卖、二手、兼职、活动、发布、图片上传、首页推荐
  *   circle.js  圈子：列表、详情、加入退出、圈子群聊
  *   learn.js   学习专区：话题、分类计数
@@ -179,7 +179,7 @@ const chat = require('./api/chat')
 const {
   getConversations, getNotifications,
   getChatMessages, sendChatMessage, markChatRead, markAllMessagesRead, clearChatMessages, muteChat,
-  getTimetable, getCalendar, addCourse, removeCourse
+  getTimetable, addCourse, removeCourse
 } = chat
 
 module.exports = { BASE_URL, DEMO_USER_ID, request, searchPosts, searchAll, getConversations, getNotifications, getProfile, publishPost, getForumPosts, getPost, likePost, addComment, getPostComments, followUser, getHotTopics, getBanners, viewPost, getIdolActivity, getIdolContestants, voteIdol, joinIdol, getUserProfile, updateUserProfile, toggleFavorite, getFavorites, getMyViews, getCoupons, getAddresses, addAddress, submitFeedback, getToken, setAuth, clearAuth, currentUserId, isLoggedIn, authStatus, loginWithWxCode, devLogin, ensureLogin }
@@ -212,12 +212,13 @@ const {
 } = circle
 Object.assign(module.exports, { getCircles, getHotCircles, getCircle, getCirclePosts, joinCircle, leaveCircle, getCircleCategories, publishCirclePost, getCircleMessages, sendCircleMessage, markCircleRead, getCircleUnread, getSchools, getSchoolLocations, aiChat, getAiWelcome })
 
-Object.assign(module.exports, { getChatMessages, sendChatMessage, markChatRead, markAllMessagesRead, clearChatMessages, muteChat, getTimetable, getCalendar, addCourse, removeCourse })
+Object.assign(module.exports, { getChatMessages, sendChatMessage, markChatRead, markAllMessagesRead, clearChatMessages, muteChat, getTimetable, addCourse, removeCourse })
 
 // 学习域已抽到 utils/api/learn.js，宠物域已抽到 utils/api/pet.js
 const learn = require('./api/learn')
 const pet = require('./api/pet')
 Object.assign(module.exports, { getLearnTopics: learn.getLearnTopics, getLearnCounts: learn.getLearnCounts })
 Object.assign(module.exports, { getPet: pet.getPet, petFeed: pet.petFeed, petTouch: pet.petTouch, petCheckin: pet.petCheckin })
+
 
 

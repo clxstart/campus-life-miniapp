@@ -33,10 +33,18 @@ public class CampusService {
  @Transactional public void clear(Long userId,Long peerId){pair(userId,peerId);long last=mapper.latestId(userId,peerId);mapper.clear(userId,peerId,last);if(last>0)mapper.readChat(userId,peerId,last);}
  public void mute(Long userId,Long peerId,boolean muted){pair(userId,peerId);mapper.mute(userId,peerId,muted);}
  public List<Map<String,Object>> notifications(Long userId){user(userId);List<Map<String,Object>> rows=mapper.notifications(userId);for(Map<String,Object> row:rows)row.put("unread",row.get("readAt")==null);return rows;}
- private Map<String,Object> termFor(Long userId){User u=user(userId);Map<String,Object> term=mapper.term(u.getSchool());if(term==null)throw new IllegalArgumentException("该学校尚未配置学期");for(String key:List.of("termStart","termEnd","midtermStart","midtermEnd","finalStart"))term.put(key,date(term.get(key)).toString());return term;}
+ private Map<String,Object> termFor(Long userId){
+  User u=user(userId);
+  // 多校 SaaS：以 school_id 为准（稳定主键）；老数据没有 school_id 时再退回按学校名匹配。
+  Map<String,Object> term = u.getSchoolId()!=null ? mapper.termBySchoolId(u.getSchoolId()) : null;
+  if(term==null && u.getSchool()!=null) term = mapper.term(u.getSchool());
+  if(term==null) throw new IllegalArgumentException("该学校尚未配置学期，请联系管理员在「教务管理」里新增学期并设为当前学期");
+  for(String key:List.of("termStart","termEnd","midtermStart","midtermEnd","finalStart"))term.put(key,date(term.get(key)).toString());
+  return term;
+ }
  private static LocalDate date(Object value){return LocalDate.parse(value.toString());}
  public Map<String,Object> timetable(Long userId,Integer week){Map<String,Object> term=termFor(userId);int current=Math.max(1,(int)ChronoUnit.WEEKS.between(date(term.get("termStart")).with(java.time.DayOfWeek.MONDAY),LocalDate.now(ZoneId.of("Asia/Shanghai")).with(java.time.DayOfWeek.MONDAY))+1);int target=week==null?current:Math.max(1,Math.min(week,60));return Map.of("termInfo",term,"week",target,"courses",mapper.courses(userId,number(term.get("id")),target));}
- public Map<String,Object> calendar(Long userId){Map<String,Object> term=termFor(userId);List<Map<String,Object>> events=mapper.events(number(term.get("id")));for(Map<String,Object> event:events){event.put("start",date(event.get("start")).toString());event.put("end",date(event.get("end")).toString());}return Map.of("termInfo",term,"events",events);}
+ // 校历（calendar）已随「校历」功能下线移除
 
  // ---- 学生自建课表 ----
  // 学生自己维护课表（默认作息可在端上改、调休周自己标），不依赖管理员逐个录入。

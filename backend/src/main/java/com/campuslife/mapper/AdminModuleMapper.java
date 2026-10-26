@@ -247,35 +247,14 @@ import java.util.Map;
         """)
     int updateTerm(Map<String,Object> row);
 
-    @Select("""
-        <script>
-        SELECT e.id, e.term_id AS termId, e.title, e.start_date AS startDate, e.end_date AS endDate, e.note,
-               t.term_label AS termLabel, t.school_id AS schoolId
-        FROM calendar_event e JOIN academic_term t ON t.id = e.term_id
-        <where><if test="schoolId != null">t.school_id = #{schoolId}</if></where>
-        ORDER BY e.start_date, e.id
-        </script>
-        """)
-    List<Map<String,Object>> calendarEvents(@Param("schoolId") Long schoolId);
+    // 校历事件（calendar_event）相关 SQL 已随「校历」功能下线移除
 
-    @Insert("""
-        INSERT INTO calendar_event(term_id, title, start_date, end_date, note)
-        VALUES(#{termId}, #{title}, #{startDate}, #{endDate}, #{note})
-        """)
-    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
-    int insertEvent(Map<String,Object> row);
+    // ---- 学期删除（建错了要能删掉，否则学期只增不减）----
+    @Select("SELECT id, school_id AS schoolId, term_label AS termLabel FROM academic_term WHERE id = #{id}")
+    Map<String,Object> termBrief(@Param("id") Long id);
 
-    @Update("""
-        UPDATE calendar_event SET title = #{title}, start_date = #{startDate}, end_date = #{endDate}, note = #{note}
-        WHERE id = #{id}
-        """)
-    int updateEvent(Map<String,Object> row);
-
-    @Delete("DELETE FROM calendar_event WHERE id = #{id}")
-    int deleteEvent(@Param("id") Long id);
-
-    @Select("SELECT id, term_id AS termId FROM calendar_event WHERE id = #{id}")
-    Map<String,Object> eventBrief(@Param("id") Long id);
+    @Delete("DELETE FROM academic_term WHERE id = #{id}")
+    int deleteTerm(@Param("id") Long id);
 
     // ---- 业务：兼职 / 活动 / 二手 ----
     @Select("""
@@ -425,7 +404,8 @@ import java.util.Map;
         SELECT s.id, s.name, s.cover, s.category, s.rating, s.monthly_sales AS monthlySales,
                s.min_price AS minPrice, s.delivery_fee AS deliveryFee, s.delivery_time AS deliveryTime,
                s.discount, s.notice, s.status, s.order_count AS orderCount, s.view_count AS viewCount,
-               s.school_id AS schoolId, sc.name AS schoolName
+               s.school_id AS schoolId, sc.name AS schoolName,
+               s.is_open AS isOpen, s.open_time AS openTime, s.close_time AS closeTime
         FROM shop s LEFT JOIN school sc ON sc.id = s.school_id
         <where>
           <if test="schoolId != null">s.school_id = #{schoolId} AND</if>

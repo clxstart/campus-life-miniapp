@@ -105,7 +105,7 @@ function ensureLogin() {
 // 公开只读接口不等待，避免无网络时首屏被登录拖慢。
 const AUTH_PATHS = ['/auth/status', '/auth/login', '/auth/dev-login']
 // 与后端 AuthInterceptor 的「我的数据」前缀保持一致
-const PRIVATE_READ_PREFIXES = ['/conversations', '/notifications', '/timetable', '/calendar', '/pet', '/users/', '/circle-messages']
+const PRIVATE_READ_PREFIXES = ['/conversations', '/notifications', '/timetable', '/pet', '/users/', '/circle-messages']
 const PUBLIC_WRITE_PATHS = ['/ai/', '/upload']
 
 function isAuthPath(url) { return AUTH_PATHS.some(prefix => url.indexOf(prefix) === 0) }
@@ -143,3 +143,4 @@ module.exports = {
   request, send, wait, clone, fallback,
   authStatus, loginWithWxCode, devLogin, ensureLogin
 }
+

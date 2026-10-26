@@ -98,11 +98,19 @@ public interface CampusMapper {
     @Select("SELECT id,term_label AS termLabel,start_date AS termStart,end_date AS termEnd,midterm_start AS midtermStart,midterm_end AS midtermEnd,final_start AS finalStart FROM academic_term WHERE school=#{school} AND active=1 ORDER BY start_date DESC LIMIT 1")
     Map<String,Object> term(@Param("school") String school);
 
+    /**
+     * 按 school_id 找当前学期（多校 SaaS 的正确口径）。
+     *
+     * 原来只按学校名匹配：学校一改名，学生的课表/校历就全部报「该学校尚未配置学期」，
+     * 而且两所学校同名时会串数据。school_id 才是稳定主键，名字只作兼容兜底。
+     */
+    @Select("SELECT id,term_label AS termLabel,start_date AS termStart,end_date AS termEnd,midterm_start AS midtermStart,midterm_end AS midtermEnd,final_start AS finalStart FROM academic_term WHERE school_id=#{schoolId} AND active=1 ORDER BY start_date DESC LIMIT 1")
+    Map<String,Object> termBySchoolId(@Param("schoolId") Long schoolId);
+
     @Select("SELECT id,name,room,day,period,theme,week_start AS weekStart,week_end AS weekEnd FROM course_schedule WHERE user_id=#{userId} AND term_id=#{termId} AND week_start<=#{week} AND week_end>=#{week} ORDER BY day,period,id")
     List<Map<String,Object>> courses(@Param("userId") Long userId,@Param("termId") Long termId,@Param("week") int week);
 
-    @Select("SELECT id,title,start_date AS start,end_date AS end,note FROM calendar_event WHERE term_id=#{termId} ORDER BY start_date,id")
-    List<Map<String,Object>> events(@Param("termId") Long termId);
+    // 校历事件查询（events）已随「校历」功能下线移除
 
     // ---- 课表导入（管理员）：对接教务系统的替代方案 ----
     // 各校教务系统无公开接口，故提供批量导入入口；将来有真实接口时替换数据来源即可。

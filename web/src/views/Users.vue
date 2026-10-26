@@ -13,6 +13,13 @@
       @search="load(1)"
       @page="load"
     >
+      <template #actions>
+        <!-- 多校 SaaS：超管可按校筛选用户 -->
+        <select v-if="isSuper" v-model.number="schoolId" class="no-input !w-auto min-w-[10rem]" @change="load(1)">
+          <option :value="0">全部学校</option>
+          <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
+        </select>
+      </template>
       <template #nickname="{ row }">
         <div class="flex items-center gap-3">
           <!-- 有头像显示头像，没有就用昵称首字兜底 -->
@@ -53,11 +60,22 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import NoTable from '../components/NoTable.vue'
 import NoModal from '../components/NoModal.vue'
 import NoImageUpload from '../components/NoImageUpload.vue'
 import http from '../api'
+import { useAuthStore } from '../stores/auth'
+
+const auth = useAuthStore()
+const isSuper = computed(() => auth.isSuper)
+const schools = ref([])
+const schoolId = ref(0)
+
+async function loadSchools() {
+  if (!isSuper.value) return
+  try { schools.value = (await http.get('/admin/schools')) || [] } catch { schools.value = [] }
+}
 
 const rows = ref([])
 const total = ref(0)
@@ -107,7 +125,9 @@ function formatTime(value) {
 async function load(nextPage = 1) {
   loading.value = true
   try {
-    const data = await http.get('/admin/users', { params: { page: nextPage, size: size.value, keyword: keyword.value } })
+    const data = await http.get('/admin/users', {
+      params: { page: nextPage, size: size.value, keyword: keyword.value, schoolId: schoolId.value || undefined }
+    })
     rows.value = data.list || []
     total.value = Number(data.total) || 0
     page.value = Number(data.page) || nextPage
@@ -119,5 +139,8 @@ async function load(nextPage = 1) {
   }
 }
 
-onMounted(() => load(1))
+onMounted(async () => {
+  await loadSchools()
+  load(1)
+})
 </script>

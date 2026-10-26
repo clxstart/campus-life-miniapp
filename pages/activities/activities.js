@@ -48,7 +48,8 @@ Page({
   },
   // 校园评选入口：校草校花与歌手大赛从发现页轮播迁到此处
   openIdol() { wx.navigateTo({ url: '/pages/activity-idol/activity-idol' }) },
-  openSinger() { wx.navigateTo({ url: '/pages/calendar/calendar' }) },
+  // 歌手大赛属于校园评选，之前误跳到校历页（校历已下线），统一进评选页
+  openSinger() { wx.navigateTo({ url: '/pages/activity-idol/activity-idol' }) },
   onPopupConfirm(e) { this._popupConfirm && this._popupConfirm({ detail: e.detail }) },
   onPopupCancel() { this._popupCancel && this._popupCancel() },
   onPopupAction(e) { this._popupAction && this._popupAction({ detail: e.detail }) },

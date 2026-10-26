@@ -95,14 +95,9 @@ export const merchantApi = {
   completeOrder: (id) => http.post(`/merchant/orders/${id}/complete`)
 }
 
+// 骑手端（工作台/待抢订单/我的配送/配送记录）已移除，相关的 /rider/* 调用随页面一起删掉。
+// 这里只保留管理端维护骑手账号用的接口。
 export const riderApi = {
-  stats: () => http.get('/rider/stats'),
-  pool: () => http.get('/rider/pool'),
-  mine: () => http.get('/rider/orders/mine'),
-  grab: (id) => http.post(`/rider/orders/${id}/grab`),
-  pick: (id) => http.post(`/rider/orders/${id}/pick`),
-  deliver: (id) => http.post(`/rider/orders/${id}/deliver`),
-  history: (params) => http.get('/rider/orders/history', { params }),
   riders: () => http.get('/admin/riders'),
   createRider: (payload) => http.post('/admin/riders', payload),
   setRiderStatus: (id, status) => http.post(`/admin/riders/${id}/status`, { status }),

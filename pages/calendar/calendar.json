@@ -1,7 +1,0 @@
-{
-  "backgroundColor": "#F6F8FB",
-  "enablePullDownRefresh": true,
-  "usingComponents": {
-    "pet-float": "/components/pet-float/index"
-  }
-}

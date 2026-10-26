@@ -199,15 +199,7 @@ const timetableCourses = [
   { name: '形势与政策', room: '图书馆报告厅', day: 4, period: 2, theme: 'amber' }
 ]
 
-const calendarEvents = [
-  { start: '2026-08-31', end: '2026-08-31', title: '秋季学期开学', note: '第一教学周开始，记得注册报到' },
-  { start: '2026-10-01', end: '2026-10-07', title: '国庆假期', note: '10月8日（周四）正常上课' },
-  { start: '2026-10-24', end: '2026-10-25', title: '秋季运动会', note: '东区田径场，全校停课两天' },
-  { start: '2026-11-02', end: '2026-11-06', title: '期中考试周', note: '具体安排以教务系统通知为准' },
-  { start: '2026-12-05', end: '2026-12-05', title: '校园歌手大赛决赛', note: '大礼堂，晚上 19:00' },
-  { start: '2027-01-04', end: '2027-01-15', title: '期末考试周', note: '考试周图书馆延长开放至 23:00' },
-  { start: '2027-01-23', end: '2027-01-23', title: '寒假开始', note: '演示日期，与学期结束日期保持一致，实际以教务通知为准' }
-]
+// 校历事件（calendarEvents）已随「校历」功能下线移除
 
 // 校草校花选手（离线兜底）：gender 1=校草组 2=校花组
 const idolContestants = [
@@ -221,7 +213,7 @@ const idolContestants = [
   { id: 8, name: '周叙白', gender: 1, college: '建筑学院', photo: '/assets/home/spring-event.webp', slogan: '画图到天亮', voteCount: 387, voted: false }
 ]
 
-module.exports = { discoveryPosts, chatMessages, conversations, notifications, profile, termInfo, timetableCourses, calendarEvents, idolContestants }
+module.exports = { discoveryPosts, chatMessages, conversations, notifications, profile, termInfo, timetableCourses, idolContestants }
 
 // 圈子离线兜底：与 module-circles.sql 的种子保持一致。
 const circles = [

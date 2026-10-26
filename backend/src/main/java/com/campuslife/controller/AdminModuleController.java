@@ -98,10 +98,11 @@ public class AdminModuleController {
 
     @GetMapping("/shops")
     public ApiResponse<Map<String, Object>> shops(@RequestParam(defaultValue = "") String keyword,
+                                                @RequestParam(required = false) Long schoolId,
                                                   @RequestParam(defaultValue = "1") int page,
                                                   @RequestParam(defaultValue = "20") int size,
                                                   HttpServletRequest req) {
-        return ApiResponse.ok(service.shops(scope(req), keyword, page, size));
+        return ApiResponse.ok(service.shops(effectiveSchool(req, schoolId), keyword, page, size));
     }
 
     @PostMapping("/shops")
@@ -194,20 +195,22 @@ public class AdminModuleController {
     // ================= 用户 =================
     @GetMapping("/users")
     public ApiResponse<Map<String, Object>> users(@RequestParam(defaultValue = "") String keyword,
+                                                @RequestParam(required = false) Long schoolId,
                                                   @RequestParam(defaultValue = "1") int page,
                                                   @RequestParam(defaultValue = "20") int size,
                                                   HttpServletRequest req) {
-        return ApiResponse.ok(service.users(scope(req), keyword, page, size));
+        return ApiResponse.ok(service.users(effectiveSchool(req, schoolId), keyword, page, size));
     }
 
     // ================= 内容 =================
     @GetMapping("/posts")
     public ApiResponse<Map<String, Object>> posts(@RequestParam(defaultValue = "") String keyword,
+                                                @RequestParam(required = false) Long schoolId,
                                                   @RequestParam(defaultValue = "false") boolean offlineOnly,
                                                   @RequestParam(defaultValue = "1") int page,
                                                   @RequestParam(defaultValue = "20") int size,
                                                   HttpServletRequest req) {
-        return ApiResponse.ok(service.posts(scope(req), keyword, offlineOnly, page, size));
+        return ApiResponse.ok(service.posts(effectiveSchool(req, schoolId), keyword, offlineOnly, page, size));
     }
 
     // 下架 / 恢复
@@ -245,10 +248,11 @@ public class AdminModuleController {
     // ================= 圈子 =================
     @GetMapping("/circles")
     public ApiResponse<Map<String, Object>> circles(@RequestParam(defaultValue = "") String keyword,
+                                                  @RequestParam(required = false) Long schoolId,
                                                     @RequestParam(defaultValue = "1") int page,
                                                     @RequestParam(defaultValue = "20") int size,
                                                     HttpServletRequest req) {
-        return ApiResponse.ok(service.circles(scope(req), keyword, page, size));
+        return ApiResponse.ok(service.circles(effectiveSchool(req, schoolId), keyword, page, size));
     }
 
     @PostMapping("/circles")
@@ -273,8 +277,9 @@ public class AdminModuleController {
 
     // ================= 学期 =================
     @GetMapping("/terms")
-    public ApiResponse<List<Map<String, Object>>> terms(HttpServletRequest req) {
-        return ApiResponse.ok(service.terms(scope(req)));
+    public ApiResponse<List<Map<String, Object>>> terms(@RequestParam(required = false) Long schoolId,
+                                                        HttpServletRequest req) {
+        return ApiResponse.ok(service.terms(effectiveSchool(req, schoolId)));
     }
 
     @PostMapping("/terms")
@@ -291,40 +296,24 @@ public class AdminModuleController {
         return ApiResponse.ok(null);
     }
 
-    // ================= 校历事件 =================
-    @GetMapping("/calendar-events")
-    public ApiResponse<List<Map<String, Object>>> events(HttpServletRequest req) {
-        return ApiResponse.ok(service.events(scope(req)));
-    }
-
-    @PostMapping("/calendar-events")
-    public ApiResponse<Map<String, Object>> createEvent(@RequestBody Map<String, Object> body, HttpServletRequest req) {
-        Map<String, Object> out = service.createEvent(body);
-        log(req, "create", "calendar", String.valueOf(out.get("id")), "新增校历事件 " + body.get("title"));
-        return ApiResponse.ok(out);
-    }
-
-    @PutMapping("/calendar-events/{id}")
-    public ApiResponse<Object> updateEvent(@PathVariable Long id, @RequestBody Map<String, Object> body, HttpServletRequest req) {
-        service.updateEvent(id, body);
-        log(req, "update", "calendar", String.valueOf(id), "编辑校历事件 " + body.get("title"));
+    @DeleteMapping("/terms/{id}")
+    public ApiResponse<Object> deleteTerm(@PathVariable Long id, HttpServletRequest req) {
+        service.deleteTerm(scope(req), id);
+        log(req, "delete", "term", String.valueOf(id), "删除学期");
         return ApiResponse.ok(null);
     }
 
-    @DeleteMapping("/calendar-events/{id}")
-    public ApiResponse<Object> deleteEvent(@PathVariable Long id, HttpServletRequest req) {
-        service.deleteEvent(id);
-        log(req, "delete", "calendar", String.valueOf(id), "删除校历事件");
-        return ApiResponse.ok(null);
-    }
+    // ================= 校历事件：已随「校历」功能下线移除 =================
+
 
     // ================= 业务：兼职 / 活动 / 二手 =================
     @GetMapping("/jobs")
     public ApiResponse<Map<String, Object>> jobs(@RequestParam(defaultValue = "") String keyword,
+                                               @RequestParam(required = false) Long schoolId,
                                                  @RequestParam(defaultValue = "1") int page,
                                                  @RequestParam(defaultValue = "20") int size,
                                                  HttpServletRequest req) {
-        return ApiResponse.ok(service.jobs(scope(req), keyword, page, size));
+        return ApiResponse.ok(service.jobs(effectiveSchool(req, schoolId), keyword, page, size));
     }
 
     @DeleteMapping("/jobs/{id}")
@@ -336,10 +325,11 @@ public class AdminModuleController {
 
     @GetMapping("/activities")
     public ApiResponse<Map<String, Object>> activities(@RequestParam(defaultValue = "") String keyword,
+                                                     @RequestParam(required = false) Long schoolId,
                                                        @RequestParam(defaultValue = "1") int page,
                                                        @RequestParam(defaultValue = "20") int size,
                                                        HttpServletRequest req) {
-        return ApiResponse.ok(service.activities(scope(req), keyword, page, size));
+        return ApiResponse.ok(service.activities(effectiveSchool(req, schoolId), keyword, page, size));
     }
 
     @PostMapping("/activities/{id}/status")
@@ -360,10 +350,11 @@ public class AdminModuleController {
 
     @GetMapping("/goods")
     public ApiResponse<Map<String, Object>> goods(@RequestParam(defaultValue = "") String keyword,
+                                                @RequestParam(required = false) Long schoolId,
                                                   @RequestParam(defaultValue = "1") int page,
                                                   @RequestParam(defaultValue = "20") int size,
                                                   HttpServletRequest req) {
-        return ApiResponse.ok(service.goods(scope(req), keyword, page, size));
+        return ApiResponse.ok(service.goods(effectiveSchool(req, schoolId), keyword, page, size));
     }
 
     @PostMapping("/goods/{id}/status")
@@ -384,10 +375,11 @@ public class AdminModuleController {
 
     // ================= 运营：Banner =================
     @GetMapping("/banners")
-    public ApiResponse<Map<String, Object>> banners(@RequestParam(defaultValue = "1") int page,
+    public ApiResponse<Map<String, Object>> banners(@RequestParam(required = false) Long schoolId,
+                                                    @RequestParam(defaultValue = "1") int page,
                                                     @RequestParam(defaultValue = "20") int size,
                                                     HttpServletRequest req) {
-        return ApiResponse.ok(service.banners(scope(req), page, size));
+        return ApiResponse.ok(service.banners(effectiveSchool(req, schoolId), page, size));
     }
 
     @PostMapping("/banners")
@@ -412,12 +404,35 @@ public class AdminModuleController {
     }
 
     // ================= 内部工具 =================
+    /**
+     * 当前账号能管哪些学校的数据。
+     * 校管固定为自己绑定的学校；超管返回 null，表示「不限定」，由调用方决定是否再细分。
+     */
     private static Long scope(HttpServletRequest req) {
         Object role = req.getAttribute(AdminInterceptor.ADMIN_ROLE);
         if ("super".equals(String.valueOf(role))) return null;  // 超管看全部
         Object schoolId = req.getAttribute(AdminInterceptor.ADMIN_SCHOOL);
         if (!(schoolId instanceof Long id) || id < 1) throw new ForbiddenException("当前账号未绑定学校，请联系超级管理员");
         return id;
+    }
+
+    /**
+     * 多校 SaaS 的取数口径：校管只能用自己学校，超管可以用前端传来的 schoolId 切到某一所学校。
+     *
+     * 这是个平台方管理多所学校的产品，超管如果只能看「所有学校混在一起」的列表，
+     * 学期、圈子、商品这些东西就分不清是哪所学校的。所以凡是有学校维度的列表接口，
+     * 都改成走这里：前端传了 schoolId 就按它筛，没传才退回「全部」。
+     */
+    private static Long effectiveSchool(HttpServletRequest req, Long requestedSchoolId) {
+        Long own = scope(req);
+        if (own != null) {
+            // 校管：只能看本校，忽略前端传值（防止改 URL 越权看别的学校）
+            if (requestedSchoolId != null && !own.equals(requestedSchoolId)) {
+                throw new ForbiddenException("只能查看本校数据");
+            }
+            return own;
+        }
+        return (requestedSchoolId != null && requestedSchoolId > 0) ? requestedSchoolId : null;
     }
 
     private static void requireSuper(HttpServletRequest req) {
@@ -447,3 +462,4 @@ public class AdminModuleController {
         try { return Long.parseLong(String.valueOf(value).trim()); } catch (Exception e) { return fallback; }
     }
 }
+

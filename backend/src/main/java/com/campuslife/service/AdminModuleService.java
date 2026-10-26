@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.*;
 
 // 管理端各模块业务。
@@ -93,7 +94,8 @@ public class AdminModuleService {
         row.put("logo", trim(body.get("logo")));
         row.put("periodConfig", trim(body.get("periodConfig")));
         row.put("status", intOr(body.get("status"), 1) == 0 ? 0 : 1);
-        mapper.updateSchool(row);
+        // 影响行数为 0 说明这个 id 不存在（可能刚被别的管理员删掉），不能静默返回成功
+        if (mapper.updateSchool(row) != 1) throw new IllegalArgumentException("学校不存在");
     }
 
     // ---- 用户 ----
@@ -226,11 +228,73 @@ public class AdminModuleService {
     // ---- 外卖：店铺 ----
     // 小程序有完整外卖功能，但管理端原来没有页面，店铺只能靠 SQL 维护。
 
+    /**
+     * 外卖店铺列表
+     *
+     * 除了上架状态 status，还额外计算「当前是否可接单」（orderable），
+     * 让商家/管理员能看出「已上架但现在不能下单」的情况：
+     *   - status=0            → 已下架
+     *   - is_open=0           → 手动打烊
+     *   - 不在营业时间段内     → 已过营业时间
+     * 之前管理端只看 status，出现「后台显示营业中、小程序显示休息中」的困惑。
+     */
     public Map<String, Object> shops(Long schoolId, String keyword, int page, int size) {
         int[] p = paging(page, size);
         String kw = like(keyword);
-        return page(mapper.shops(schoolId, kw, p[1], p[2]),
-                    mapper.countShops(schoolId, kw), p[0], p[1]);
+        List<Map<String, Object>> list = mapper.shops(schoolId, kw, p[1], p[2]);
+        list.forEach(this::decorateShopOpenState);
+        return page(list, mapper.countShops(schoolId, kw), p[0], p[1]);
+    }
+
+    /** 为店铺行补充 orderable / openStateText，与小程序端 orderable() 判定保持一致 */
+    private void decorateShopOpenState(Map<String, Object> row) {
+        boolean listed = Integer.valueOf(1).equals(numberOrNull(row.get("status")));
+        boolean manualOpen = Integer.valueOf(1).equals(numberOrNull(row.get("isOpen")));
+
+        boolean inBusinessHours = true;
+        String range = "";
+        Object openRaw = row.get("openTime");
+        Object closeRaw = row.get("closeTime");
+        if (openRaw != null && closeRaw != null) {
+            String open = String.valueOf(openRaw);
+            String close = String.valueOf(closeRaw);
+            range = open + "-" + close;
+            try {
+                LocalTime openT = LocalTime.parse(open);
+                LocalTime closeT = LocalTime.parse(close);
+                if (openT.equals(closeT)) {
+                    inBusinessHours = true;                 // 24 小时营业
+                } else {
+                    LocalTime now = LocalTime.now();
+                    inBusinessHours = openT.isBefore(closeT)
+                        ? !now.isBefore(openT) && now.isBefore(closeT)
+                        : !now.isBefore(openT) || now.isBefore(closeT);   // 跨天
+                }
+            } catch (Exception ignored) {
+                inBusinessHours = true;                     // 时间格式异常时不阻塞
+            }
+        }
+
+        boolean orderable = listed && manualOpen && inBusinessHours;
+        row.put("orderable", orderable);
+
+        String stateText;
+        if (!listed) {
+            stateText = "已下架";
+        } else if (!manualOpen) {
+            stateText = "已打烊";
+        } else if (!inBusinessHours) {
+            stateText = "已过营业时间" + (range.isEmpty() ? "" : "（" + range + "）");
+        } else {
+            stateText = "可接单";
+        }
+        row.put("openStateText", stateText);
+    }
+
+    private static Integer numberOrNull(Object value) {
+        if (value == null) return null;
+        if (value instanceof Number n) return n.intValue();
+        try { return Integer.valueOf(String.valueOf(value).trim()); } catch (Exception e) { return null; }
     }
 
     public Map<String, Object> createShop(Long scopeSchoolId, Map<String, Object> body) {
@@ -514,7 +578,8 @@ public class AdminModuleService {
         row.put("auditReason", textAudit.reason());
         row.put("auditAt", "passed".equals(auditStatus) ? java.time.LocalDateTime.now() : null);
         row.put("status", "passed".equals(auditStatus) && intOr(body.get("status"), 1) == 1 ? 1 : 0);
-        mapper.updateCircle(row);
+        // 影响行数为 0 说明圈子不存在；审核日志也只在该圈子真的被改动时才写
+        if (mapper.updateCircle(row) != 1) throw new IllegalArgumentException("圈子不存在");
         auditService.logTextResult("circle", id, null, name + "\n" + description, textAudit);
     }
 
@@ -568,35 +633,21 @@ public class AdminModuleService {
         return text;
     }
 
-    // ---- 校历事件 ----
-    public List<Map<String, Object>> events(Long schoolId) { return mapper.calendarEvents(schoolId); }
-
-    public Map<String, Object> createEvent(Map<String, Object> body) {
-        long termId = longOr(body.get("termId"), 0);
-        if (termId < 1) throw new IllegalArgumentException("请选择所属学期");
-        Map<String, Object> row = new LinkedHashMap<>();
-        row.put("termId", termId);
-        row.put("title", requireText(body.get("title"), "事件名称", 64));
-        row.put("startDate", requireDate(body.get("startDate"), "开始日期"));
-        row.put("endDate", requireDate(body.get("endDate"), "结束日期"));
-        row.put("note", trim(body.get("note")));
-        mapper.insertEvent(row);
-        return Map.of("id", row.get("id"));
-    }
-
-    public void updateEvent(Long id, Map<String, Object> body) {
-        Map<String, Object> row = new LinkedHashMap<>();
-        row.put("id", id);
-        row.put("title", requireText(body.get("title"), "事件名称", 64));
-        row.put("startDate", requireDate(body.get("startDate"), "开始日期"));
-        row.put("endDate", requireDate(body.get("endDate"), "结束日期"));
-        row.put("note", trim(body.get("note")));
-        mapper.updateEvent(row);
-    }
-
-    public void deleteEvent(Long id) {
-        if (mapper.eventBrief(id) == null) throw new IllegalArgumentException("事件不存在");
-        mapper.deleteEvent(id);
+    /**
+     * 删除学期。
+     *
+     * 学期原来只能新增和编辑，建错了就永远留在列表里（多校配置时尤其容易建错）。
+     * 校管只能删自己学校的学期，超管不限。
+     */
+    public void deleteTerm(Long scopeSchoolId, Long id) {
+        Map<String, Object> brief = mapper.termBrief(id);
+        if (brief == null) throw new IllegalArgumentException("学期不存在");
+        if (scopeSchoolId != null) {
+            Object own = brief.get("schoolId");
+            long termSchool = own instanceof Number n ? n.longValue() : 0L;
+            if (termSchool != scopeSchoolId) throw new ForbiddenException("只能删除本校的学期");
+        }
+        if (mapper.deleteTerm(id) != 1) throw new IllegalArgumentException("学期不存在");
     }
 
     // ---- 业务 ----
@@ -641,7 +692,7 @@ public class AdminModuleService {
     public void updateBanner(Long id, Map<String, Object> body) {
         Map<String, Object> row = bannerRow(body, null);
         row.put("id", id);
-        mapper.updateBanner(row);
+        if (mapper.updateBanner(row) != 1) throw new IllegalArgumentException("轮播位不存在");
     }
 
     public void deleteBanner(Long id) { mapper.deleteBanner(id); }

@@ -42,17 +42,11 @@ const routes = [
       { path: 'logs', name: 'logs', component: () => import('../views/Logs.vue'), meta: { title: '操作日志', icon: '❐' } }
     ]
   },
-  {
-    path: '/rider',
-    component: () => import('../layouts/RiderLayout.vue'),
-    meta: { riderOnly: true },
-    children: [
-      { path: '', name: 'rider-home', component: () => import('../views/rider/Home.vue'), meta: { title: '工作台' } },
-      { path: 'pool', name: 'rider-pool', component: () => import('../views/rider/Pool.vue'), meta: { title: '待抢订单' } },
-      { path: 'mine', name: 'rider-mine', component: () => import('../views/rider/Mine.vue'), meta: { title: '我的配送' } },
-      { path: 'history', name: 'rider-history', component: () => import('../views/rider/History.vue'), meta: { title: '配送记录' } }
-    ]
-  },
+  // 骑手端 4 个页面（工作台/待抢订单/我的配送/配送记录）已移除：
+  // 骑手配送这条链路在小程序端没有对应入口，管理端也没有派单闭环，
+  // 留着只是一个点进去看不到数据、也没法操作的空壳。
+  // 管理端的「骑手管理」(#/riders) 保留，用于维护骑手账号。
+  { path: '/rider/:pathMatch(.*)*', redirect: '/dashboard' },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' }
 ]
 
@@ -60,17 +54,16 @@ const router = createRouter({ history: createWebHashHistory(), routes })
 router.beforeEach((to) => {
   const authed = !!getToken()
   const role = getProfile()?.role
-  // 三种登录身份各有自己的首页：商家 /merchant，骑手 /rider，管理员 /dashboard
-  const home = role === 'rider' ? '/rider' : role === 'merchant' ? '/merchant' : '/dashboard'
+  // 商家和骑手各有自己的入口：商家进 /merchant；骑手端已移除，骑手账号登录后同样进 /merchant 无权限，
+  // 所以直接回到 dashboard（管理端会按角色隐藏无权菜单）。
+  const home = role === 'merchant' ? '/merchant' : '/dashboard'
   if (to.meta.public) {
     return authed ? { path: home } : true
   }
   if (!authed) return { path: '/login', query: { redirect: to.fullPath } }
-  // 商家只能进 /merchant，骑手只能进 /rider，管理员不能进这两块
+  // 商家只能进 /merchant，管理员不能进商家端
   if (role === 'merchant' && !to.path.startsWith('/merchant')) return '/merchant'
   if (role !== 'merchant' && to.path.startsWith('/merchant')) return home
-  if (role === 'rider' && !to.path.startsWith('/rider')) return '/rider'
-  if (role !== 'rider' && to.path.startsWith('/rider')) return home
   return true
 })
 export default router
