@@ -93,7 +93,8 @@ public class AdminModuleService {
         row.put("logo", trim(body.get("logo")));
         row.put("periodConfig", trim(body.get("periodConfig")));
         row.put("status", intOr(body.get("status"), 1) == 0 ? 0 : 1);
-        mapper.updateSchool(row);
+        // 影响行数为 0 说明这个 id 不存在（可能刚被别的管理员删掉），不能静默返回成功
+        if (mapper.updateSchool(row) != 1) throw new IllegalArgumentException("学校不存在");
     }
 
     // ---- 用户 ----
