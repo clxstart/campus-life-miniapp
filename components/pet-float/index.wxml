@@ -8,7 +8,7 @@
     inertia="{{false}}"
     x="{{x}}"
     y="{{y}}"
-    damping="{{30}}"
+    damping="{{100}}"
     friction="{{2}}"
     out-of-bounds="{{false}}"
     bindchange="onDragChange"

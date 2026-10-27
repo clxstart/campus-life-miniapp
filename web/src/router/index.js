@@ -38,6 +38,8 @@ const routes = [
       { path: 'business', name: 'business', component: () => import('../views/Business.vue'), meta: { title: '业务管理', icon: '▦' } },
       // 报名审核：只有「填表+材料」模式的活动会有待审记录
       { path: 'enrollments', name: 'enrollments', component: () => import('../views/Enrollments.vue'), meta: { title: '报名审核', icon: '☑' } },
+      // 内容举报：用户举报进队列，人工判断后处理
+      { path: 'reports', name: 'reports', component: () => import('../views/Reports.vue'), meta: { title: '内容举报', icon: '⚑' } },
       // 运营配置（Banner）暂时隐藏：小程序轮播位已改成「热门圈子」，banner 没有展示位。
       // 后端 /api/banners 与 Ops.vue 都保留着，将来需要展示位时把这一行放回来即可。
       // { path: 'ops', name: 'ops', component: () => import('../views/Ops.vue'), meta: { title: '运营配置', icon: '✦' } },

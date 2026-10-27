@@ -60,3 +60,13 @@
 .bar-fav{flex:none;padding:0 22rpx;height:72rpx;line-height:72rpx;border-radius:36rpx;background:#f2f4f7;color:#8a949e;font-size:24rpx;font-weight:600}
 .bar-fav.favored{background:#fdf3dd;color:#c08a1d}
 .bar-like.liked{background:#fdeef1;color:#e05a75}
+
+/* 导航右侧「举报」：小字、低对比，不抢主内容注意力 */
+.nav-more {
+  margin-left: auto;
+  padding: 8rpx 20rpx;
+  font-size: 24rpx;
+  color: #8A9992;
+  border: 1rpx solid #DEDCCD;
+  border-radius: 999rpx;
+}

@@ -17,6 +17,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService service;
+    private final com.campuslife.service.UserStatusGuard statusGuard;
 
     /** 只能操作自己的数据：路径里的 {id} 必须与登录身份一致。 */
     private static Long requireSelf(Long pathId, HttpServletRequest request) {
@@ -92,9 +93,24 @@ public class UserController {
         return ApiResponse.ok(service.addAddress(requireSelf(id, request), r));
     }
 
+    /**
+     * 注销账号。
+     *
+     * 只能注销自己：先要求登录，再校验路径 {id} 与 token 身份一致（requireSelf）。
+     * 注销后旧 token 立即失效（AuthInterceptor 会查用户状态），需要重新登录。
+     */
+    @DeleteMapping("/users/{id}/account")
+    public ApiResponse<Map<String, Object>> deleteAccount(@PathVariable Long id, HttpServletRequest request) {
+        Map<String, Object> out = service.deleteAccount(requireSelf(id, request));
+        // 注销后立刻失效缓存，下一次请求就会拿到 401
+        if (statusGuard != null) statusGuard.invalidate(id);
+        return ApiResponse.ok(out);
+    }
+
     @PostMapping("/feedback")
     public ApiResponse<Map<String, Object>> feedback(@Valid @RequestBody FeedbackRequest r, HttpServletRequest request) {
         r.setUserId(CurrentUser.resolve(request, r.getUserId()));
         return ApiResponse.ok(service.feedback(r.getUserId(), r.getContent()));
     }
 }
+

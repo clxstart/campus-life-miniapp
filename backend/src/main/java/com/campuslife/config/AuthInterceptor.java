@@ -23,12 +23,24 @@ import java.util.Set;
  * 公开只读接口（帖子列表、学校列表、搜索等）仍然允许匿名访问，
  * 它们只用 userId 做「我点过赞吗」这种个性化标记，不涉及权限。
  */
+import com.campuslife.service.UserStatusGuard;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class AuthInterceptor implements HandlerInterceptor {
     private final JwtUtil jwt;
+    /** 账号是否可用的校验（注销后 token 立即失效）。用 ObjectProvider 避免与 mapper 初始化顺序耦合。 */
+    private final org.springframework.beans.factory.ObjectProvider<UserStatusGuard> userStatusGuardProvider;
+    private volatile UserStatusGuard userStatusGuard;
     public static final String USER_ID = "campusUserId";
+
+    private UserStatusGuard userStatusGuard() {
+        if (userStatusGuard == null) {
+            try { userStatusGuard = userStatusGuardProvider.getIfAvailable(); } catch (Exception ignored) { }
+        }
+        return userStatusGuard;
+    }
 
     /** 关掉后退回「谁传 userId 就代表谁」的旧行为，仅限本机调试。 */
     @Value("${campus.auth.enforce:true}")
@@ -90,6 +102,15 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         Long userId = jwt.parse(token(request));
         if (userId != null) {
+            // 已注销的账号：token 本身仍能解析（JWT 无状态），但必须立刻失效，
+            // 否则「注销」只是清空了资料，用户拿旧 token 还能继续操作。
+            UserStatusGuard guard = userStatusGuard();
+            if (guard != null && !guard.isActive(userId)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"code\":401,\"msg\":\"账号已注销，请重新登录\",\"data\":null}");
+                return false;
+            }
             request.setAttribute(USER_ID, userId);
             return true;
         }
@@ -133,3 +154,4 @@ public class AuthInterceptor implements HandlerInterceptor {
         response.getWriter().flush();
     }
 }
+

@@ -33,6 +33,7 @@ public class SystemStatusService {
     private final DataSource dataSource;
     private final UploadService uploadService;
     private final AdminModuleMapper adminModuleMapper;
+    private final ContentReportService reportService;
 
     public Map<String, Object> overview() {
         Map<String, Object> out = new LinkedHashMap<>();
@@ -166,6 +167,12 @@ public class SystemStatusService {
         } catch (Exception e) {
             row.put("error", e.getMessage());
         }
+        // 待处理举报单独查：它是运维需要立刻看到的一项
+        try {
+            row.put("pendingReports", reportService.countPending());
+        } catch (Exception e) {
+            row.put("pendingReports", "unknown");
+        }
         return row;
     }
 
@@ -199,4 +206,5 @@ public class SystemStatusService {
         return Math.round(v * 10) / 10.0;
     }
 }
+
 

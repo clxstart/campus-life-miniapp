@@ -94,7 +94,46 @@ Page({
     if (key === 'address') return this.openAddresses()
     if (key === 'coupon') return this.openCoupons()
     if (key === 'feedback') return this.openFeedback()
+    if (key === 'privacy') return wx.navigateTo({ url: '/pages/agreement/agreement?type=privacy' })
+    if (key === 'terms') return wx.navigateTo({ url: '/pages/agreement/agreement?type=terms' })
+    if (key === 'settings') return this.openSettings()
     popup.toast(this, event.currentTarget.dataset.label)
+  },
+
+  // 设置：目前放协议入口与注销账号。注销是不可逆操作，二次确认 + 输入确认词。
+  openSettings() {
+    const items = ['隐私政策', '用户协议', '注销账号']
+    popup.sheet(this, {
+      title: '设置',
+      actions: items.map((label, index) => ({ label, index })),
+      action: ({ item }) => {
+        const label = item && item.label
+        if (label === '隐私政策') wx.navigateTo({ url: '/pages/agreement/agreement?type=privacy' })
+        else if (label === '用户协议') wx.navigateTo({ url: '/pages/agreement/agreement?type=terms' })
+        else if (label === '注销账号') this.confirmDeleteAccount()
+      }
+    })
+  },
+
+  confirmDeleteAccount() {
+    popup.modal(this, {
+      title: '注销账号',
+      message: '注销后你的资料、帖子、收藏等将被删除且无法恢复，订单与交易记录按法规要求保留。确定继续吗？',
+      showCancel: true,
+      confirmText: '继续注销',
+      confirm: () => this.doDeleteAccount()
+    })
+  },
+
+  async doDeleteAccount() {
+    try {
+      await api.deleteAccount(api.currentUserId())
+      api.clearAuth()
+      popup.toast(this, '账号已注销', { tone: 'success' })
+      setTimeout(() => wx.reLaunch({ url: '/pages/index/index' }), 1200)
+    } catch (error) {
+      popup.toast(this, error.message || '注销失败，请稍后再试', { tone: 'error' })
+    }
   },
 
   // 收藏列表：点标题直达帖子详情

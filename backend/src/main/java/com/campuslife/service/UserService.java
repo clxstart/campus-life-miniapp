@@ -70,9 +70,42 @@ import java.time.LocalDateTime; import java.util.*;
    Feedback f=new Feedback(); f.setUserId(userId); f.setContent(content); f.setCreatedAt(LocalDateTime.now()); feedbackMapper.insert(f);
    return Map.of("received",true);}
  // 收藏/浏览的帖子卡片：列表页只需要标题与时间
+  /**
+   * 注销账号（软删除 + 匿名化）。
+   *
+   * 为什么不物理删除：订单、支付、审计记录需要按法规保留，物理删除会让它们变成孤儿，
+   * 对账与合规审计就说不清了。所以：
+   *   - 清空昵称/头像/学校/openid，让账号不再指向任何可识别到人的信息；
+   *   - status=0 标记注销，AuthInterceptor 立刻让旧 token 失效；
+   *   - openid 置空后，用同一个微信再登录会被当成新用户建号，相当于真的重新开始。
+   *
+   * 前置校验：有未完成订单时不允许注销（钱的事不能糊弄）。
+   */
+  @org.springframework.transaction.annotation.Transactional
+  public Map<String,Object> deleteAccount(Long userId) {
+    com.campuslife.entity.User user = userMapper.selectById(userId);
+    if (user == null) throw new IllegalArgumentException("用户不存在");
+    if (user.getStatus() != null && user.getStatus() == 0) throw new IllegalStateException("账号已注销");
+
+    long unfinished = campusMapper.countUnfinishedOrders(userId);
+    if (unfinished > 0) {
+      throw new IllegalStateException("还有 " + unfinished + " 笔订单未完成，请先处理后再注销");
+    }
+
+    user.setStatus(0);
+    user.setDeletedAt(LocalDateTime.now());
+    user.setNickname("已注销用户");
+    user.setAvatar(null);
+    user.setOpenid(null);
+    user.setSchool(null);
+    userMapper.updateById(user);
+    return Map.of("deleted", true);
+  }
+
  private List<Map<String,Object>> postCards(List<Long> postIds){
    List<Map<String,Object>> out=new ArrayList<>();
    if(postIds.isEmpty())return out;
    for(Post p:postMapper.selectBatchIds(postIds)){Map<String,Object> m=new LinkedHashMap<>(); m.put("id",p.getId()); m.put("title",p.getTitle()); m.put("createdAt",p.getCreatedAt()); out.add(m);}
    return out;}
 }
+

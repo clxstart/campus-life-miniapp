@@ -98,6 +98,37 @@
           <li v-for="(line, i) in data.slowRequests" :key="i" class="break-all">{{ line }}</li>
         </ul>
       </div>
+
+      <!-- 功能开关：出问题时一键止血 -->
+      <div class="border border-stone-200 rounded-[1.5rem] p-5 md:col-span-2">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+          <p class="font-medium text-stone-800">功能开关</p>
+          <span class="text-xs text-stone-400">关闭后用户会看到对应提示，其他功能不受影响</span>
+        </div>
+        <p class="text-xs text-stone-500 mb-3">
+          线上某个功能出问题，在这里一键关闭止血，不用改代码、不用重启。改完约 30 秒内全站生效。
+        </p>
+        <div class="space-y-2">
+          <div v-for="f in flags" :key="f.flagKey"
+               class="flex items-center justify-between gap-3 border border-stone-200 rounded-2xl px-4 py-3">
+            <div class="min-w-0">
+              <p class="text-sm text-stone-800">{{ flagLabel(f.flagKey) }}</p>
+              <p class="text-xs text-stone-400 truncate">{{ f.flagKey }}<span v-if="f.remark"> · {{ f.remark }}</span></p>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+              <span class="text-xs" :class="Number(f.enabled) ? 'text-[#4d6b3c]' : 'text-[#a4553f]'">
+                {{ Number(f.enabled) ? '已开启' : '已关闭' }}
+              </span>
+              <button class="no-btn-ghost no-btn-sm" :disabled="flagBusy === f.flagKey" @click="toggleFlag(f)">
+                {{ Number(f.enabled) ? '关闭' : '开启' }}
+              </button>
+            </div>
+          </div>
+          <p v-if="!flags.length" class="text-sm text-stone-500">
+            没有读到开关数据，请确认已执行 module-feature-flag.sql。
+          </p>
+        </div>
+      </div>
     </div>
 
     <p v-if="data" class="text-xs text-stone-400">采集时间：{{ data.timestamp }}</p>
@@ -140,6 +171,40 @@ const businessLabels = {
 }
 const businessItems = computed(() => data.value?.business || {})
 
+// ---- 功能开关 ----
+const flags = ref([])
+const flagBusy = ref('')
+const FLAG_LABELS = {
+  'ai_chat.enabled': 'AI 陪聊',
+  'upload.enabled': '图片/材料上传',
+  'pay.enabled': '在线支付',
+  'enroll.material.enabled': '活动材料报名',
+  'circle_chat.enabled': '圈子群聊',
+  'post.publish.enabled': '发帖与评论'
+}
+function flagLabel(key) {
+  return FLAG_LABELS[key] || key
+}
+
+async function loadFlags() {
+  try { flags.value = (await http.get('/admin/feature-flags')) || [] } catch { flags.value = [] }
+}
+
+async function toggleFlag(row) {
+  const next = Number(row.enabled) ? 0 : 1
+  const action = next ? '开启' : '关闭'
+  if (!confirm(`确定${action}「${flagLabel(row.flagKey)}」？\n\n关闭后：用户在该功能处会看到维护提示，其他功能不受影响，随时可以再打开。`)) return
+  flagBusy.value = row.flagKey
+  try {
+    await http.put(`/admin/feature-flags/${row.flagKey}`, { enabled: next, remark: row.remark || '' })
+    await loadFlags()
+  } catch (e) {
+    alert(e.message)
+  } finally {
+    flagBusy.value = ''
+  }
+}
+
 async function load() {
   loading.value = true
   error.value = ''
@@ -152,6 +217,6 @@ async function load() {
   }
 }
 
-onMounted(load)
-useAutoRefresh(load)
+onMounted(() => { load(); loadFlags() })
+useAutoRefresh(() => { load(); loadFlags() })
 </script>

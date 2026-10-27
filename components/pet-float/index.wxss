@@ -24,9 +24,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* 提升合成层，拖动更顺滑 */
-  will-change: transform;
-  transform: translateZ(0);
+  /* 注意：这里不能写 transform / will-change。
+     movable-view 靠自己的内联 transform 定位，类上再挂 transform 会抢属性，
+     首帧或重排时宠物会跳到错误位置。 */
 }
 
 /* 容器：透明，宠物直接浮在页面上

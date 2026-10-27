@@ -3,6 +3,8 @@
   <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px">
     <view class="back" catchtap="goBack">‹</view>
     <view class="nav-title">帖子详情</view>
+    <!-- 举报入口：UGC 平台必须让用户能反馈问题内容 -->
+    <view class="nav-more" catchtap="reportPost">举报</view>
   </view>
   <offline-banner local="{{offline}}" />
   <view class="detail-body">

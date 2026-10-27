@@ -22,6 +22,18 @@ const LINES = [
 /** 拖动判定阈值（px）：位移超过此值算拖动，不算点击 */
 const DRAG_THRESHOLD = 6
 
+/**
+ * 默认距底偏移（rpx）
+ *
+ * 故意用统一常量、不读各页面传入的 bottom：
+ * 各页面传的值不一样（tabBar 页 260、普通页 200、聊天页 220），
+ * 切页面时宠物会上下跳 30rpx。既然诉求是「位置固定不变」，就统一成一个值。
+ *
+ * 取 200rpx 的依据：底部导航是 100rpx + 安全区(≈68rpx)=168rpx，
+ * 聊天输入栏同量级，200rpx 能全部让开并留一点间距。
+ */
+const DEFAULT_BOTTOM_RPX = 200
+
 Component({
   options: { addGlobalClass: true },
 
@@ -50,7 +62,19 @@ Component({
       this._alive = true
       this._moved = false
       this._readCache()
-      this._initPosition()
+      // 只定尺寸，不落坐标：此刻节点还没布局完，坐标会被夹取
+      this._measure()
+
+      // 等一帧让 movable-area 拿到真实高度后再落坐标。
+      // 不用 ready 生命周期：它在部分基础库/开发者工具下会和 attached
+      // 的执行顺序不稳定，导致组件 attached 抛错。nextTick + 50ms 兜底更稳。
+      wx.nextTick(() => {
+        if (!this._alive) return
+        this._applyPosition()
+        this._posTimer = setTimeout(() => {
+          if (this._alive) this._applyPosition()
+        }, 50)
+      })
 
       this._timer = setTimeout(() => {
         if (this._alive) this._say(LINES[Math.floor(Math.random() * LINES.length)])
@@ -60,6 +84,7 @@ Component({
       this._alive = false
       if (this._timer) { clearTimeout(this._timer); this._timer = null }
       if (this._hideTimer) { clearTimeout(this._hideTimer); this._hideTimer = null }
+      if (this._posTimer) { clearTimeout(this._posTimer); this._posTimer = null }
     }
   },
 
@@ -67,9 +92,11 @@ Component({
     show() {
       if (!this._alive) return
       this._readCache()
-      // 回到栈里已有的页面时组件不会重建，这里重新按存储校准一次位置，
-      // 保证在别的页面拖动过之后，切回来位置也是同一个
-      this._syncSavedPosition()
+      // 拖动中不打断手势
+      if (this.data.dragging) return
+      // 回到栈里已有的页面时组件不会重建，这里按存储校准一次位置，
+      // 保证在别的页面拖过之后切回来位置一致（值相同则内部直接 return）
+      this._applyPosition()
     }
   },
 
@@ -92,28 +119,14 @@ Component({
      * 结果每切换一次页面猫就往上挪一点。
      * 存右下角偏移后，各页面视觉位置完全一致。
      */
-    _initPosition() {
-      let winW = 375, winH = 667
-      try {
-        const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
-        winW = info.windowWidth || winW
-        winH = info.windowHeight || winH
-      } catch (e) {}
-
-      // 宠物球实际占位（rpx → px：750rpx = 屏宽）
-      const ballPx = Math.round((136 / 750) * winW)
-      const maxX = Math.max(0, winW - ballPx)
-      const maxY = Math.max(0, winH - ballPx)
-
-      // 默认位置：贴右下角。
-      // 底部偏移用页面传入的 bottom 属性（rpx）换算成 px —— 各页面已经按
-      // 自己的底部导航 / 输入框高度调好了这个值（tabBar 页 260、普通页 200），
-      // 直接复用就不会压住底部导航。
-      const defaultBottomPx = Math.round(((this.properties.bottom || 200) / 750) * winW)
+    /** 读取一份目标位置：默认右下角，或本地存过的「距右 / 距底」偏移 */
+    _targetOffset() {
+      const winW = this._winW || 375
+      // 默认位置：贴右下角，距底统一用 DEFAULT_BOTTOM_RPX。
+      // 不读 properties.bottom —— 各页面传值不同，会导致切页面时宠物上下跳。
       let right = 8
-      let bottom = defaultBottomPx
+      let bottom = Math.round((DEFAULT_BOTTOM_RPX / 750) * winW)
 
-      // 恢复上次位置
       // 只认 {right,bottom} 格式。旧版存的 {x,y} 是绝对坐标，
       // 在不同 windowHeight 的页面之间会漂移（每切一次页面就往上挪），
       // 所以直接忽略，让它回到干净的默认右下角。
@@ -126,35 +139,46 @@ Component({
       } catch (e) {}
 
       // 偏移量不能超过可移动范围，否则球会跑出屏幕
-      right = Math.min(right, maxX)
-      bottom = Math.min(bottom, maxY)
-
-      const x = maxX - right
-      const y = maxY - bottom
-
-      this._maxX = maxX
-      this._maxY = maxY
-      this._ballPx = ballPx
-      this.setData({ areaHeight: winH, x, y })
+      right = Math.min(right, this._maxX || 0)
+      bottom = Math.min(bottom, this._maxY || 0)
+      return { right, bottom }
     },
 
     /**
-     * 按本地存储重新校准位置（页面 show 时调用）
+     * 第一阶段：只算尺寸，让 movable-area 先长到正确高度
      *
-     * 场景：在 A 页拖过猫，切到 B 页，再返回 A 页（A 没被销毁）——
-     * A 页的组件实例还停留在旧位置，这里重新读存储把它拉到同一处。
+     * 必须在 attached 里做。movable-area 的高度由 areaHeight 决定，
+     * 如果等到设置坐标时高度还是默认 600，movable-view 会把 y 夹到顶部，
+     * 表现出来就是「宠物跳到右上角」。
      */
-    _syncSavedPosition() {
+    _measure() {
+      let winW = 375, winH = 667
+      try {
+        const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
+        winW = info.windowWidth || winW
+        winH = info.windowHeight || winH
+      } catch (e) {}
+
+      const ballPx = Math.round((136 / 750) * winW)
+      this._winW = winW
+      this._winH = winH
+      this._ballPx = ballPx
+      this._maxX = Math.max(0, winW - ballPx)
+      this._maxY = Math.max(0, winH - ballPx)
+
+      // 先把区域高度定下来，坐标留到 ready 再设置
+      this.setData({ areaHeight: winH })
+    },
+
+    /**
+     * 第二阶段：在布局完成之后落坐标
+     *
+     * 在 ready（或页面 show）里调用。此时 movable-area 已是 winH 高，
+     * 目标 y 不会被夹取，宠物直接出现在右下角而不是先跑到顶部。
+     */
+    _applyPosition() {
       if (this._maxX == null || this._maxY == null) return
-      let saved = null
-      try { saved = wx.getStorageSync(POS_KEY) } catch (e) { return }
-      if (!saved) return
-      // 只认新格式，旧 {x,y} 会被忽略，回到默认右下角
-      if (typeof saved.right !== 'number' || typeof saved.bottom !== 'number') return
-
-      const right = Math.min(Math.max(0, saved.right), this._maxX)
-      const bottom = Math.min(Math.max(0, saved.bottom), this._maxY)
-
+      const { right, bottom } = this._targetOffset()
       const x = this._maxX - right
       const y = this._maxY - bottom
       if (x === this.data.x && y === this.data.y) return

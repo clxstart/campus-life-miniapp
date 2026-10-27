@@ -6,7 +6,7 @@
       <!-- 本校/全部：圈子按校隔离 -->
       <view class="scope-switch"><view class="scope-opt {{schoolScope==='local'?'on':''}}" data-scope="local" catchtap="switchSchoolScope">本校</view><view class="scope-opt {{schoolScope==='all'?'on':''}}" data-scope="all" catchtap="switchSchoolScope">全部</view></view>
       <view class="discover-search" bindtap="openSearch">
-        <image src="/assets/icons/search.svg" mode="aspectFit" />
+        <image lazy-load="true" src="/assets/icons/search.svg" mode="aspectFit" />
         <text>搜索圈子</text>
       </view>
     </view>
@@ -64,7 +64,7 @@
       data-id="{{item.id}}"
       bindtap="openCircle"
     >
-      <image class="circle-cover" src="{{item.cover}}" mode="aspectFill" />
+      <image lazy-load="true" class="circle-cover" src="{{item.cover}}" mode="aspectFill" />
       <view class="circle-main">
         <view class="circle-title-row">
           <text class="circle-name">{{item.name}}</text>
@@ -110,3 +110,4 @@
 </view>
 <!-- 全局悬浮宠物 -->
 <pet-float bottom="260" />
+

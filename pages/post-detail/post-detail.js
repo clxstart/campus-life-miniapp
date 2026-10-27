@@ -133,5 +133,26 @@ Page({
     wx.navigateTo({url:`/pages/chat/chat?id=${p.authorId||0}&name=${encodeURIComponent(p.authorNickname||'同学')}&avatar=${encodeURIComponent(p.authorNickname?p.authorNickname[0]:'同')}&color=${encodeURIComponent('#7EB6F6')}`})
   },
   previewImage(){ const p=this.data.post; if(p&&p.image) wx.previewImage({urls:[p.image]}) },
+  // 举报：选原因后提交到管理端队列，由人判断，不自动下架
+  reportPost(){
+    const p = this.data.post
+    if (!p || !p.id) return
+    const reasons = ['广告', '辱骂', '色情', '诈骗', '侵权', '其他']
+    popup.sheet(this, {
+      title: '举报这条帖子',
+      actions: reasons.map(r => ({ label: r })),
+      action: async ({ item }) => {
+        const reason = item && item.label
+        if (!reason) return
+        try {
+          await api.reportContent('post', p.id, reason, '')
+          popup.toast(this, '已收到举报，我们会尽快处理', { tone: 'success' })
+        } catch (error) {
+          popup.toast(this, error.message || '举报失败，请稍后再试', { tone: 'error' })
+        }
+      }
+    })
+  },
   onShareAppMessage(){ const p=this.data.post; return { title:p?(p.title||'校园论坛帖子'):'校园论坛', path:`/pages/post-detail/post-detail?id=${this.postId}` } }
 })
+

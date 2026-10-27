@@ -1,0 +1,65 @@
+.mt-page {
+  min-height: 100vh;
+  background: #F7F3EA;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 48rpx;
+  box-sizing: border-box;
+}
+
+.mt-card {
+  width: 100%;
+  background: #FFFCF5;
+  border: 1rpx solid #DEDCCD;
+  border-radius: 32rpx;
+  padding: 64rpx 40rpx 48rpx;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.mt-icon {
+  font-size: 88rpx;
+  line-height: 1;
+  margin-bottom: 28rpx;
+}
+
+.mt-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #203D34;
+  margin-bottom: 20rpx;
+}
+
+.mt-desc {
+  font-size: 27rpx;
+  color: #586A60;
+  line-height: 1.7;
+}
+
+.mt-desc--sub {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #8A9992;
+}
+
+.mt-btn {
+  margin-top: 44rpx;
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: 999rpx;
+  background: #2F6555;
+  color: #FFFCF5;
+  font-size: 28rpx;
+  font-weight: 600;
+  border: none;
+}
+.mt-btn::after { border: 0; }
+
+.mt-foot {
+  margin-top: 40rpx;
+  font-size: 22rpx;
+  color: #8A9992;
+}

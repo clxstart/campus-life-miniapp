@@ -1,0 +1,20 @@
+<!--
+  服务维护页：纯静态，不依赖任何接口。
+
+  用途：当后端整体不可达时，请求层会把用户引到这里，
+  而不是让用户在原来的页面上一直转圈（那会让人以为是自己网络的问题）。
+-->
+<view class="mt-page">
+  <view class="mt-card">
+    <view class="mt-icon">☕</view>
+    <view class="mt-title">服务正在维护</view>
+    <view class="mt-desc">
+      校园生活暂时打不开，我们正在处理，通常几分钟就能恢复。
+    </view>
+    <view class="mt-desc mt-desc--sub">
+      你可以先关掉小程序，稍后再从「最近使用」重新进入。
+    </view>
+    <button class="mt-btn" bindtap="retry">重新试试</button>
+  </view>
+  <view class="mt-foot">如果一直这样，请联系学校管理员</view>
+</view>

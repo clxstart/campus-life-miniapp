@@ -4,7 +4,7 @@
     <view class="search-navbar-row" style="height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px;">
       <view class="back" bindtap="goBack">‹</view>
       <view class="search-box">
-        <image src="/assets/icons/search.svg" mode="aspectFit" />
+        <image lazy-load="true" src="/assets/icons/search.svg" mode="aspectFit" />
         <input value="{{draft}}" placeholder="搜帖子、圈子、闲置、活动…" maxlength="64" confirm-type="search" bindinput="inputKeyword" bindconfirm="submitSearch" />
       </view>
       <text class="search-submit" bindtap="submitSearch">搜索</text>
@@ -46,7 +46,7 @@
         <view wx:if="{{item.desc}}" class="summary">{{item.desc}}</view>
         <view class="card-meta">{{item.meta}}</view>
       </view>
-      <image wx:if="{{item.image}}" class="card-image" src="{{item.image}}" mode="aspectFill" />
+      <image lazy-load="true" wx:if="{{item.image}}" class="card-image" src="{{item.image}}" mode="aspectFill" />
     </view>
   </view>
 
@@ -58,3 +58,4 @@
 </view>
 <!-- 全局悬浮宠物 -->
 <pet-float bottom="200" />
+

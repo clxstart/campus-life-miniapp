@@ -142,4 +142,16 @@ public interface CampusMapper {
     @Select("SELECT id, name, room, day, period, theme, week_start AS weekStart, week_end AS weekEnd FROM course_schedule WHERE term_id=#{termId} AND user_id=#{userId} AND day=#{day} AND period=#{period} AND name=#{name} LIMIT 1")
     Map<String,Object> courseByKey(@Param("termId") Long termId, @Param("userId") Long userId,
         @Param("day") int day, @Param("period") int period, @Param("name") String name);
+    /**
+     * 未完成订单数（用于账号注销前置校验）。
+     * 口径：未支付、已支付未完成、配送中、退款中的都算未完成 —— 这些状态还涉及钱或履约，
+     * 注销后没人能处理。已完成/已取消/已退款不算。
+     */
+    @Select("""
+        SELECT COUNT(*) FROM user_order
+        WHERE user_id = #{userId}
+          AND status NOT IN ('finished', 'completed', 'cancelled', 'canceled', 'closed', 'refunded')
+        """)
+    long countUnfinishedOrders(@Param("userId") Long userId);
 }
+

@@ -16,6 +16,7 @@ import com.campuslife.dto.AuditResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BizService {
@@ -565,4 +567,5 @@ public class BizService {
 
     private String snapshotJson(List<Map<String, Object>> items) { try { return json.writeValueAsString(items); } catch (JsonProcessingException e) { throw new IllegalStateException("订单商品保存失败", e); } }
 }
+
 

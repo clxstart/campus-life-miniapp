@@ -1,0 +1,90 @@
+/* 协议页：长文阅读，行距放宽，避免大段文字挤在一起 */
+.ag-page {
+  min-height: 100vh;
+  background: #F7F3EA;
+  padding: 0 40rpx 80rpx;
+  box-sizing: border-box;
+}
+
+.ag-nav {
+  display: flex;
+  align-items: center;
+  height: 88rpx;
+  position: relative;
+}
+.ag-back {
+  font-size: 48rpx;
+  line-height: 1;
+  color: #203D34;
+  width: 60rpx;
+}
+.ag-nav-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #203D34;
+  pointer-events: none;
+}
+
+.ag-header {
+  background: #FFFCF5;
+  border: 1rpx solid #DEDCCD;
+  border-radius: 28rpx;
+  padding: 36rpx 32rpx;
+  margin-bottom: 28rpx;
+}
+.ag-title {
+  font-size: 38rpx;
+  font-weight: 700;
+  color: #203D34;
+  margin-bottom: 16rpx;
+}
+.ag-meta {
+  font-size: 24rpx;
+  color: #8A9992;
+  line-height: 1.6;
+}
+
+.ag-body {
+  background: #FFFCF5;
+  border: 1rpx solid #DEDCCD;
+  border-radius: 28rpx;
+  padding: 32rpx;
+}
+.ag-section { margin-bottom: 36rpx; }
+.ag-section:last-child { margin-bottom: 0; }
+.ag-heading {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #203D34;
+  margin-bottom: 16rpx;
+}
+.ag-line {
+  font-size: 27rpx;
+  color: #586A60;
+  line-height: 1.85;
+  margin-bottom: 14rpx;
+  padding-left: 8rpx;
+}
+
+.ag-footer {
+  margin-top: 36rpx;
+  text-align: center;
+}
+.ag-switch {
+  display: inline-block;
+  padding: 18rpx 48rpx;
+  border: 1rpx solid #2F6555;
+  border-radius: 999rpx;
+  color: #2F6555;
+  font-size: 27rpx;
+}
+.ag-tip {
+  margin-top: 24rpx;
+  font-size: 22rpx;
+  color: #8A9992;
+  line-height: 1.6;
+}

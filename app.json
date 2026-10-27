@@ -31,6 +31,8 @@
     "pages/jobs/jobs",
     "pages/activities/activities",
     "pages/activity-enroll/activity-enroll",
+    "pages/agreement/agreement",
+    "pages/maintenance/maintenance",
     "pages/search/search",
     "pages/campus-offer/campus-offer",
     "pages/adopt/adopt",
@@ -50,3 +52,4 @@
   },
   "sitemapLocation": "sitemap.json"
 }
+
