@@ -110,6 +110,17 @@ public class ForumController {
         return ApiResponse.ok(service.addComment(id, r));
     }
 
+    /**
+     * 评论点赞 / 取消点赞
+     * body: {liked: true/false}
+     */
+    @PostMapping("/comments/{id}/like")
+    public ApiResponse<Map<String, Object>> likeComment(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        Object raw = body == null ? null : body.get("liked");
+        boolean liked = raw instanceof Boolean b ? b : !"false".equalsIgnoreCase(String.valueOf(raw));
+        return ApiResponse.ok(service.toggleCommentLike(id, liked));
+    }
+
     @PostMapping("/posts/{id}/view")
     public ApiResponse<Object> view(@PathVariable Long id,
                                     @RequestParam(defaultValue = "1") Long userId,

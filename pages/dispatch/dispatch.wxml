@@ -48,8 +48,7 @@
   </view>
 
   <text class="cp-hint dp-foot">累计完成 {{claimedCount}} 次派遣</text>
-
-  <t-toast id="t-toast" />
 </view>
 <!-- 全局悬浮宠物 -->
 <pet-float bottom="200" />
+

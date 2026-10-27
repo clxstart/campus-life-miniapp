@@ -62,21 +62,20 @@
       </view>
     </view>
 
-    <t-button
-      theme="primary"
-      size="large"
-      block
+    <!-- 用原生 button，替代 tdesign 的 t-button（为了移除整个 tdesign 依赖） -->
+    <button
+      class="adopt-btn adopt-btn-main"
       loading="{{submitting}}"
       disabled="{{submitting}}"
-      bind:tap="onAdopt"
-      class="adopt-btn"
-    >就选它啦</t-button>
+      bindtap="onAdopt"
+    >就选它啦</button>
 
     <text class="cp-hint adopt-tip">领养后可以在「捏脸」里随时换外观</text>
   </view>
 
-  <!-- 破壳演出（图片 + CSS 动画，跳过入口常驻） -->
-  <t-popup visible="{{hatching}}" placement="center" bind:visible-change="onPopupChange">
+  <!-- 破壳演出（图片 + CSS 动画，跳过入口常驻）。
+       原先是 tdesign 的 t-popup，现改为普通遮罩层：只用 wx:if 控制显隐，不依赖组件库。 -->
+  <view wx:if="{{hatching}}" class="hatch-mask">
     <view class="hatch hatch--{{hatchStage}}">
       <view class="hatch-stage">
         <!-- 蛋壳上半 -->
@@ -92,9 +91,9 @@
         <view class="hatch-shell hatch-shell--bottom"></view>
       </view>
       <text class="hatch-title">{{hatchTitle}}</text>
-      <t-button theme="light" size="medium" bind:tap="onSkipHatch">跳过</t-button>
+      <view class="hatch-skip" bindtap="onSkipHatch">跳过</view>
     </view>
-  </t-popup>
+  </view>
 </view>
 <!-- 全局悬浮宠物 -->
 <pet-float bottom="200" />

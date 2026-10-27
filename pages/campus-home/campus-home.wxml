@@ -110,7 +110,6 @@
   <view style="height:200rpx;"></view>
 
   <!-- 悬浮宠物统一由全局组件 pet-float 提供（与其它页面一致） -->
-
-  <t-toast id="t-toast" />
 </view>
+
 

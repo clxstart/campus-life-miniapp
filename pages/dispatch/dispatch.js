@@ -9,7 +9,7 @@
 const petApi = require('../../utils/pet-api')
 const petProfile = require('../../utils/pet-profile')
 const { normalizeAppearance, DEFAULT_APPEARANCE } = require('../../utils/pet-appearance')
-const Toast = require('tdesign-miniprogram/toast/index')
+const popup = require('../../utils/ui-popup-helper')
 
 const STATUS_TEXT = {
   running: '进行中',
@@ -72,7 +72,7 @@ Page({
           : (current && current.status === 'claimable' ? 'happy' : 'idle')
       })
     } catch (error) {
-      Toast({ context: this, selector: '#t-toast', message: error.message || '加载失败', theme: 'fail' })
+      popup.toast(this, error.message || '加载失败', { tone: 'error' })
     }
   },
 
@@ -104,11 +104,11 @@ Page({
     if (!task || !task.code) return
     try {
       await petApi.startDispatch(this._userId, task.code)
-      Toast({ context: this, selector: '#t-toast', message: '小云出发啦', theme: 'success' })
+      popup.toast(this, '小云出发啦', { tone: 'success' })
       await this._load()
       this._startTick()
     } catch (error) {
-      Toast({ context: this, selector: '#t-toast', message: error.message || '派遣失败', theme: 'fail' })
+      popup.toast(this, error.message || '派遣失败', { tone: 'error' })
     }
   },
 
@@ -118,10 +118,10 @@ Page({
     try {
       const res = await petApi.claimDispatch(this._userId, cur.id)
       const reward = res && res.reward != null ? res.reward : 0
-      Toast({ context: this, selector: '#t-toast', message: `领取到 ${reward} 积分`, theme: 'success' })
+      popup.toast(this, `领取到 ${reward} 积分`, { tone: 'success' })
       await this._load()
     } catch (error) {
-      Toast({ context: this, selector: '#t-toast', message: error.message || '领取失败', theme: 'fail' })
+      popup.toast(this, error.message || '领取失败', { tone: 'error' })
       // 失败也刷新一次，保证状态与服务端一致
       this._load()
     }
@@ -150,3 +150,4 @@ function getUserId() {
   } catch (e) {}
   return 1
 }
+

@@ -12,7 +12,7 @@
 const petApi = require('../../utils/pet-api')
 const { normalizeAppearance, DEFAULT_APPEARANCE } = require('../../utils/pet-appearance')
 const { request } = require('../../utils/api')
-const Toast = require('tdesign-miniprogram/toast/index')
+const popup = require('../../utils/ui-popup-helper')
 
 const GREETINGS = ['早上好', '上午好', '中午好', '下午好', '晚上好']
 
@@ -269,3 +269,4 @@ function getUserId() {
   } catch (e) {}
   return 1
 }
+

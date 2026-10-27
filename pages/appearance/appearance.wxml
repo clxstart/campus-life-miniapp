@@ -38,8 +38,7 @@
       <text class="cp-hint">{{tip}}</text>
     </view>
   </view>
-
-  <t-toast id="t-toast" />
 </view>
 <!-- 全局悬浮宠物 -->
 <pet-float bottom="200" />
+

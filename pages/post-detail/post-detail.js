@@ -39,7 +39,13 @@ Page({
     api.getPostComments(this.postId)
       .then(res=>{
         const list=(res&&res.list)?res.list:(res||[])
-        const normalized=list.map(x=>({...x,avatarText:(x.authorNickname||'同')[0],createdAt:formatTime(x.createdAt)}))
+        const normalized=list.map(x=>({
+          ...x,
+          avatarText:(x.authorNickname||'同')[0],
+          createdAt:formatTime(x.createdAt),
+          likeCount:x.likeCount||0,
+          liked:!!x.liked
+        }))
         this.setComments(normalized)
       })
       .catch(()=>{ if(!silent) this.setData({comments:[]}) })
@@ -72,6 +78,38 @@ Page({
     }
   },
   onDraftInput(e){this.setData({commentDraft:e.detail.value})},
+  /** 评论点赞 / 取消：先本地生效，失败回滚 */
+  async onLikeComment(e){
+    const id=e.currentTarget.dataset.id
+    if(!id)return
+    const idx=this.data.comments.findIndex(c=>String(c.id)===String(id))
+    if(idx<0)return
+    const item=this.data.comments[idx]
+    const liked=!item.liked
+    const nextCount=Math.max(0,(item.likeCount||0)+(liked?1:-1))
+    this.setData({
+      [`comments[${idx}].liked`]:liked,
+      [`comments[${idx}].likeCount`]:nextCount
+    })
+    try{
+      const res=await api.likeComment(id,liked)
+      if(res&&typeof res.likeCount==='number'){
+        this.setData({[`comments[${idx}].likeCount`]:res.likeCount})
+      }
+    }catch(error){
+      // 回滚
+      this.setData({
+        [`comments[${idx}].liked`]:!liked,
+        [`comments[${idx}].likeCount`]:item.likeCount||0
+      })
+      popup.toast(this,error.message||'操作失败',{tone:'error'})
+    }
+  },
+  /** 回复某条评论：把输入框填成「@用户名 」并聚焦 */
+  replyComment(e){
+    const name=e.currentTarget.dataset.name||'同学'
+    this.setData({commentDraft:`@${name} `})
+  },
   async submitComment(){
     const {post,commentDraft}=this.data
     if(!post||!commentDraft.trim()||this.data.commentSending)return
@@ -80,7 +118,7 @@ Page({
     try{
       const result=await api.addComment(post.id,content)
       // 先本地插入，保证「发完立刻能看到」
-      const c={id:result.id,content,authorNickname:'我',avatarText:'我',createdAt:'刚刚'}
+      const c={id:result.id,content,authorNickname:'我',avatarText:'我',createdAt:'刚刚',likeCount:0,liked:false}
       this.setComments(this.data.comments.concat(c))
       this.setData({commentDraft:'','post.commentCount':(post.commentCount||0)+1})
       // 再静默拉一次服务端列表做对账：

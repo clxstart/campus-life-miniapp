@@ -26,7 +26,15 @@
       <view class="comment-main">
         <text class="comment-name">{{item.authorNickname||'同学'}}</text>
         <text class="comment-text">{{item.content}}</text>
-        <text class="comment-time">{{item.createdAt}}</text>
+        <view class="comment-foot">
+          <text class="comment-time">{{item.createdAt}}</text>
+          <text class="comment-dot">·</text>
+          <text class="comment-reply" data-id="{{item.id}}" data-name="{{item.authorNickname}}" catchtap="replyComment">回复</text>
+        </view>
+      </view>
+      <view class="comment-like {{item.liked?'liked':''}}" data-id="{{item.id}}" catchtap="onLikeComment">
+        <text class="comment-like-icon">{{item.liked?'♥':'♡'}}</text>
+        <text class="comment-like-num">{{item.likeCount||0}}</text>
       </view>
     </view>
     <view class="bottom-pad"></view>

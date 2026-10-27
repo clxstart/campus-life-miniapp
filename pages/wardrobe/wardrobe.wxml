@@ -61,17 +61,18 @@
     </view>
   </view>
 
-  <!-- 兑换确认 -->
-  <t-dialog
-    visible="{{buyVisible}}"
-    title="兑换{{buying.name}}"
-    content="将消耗 {{buying.price}} 积分，当前有 {{balance}} 积分。确认兑换吗？"
-    confirm-btn="确认兑换"
-    cancel-btn="再想想"
-    bind:confirm="onBuyConfirm"
-    bind:cancel="onBuyCancel"
-  />
-  <t-toast id="t-toast" />
+  <!-- 兑换确认（原生遮罩实现，替代 tdesign 的 t-dialog，从而移除整个 tdesign 依赖） -->
+  <view wx:if="{{buyVisible}}" class="wd-mask" catchtouchmove="noop">
+    <view class="wd-dialog">
+      <view class="wd-dialog-title">兑换{{buying.name}}</view>
+      <view class="wd-dialog-content">将消耗 {{buying.price}} 积分，当前有 {{balance}} 积分。确认兑换吗？</view>
+      <view class="wd-dialog-actions">
+        <view class="wd-dialog-btn wd-dialog-btn--ghost" bindtap="onBuyCancel">再想想</view>
+        <view class="wd-dialog-btn wd-dialog-btn--primary" bindtap="onBuyConfirm">确认兑换</view>
+      </view>
+    </view>
+  </view>
 </view>
 <!-- 全局悬浮宠物 -->
 <pet-float bottom="200" />
+

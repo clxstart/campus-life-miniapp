@@ -17,6 +17,34 @@
       {
         "value": "web",
         "type": "folder"
+      },
+      {
+        "value": ".dsh-tool-vision",
+        "type": "folder"
+      },
+      {
+        "value": "assets/_originals",
+        "type": "folder"
+      },
+      {
+        "value": "logs",
+        "type": "folder"
+      },
+      {
+        "value": "tools",
+        "type": "folder"
+      },
+      {
+        "value": ".vscode",
+        "type": "folder"
+      },
+      {
+        "value": ".md",
+        "type": "suffix"
+      },
+      {
+        "value": ".log",
+        "type": "suffix"
       }
     ],
     "include": []

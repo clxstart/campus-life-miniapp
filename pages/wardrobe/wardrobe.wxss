@@ -146,3 +146,56 @@
   font-size: 28rpx;
   font-weight: 700;
 }
+
+/* ===== 兑换确认弹层（原生实现，替代 tdesign t-dialog）===== */
+.wd-mask {
+  position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background: rgba(20, 30, 26, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 900;
+}
+.wd-dialog {
+  width: 560rpx;
+  background: var(--c-card);
+  border-radius: var(--radius-card, 24rpx);
+  padding: 40rpx 36rpx 28rpx;
+  box-sizing: border-box;
+}
+.wd-dialog-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--c-text);
+  text-align: center;
+}
+.wd-dialog-content {
+  font-size: 27rpx;
+  color: var(--c-text-sub);
+  line-height: 1.6;
+  margin: 20rpx 0 32rpx;
+  text-align: center;
+}
+.wd-dialog-actions {
+  display: flex;
+  gap: 20rpx;
+}
+.wd-dialog-btn {
+  flex: 1;
+  height: 84rpx;
+  line-height: 84rpx;
+  text-align: center;
+  border-radius: 999rpx;
+  font-size: 28rpx;
+}
+.wd-dialog-btn--ghost {
+  background: transparent;
+  color: var(--c-text-sub);
+  border: 1rpx solid var(--c-line);
+}
+.wd-dialog-btn--primary {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  font-weight: 600;
+}

@@ -10,7 +10,7 @@
  */
 const petApi = require('../../utils/pet-api')
 const { DEFAULT_APPEARANCE, findAccessory } = require('../../utils/pet-appearance')
-const Toast = require('tdesign-miniprogram/toast/index')
+const popup = require('../../utils/ui-popup-helper')
 
 Page({
   data: {
@@ -49,7 +49,7 @@ Page({
         balance: (wd && wd.balance) || 0
       })
     } catch (error) {
-      Toast({ context: this, selector: '#t-toast', message: error.message || '加载失败', theme: 'fail' })
+      popup.toast(this, error.message || '加载失败', { tone: 'error' })
       this.setData({ items: [] })
     }
   },
@@ -73,6 +73,8 @@ Page({
     })
   },
 
+  // 遮罩层阻止穿透滚动用（catchtouchmove 需要一个空处理函数）
+  noop() {},
   onBuyCancel() { this.setData({ buyVisible: false }) },
 
   async onBuyConfirm() {
@@ -81,10 +83,10 @@ Page({
     if (!item || !item.code) return
     try {
       await petApi.purchaseItem(this._userId, item.code)
-      Toast({ context: this, selector: '#t-toast', message: '兑换成功，已收进收藏', theme: 'success' })
+      popup.toast(this, '兑换成功，已收进收藏', { tone: 'success' })
       await this._load()
     } catch (error) {
-      Toast({ context: this, selector: '#t-toast', message: error.message || '兑换失败', theme: 'fail' })
+      popup.toast(this, error.message || '兑换失败', { tone: 'error' })
     }
   },
 
@@ -109,3 +111,5 @@ function getUserId() {
   } catch (e) {}
   return 1
 }
+
+

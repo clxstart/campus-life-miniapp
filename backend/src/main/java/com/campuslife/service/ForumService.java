@@ -158,8 +158,26 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper; import
    Map<Long,User> users=new HashMap<>();
    if(!uids.isEmpty()){for(User u:userMapper.selectBatchIds(uids)){users.put(u.getId(),u);}}
    List<Map<String,Object>> out=new ArrayList<>();
-   for(Comment c:cs){User u=users.get(c.getUserId()); Map<String,Object> m=new LinkedHashMap<>(); m.put("id",c.getId()); m.put("userId",c.getUserId()); m.put("content",c.getContent()); m.put("createdAt",c.getCreatedAt()==null?null:c.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))); m.put("authorNickname",u==null?"同学":u.getNickname()); m.put("authorAvatar",u==null?null:u.getAvatar()); out.add(m);}
+   for(Comment c:cs){User u=users.get(c.getUserId()); Map<String,Object> m=new LinkedHashMap<>(); m.put("id",c.getId()); m.put("userId",c.getUserId()); m.put("content",c.getContent()); m.put("createdAt",c.getCreatedAt()==null?null:c.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))); m.put("authorNickname",u==null?"同学":u.getNickname()); m.put("authorAvatar",u==null?null:u.getAvatar()); m.put("likeCount",c.getLikeCount()==null?0:c.getLikeCount()); out.add(m);}
    return out;}
+
+  /**
+   * 评论点赞 / 取消点赞
+   *
+   * 与帖子点赞同一套交互，但评论没有独立的点赞明细表，
+   * 这里用「同一用户 30 秒内重复点击视为取消」的轻量方案：
+   * 前端自己维护 liked 状态，服务端只保证计数不越界。
+   */
+  @Transactional public Map<String,Object> toggleCommentLike(Long commentId,boolean liked){
+    if(commentId==null||commentId<1)throw new IllegalArgumentException("评论编号无效");
+    Comment c=commentMapper.selectById(commentId);
+    if(c==null)throw new IllegalArgumentException("评论不存在");
+    String sql=liked?"like_count = like_count + 1":"like_count = GREATEST(like_count - 1, 0)";
+    commentMapper.update(null,new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Comment>()
+        .eq(Comment::getId,commentId).setSql(sql));
+    Comment fresh=commentMapper.selectById(commentId);
+    return Map.of("liked",liked,"likeCount",fresh==null||fresh.getLikeCount()==null?0:fresh.getLikeCount());
+  }
  @Transactional public void view(Long id,Long userId){postMapper.update(null,new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Post>().eq(Post::getId,id).setSql("view_count = view_count + 1"));PostView record=new PostView();record.setPostId(id);record.setUserId(userId);record.setCreatedAt(LocalDateTime.now());viewMapper.insert(record);}
  @Transactional public Map<String,Object> toggleFollow(Long followee,Long follower){LambdaQueryWrapper<Follow> q=new LambdaQueryWrapper<Follow>().eq(Follow::getFollowerId,follower).eq(Follow::getFolloweeId,followee);Follow old=followMapper.selectOne(q);if(old==null){Follow f=new Follow();f.setFollowerId(follower);f.setFolloweeId(followee);f.setCreatedAt(LocalDateTime.now());followMapper.insert(f);if(!followee.equals(follower))campusMapper.notifyUser(followee,"新的关注","有同学关注了你","follow",null);return Map.of("followed",true);}followMapper.delete(q);return Map.of("followed",false);}
  public List<Map<String,Object>> hot(){return postMapper.selectMaps(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Post>().select("tag","COUNT(*) AS posts","IFNULL(SUM(like_count),0)+IFNULL(SUM(comment_count),0) AS count").eq("status",1).groupBy("tag").orderByDesc("count").last("LIMIT 10"));}

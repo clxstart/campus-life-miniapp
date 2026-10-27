@@ -30,12 +30,25 @@
 .tip{padding:40rpx 0;color:#a5adb5;font-size:23rpx;text-align:center}
 .page-tip{padding-top:200rpx}
 /* 狐友式评论项：小头像 + 粗黑昵称 + 近黑内容 + 小灰时间 */
+/* 评论条目：左头像 → 用户名 / 内容 / 时间·回复 → 右侧点赞
+   参考主流社区（贴吧/B站）的评论区排版 */
 .comment-item{display:flex;align-items:flex-start;padding:24rpx 0;border-bottom:1rpx solid #f0f1f3}
-.comment-avatar{width:56rpx;height:56rpx;border-radius:50%;background:#dcecff;flex:none;display:flex;align-items:center;justify-content:center;color:#3a9b76;font-weight:700;font-size:24rpx}
+.comment-avatar{width:64rpx;height:64rpx;border-radius:50%;background:#dcecff;flex:none;display:flex;align-items:center;justify-content:center;color:#3a9b76;font-weight:700;font-size:26rpx}
 .comment-main{flex:1;min-width:0;margin-left:16rpx}
-.comment-name{color:#1a2330;font-size:24rpx;font-weight:700}
-.comment-text{margin-top:8rpx;color:#2b3540;font-size:28rpx;line-height:42rpx}
-.comment-time{margin-top:8rpx;color:#a8b0b8;font-size:20rpx}
+.comment-name{color:#8b939b;font-size:23rpx}
+.comment-text{display:block;margin-top:6rpx;color:#1a2330;font-size:29rpx;line-height:42rpx;word-break:break-all}
+/* 时间 · 回复 同一行 */
+.comment-foot{display:flex;align-items:center;margin-top:8rpx}
+.comment-time{color:#a8b0b8;font-size:21rpx}
+.comment-dot{margin:0 8rpx;color:#c4cace;font-size:21rpx}
+.comment-reply{color:#8b939b;font-size:21rpx}
+.comment-reply:active{color:#2F6555}
+/* 右侧点赞：空心/实心切换，数字跟在后面 */
+.comment-like{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-width:56rpx;padding-left:12rpx}
+.comment-like-icon{color:#b9c1c7;font-size:30rpx;line-height:1.2}
+.comment-like-num{margin-top:2rpx;color:#a8b0b8;font-size:20rpx}
+.comment-like.liked .comment-like-icon{color:#e2564d}
+.comment-like.liked .comment-like-num{color:#e2564d}
 .bottom-pad{height:140rpx}
 /* 底部输入条：白底 + 细顶边，圆角输入 + 蓝/灰发送 + 点赞胶囊 */
 .input-bar{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:16rpx;padding:16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));background:#fff;border-top:1rpx solid #f0f1f3}

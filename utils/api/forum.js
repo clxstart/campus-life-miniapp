@@ -114,6 +114,8 @@ function mockComments(id) {
 // 评论是公开装饰数据：服务端异常时用演示评论兜底，不至于让详情页空白
 function getPostComments(id) { return request(`/posts/${id}/comments`, 'GET').catch(() => wait(mockComments(id))) }
 function addComment(id, content, userId = currentUserId()) { return request(`/posts/${id}/comments`, 'POST', { content, userId }).catch(error => { throw error }) }
+// 评论点赞：liked=true 点赞，false 取消
+function likeComment(commentId, liked) { return request(`/comments/${commentId}/like`, 'POST', { liked }).catch(error => { throw error }) }
 function followUser(id, userId = currentUserId()) { return request(`/users/${id}/follow`, 'POST', { userId }).catch(error => { if (error.server) throw error; return wait({ followed: true }) }) }
 function getHotTopics() { return request('/topics/hot').catch(() => wait([{ tag: '校园日常', count: 18 }, { tag: '学习', count: 12 }, { tag: '社团活动', count: 9 }])) }
 // 活动轮播位：运营在 banner 表加行即可上线，无需发版；失败返回空数组，页面用本地默认
@@ -140,6 +142,6 @@ function publishPost(payload, userId = currentUserId()) {
 module.exports = {
   localPosts, localForumPosts, mockForum,
   getForumPosts, searchPosts, getPost, likePost,
-  getPostComments, addComment, followUser,
+  getPostComments, addComment, likeComment, followUser,
   getHotTopics, getBanners, viewPost, publishPost
 }

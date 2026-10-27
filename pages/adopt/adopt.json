@@ -3,8 +3,6 @@
   "usingComponents": {
     "pet-avatar": "/components/pet-avatar/index",
     "pet-stage": "/components/pet-stage/index",
-    "t-button": "tdesign-miniprogram/button/button",
-    "t-popup": "tdesign-miniprogram/popup/popup",
     "nav-bar": "/components/nav-bar/index",
     "pet-float": "/components/pet-float/index"
   }

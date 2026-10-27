@@ -7,7 +7,7 @@ const petApi = require('../../utils/pet-api')
 const petProfile = require('../../utils/pet-profile')
 const petChat = require('../../utils/pet-chat')
 const { normalizeAppearance, DEFAULT_APPEARANCE } = require('../../utils/pet-appearance')
-const Toast = require('tdesign-miniprogram/toast/index')
+const popup = require('../../utils/ui-popup-helper')
 
 const QUICK_ASK = ['二食堂今天有什么', '哪里适合自习', '有二手教材吗']
 
@@ -112,7 +112,7 @@ Page({
   onOpenResult(e) {
     const { type, targetId } = e.detail || {}
     if (!targetId) {
-      Toast({ context: this, selector: '#t-toast', message: '演示卡片，暂无可跳转详情', theme: 'default' })
+      popup.toast(this, '演示卡片，暂无可跳转详情', { tone: 'info' })
       return
     }
     const routes = {
@@ -161,3 +161,4 @@ function getUserId() {
   } catch (e) {}
   return 1
 }
+
