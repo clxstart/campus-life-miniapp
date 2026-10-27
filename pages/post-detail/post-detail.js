@@ -22,16 +22,28 @@ Page({
       api.viewPost(this.postId).catch(error=>console.warn('[浏览上报]',error.message))
     }).catch(()=>this.setData({loading:false,offline:true})).finally(()=>this.fetchComments())
   },
-  fetchComments(){
-    this.setData({commentsLoading:true})
+  // 评论列表统一入口：按 id 去重后再 setData。
+  // 本地「刚发的评论」和接口返回的同一条评论 id 相同，
+  // 如果两者先后都被写进数组，就会出现两条一模一样的评论。
+  setComments(list){
+    const seen=new Set(), dedup=[]
+    for(const item of (list||[])){
+      const key=String(item&&item.id)
+      if(seen.has(key))continue
+      seen.add(key); dedup.push(item)
+    }
+    this.setData({comments:dedup})
+  },
+  fetchComments(silent=false){
+    if(!silent)this.setData({commentsLoading:true})
     api.getPostComments(this.postId)
       .then(res=>{
         const list=(res&&res.list)?res.list:(res||[])
         const normalized=list.map(x=>({...x,avatarText:(x.authorNickname||'同')[0],createdAt:formatTime(x.createdAt)}))
-        this.setData({comments:normalized})
+        this.setComments(normalized)
       })
-      .catch(()=>this.setData({comments:[]}))
-      .finally(()=>this.setData({commentsLoading:false}))
+      .catch(()=>{ if(!silent) this.setData({comments:[]}) })
+      .finally(()=>{ if(!silent) this.setData({commentsLoading:false}) })
   },
   openAuthor(){ const p=this.data.post; if(!p)return; wx.navigateTo({url:`/pages/user-home/user-home?id=${p.authorId||0}`}) },
   goBack(){const pages=getCurrentPages();if(pages.length>1){wx.navigateBack()}else{wx.reLaunch({url:'/pages/index/index'})}},
@@ -61,10 +73,22 @@ Page({
   },
   onDraftInput(e){this.setData({commentDraft:e.detail.value})},
   async submitComment(){
-    const {post,commentDraft}=this.data;if(!post||!commentDraft.trim()||this.data.commentSending)return
-    const content=commentDraft.trim();this.setData({commentSending:true})
-    try{const result=await api.addComment(post.id,content);const c={id:result.id,content,authorNickname:'我',avatarText:'我',createdAt:'刚刚'};this.setData({comments:this.data.comments.concat(c),commentDraft:'','post.commentCount':(post.commentCount||0)+1})}
-    catch(error){popup.toast(this,error.message||'评论失败',{tone:'error'})}finally{this.setData({commentSending:false})}
+    const {post,commentDraft}=this.data
+    if(!post||!commentDraft.trim()||this.data.commentSending)return
+    const content=commentDraft.trim()
+    this.setData({commentSending:true})
+    try{
+      const result=await api.addComment(post.id,content)
+      // 先本地插入，保证「发完立刻能看到」
+      const c={id:result.id,content,authorNickname:'我',avatarText:'我',createdAt:'刚刚'}
+      this.setComments(this.data.comments.concat(c))
+      this.setData({commentDraft:'','post.commentCount':(post.commentCount||0)+1})
+      // 再静默拉一次服务端列表做对账：
+      // 服务端是唯一数据源，避免「本地追加」与「接口返回」两条并存导致评论重复
+      this.fetchComments(true)
+    }
+    catch(error){popup.toast(this,error.message||'评论失败',{tone:'error'})}
+    finally{this.setData({commentSending:false})}
   },
   chatWithAuthor(){
     const p=this.data.post;if(!p)return
