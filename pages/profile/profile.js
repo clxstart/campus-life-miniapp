@@ -18,7 +18,9 @@ Page({
     menus: [
       { key: 'food-orders', icon: '餐', title: '我的外卖订单', value: '', tone: 'green' },
       { key: 'timetable', icon: '课', title: '我的课表', value: '', tone: 'blue' },
-      { key: 'cert', icon: '✓', title: '校园身份认证', value: '已认证', tone: 'blue' },
+      // 校园身份认证：后端与 user 表都还没有认证状态字段，这里如实显示「未开通」，
+      // 不再写死「已认证」—— 展示与事实不符比功能缺失更容易误导用户。
+      { key: 'cert', icon: '✓', title: '校园身份认证', value: '未开通', tone: 'blue' },
       { key: 'address', icon: '⌖', title: '地址管理', value: '', tone: 'green' },
       { key: 'coupon', icon: '券', title: '优惠与权益', value: '', tone: 'yellow' },
       { key: 'feedback', icon: '?', title: '帮助与反馈', value: '', tone: 'purple' },

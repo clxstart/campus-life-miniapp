@@ -21,7 +21,17 @@ Page({
     api.getForumPosts({tag:q.tag||'',scope:q.scope||'',postScope:this.data.postScope,page,size:this.data.size}).then(res=>{
       const raw=res.list||[]
       const list=raw.map(x=>({...x,avatarText:(x.authorNickname||'同')[0],createdAt:formatTime(x.createdAt)}))
-      this.setData({posts:reset?list:this.data.posts.concat(list),page,total:res.total||0,offline:!!res.offline})
+      // 按 id 去重后再合并：
+      // 翻页边界重复、离线兜底与后端数据叠加、同一条帖子被两次拉取，
+      // 都会让列表里出现两条一模一样的帖子。这里统一兜底。
+      const merged=reset?list:this.data.posts.concat(list)
+      const seen=new Set(), dedup=[]
+      for(const item of merged){
+        const key=String(item.id)
+        if(seen.has(key))continue
+        seen.add(key); dedup.push(item)
+      }
+      this.setData({posts:dedup,page,total:res.total||0,offline:!!res.offline})
     }).catch(()=>{this.setData({offline:true})}).finally(()=>this.setData({loading:false}))
   },
   onTabTap(e){const activeTab=Number(e.currentTarget.dataset.index);if(activeTab===this.data.activeTab)return;this.setData({activeTab,posts:[],page:1});this.loadPosts(true)},

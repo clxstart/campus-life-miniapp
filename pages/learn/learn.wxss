@@ -62,7 +62,8 @@
 .post-time{display:block;font-size:20rpx;color:#96a0ab;line-height:30rpx}
 .post-badge{padding:6rpx 14rpx;background:#f3f6fb;border-radius:16rpx;font-size:19rpx;color:#7891ae;flex-shrink:0}
 .post-title{display:block;margin-top:24rpx;font-size:32rpx;line-height:48rpx;font-weight:600}
-.post-summary{display:-webkit-box;overflow:hidden;-webkit-line-clamp:3;-webkit-box-orient:vertical;font-size:28rpx;line-height:44rpx;color:#737e88;margin-top:10rpx}
+/* 正文摘要：列表页只显示 1 行，超出用省略号，点进详情看全文 */
+.post-summary{display:-webkit-box;overflow:hidden;-webkit-line-clamp:1;-webkit-box-orient:vertical;text-overflow:ellipsis;word-break:break-all;font-size:28rpx;line-height:44rpx;color:#737e88;margin-top:10rpx}
 .post-image{display:block;width:100%;height:280rpx;border-radius:20rpx;margin-top:20rpx;background:#f2f5f8}
 .post-footer{display:flex;align-items:center;justify-content:space-between;margin-top:26rpx;padding-top:20rpx;box-shadow:0 -1rpx 0 #f1f4f7}
 .post-topic{font-size:22rpx;color:#648ac0}

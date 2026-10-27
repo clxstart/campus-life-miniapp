@@ -77,14 +77,9 @@
       <artifactId>wechatpay-java</artifactId>
       <version>0.2.17</version>
     </dependency>
-    <!-- task-13: 内容审核（本地敏感词引擎） -->
-    <!-- houbb/sensitive-word：DFA 引擎，保留作为对照与回退方案 -->
-    <dependency>
-      <groupId>com.github.houbb</groupId>
-      <artifactId>sensitive-word</artifactId>
-      <version>0.2.0</version>
-    </dependency>
-    <!-- ToolGood.Words：高性能敏感词引擎（DFA + 全角半角/繁简/拼音等归一化） -->
+    <!-- 内容审核：敏感词引擎用 ToolGood.Words（DFA + 全角半角/繁简/拼音归一化）。
+         历史上用过 houbb/sensitive-word 0.2.0，切到 ToolGood 后已无任何 import，
+         属于死依赖（还拖着 heaven/opencc4j/nlp-common 三个传递依赖），2026-10-27 移除。 -->
     <dependency>
       <groupId>io.github.toolgood</groupId>
       <artifactId>toolgood-words</artifactId>

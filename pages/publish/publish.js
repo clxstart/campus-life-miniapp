@@ -201,7 +201,21 @@ Page({
         : type === 'job' ? '/pages/jobs/jobs'
         : type === 'event' ? '/pages/activities/activities'
         : '/pages/community/community'
-      setTimeout(() => wx.redirectTo({ url: target }), 700)
+      setTimeout(() => {
+        // 优先「返回上一页 + 标记重载」，而不是 redirectTo。
+        // redirectTo 会新建一个列表页实例、把原实例留在页面栈里，
+        // 同一个列表页存在两份：返回时看到旧数据，新帖在另一份里，
+        // 看起来就像「我发的内容重复了」。
+        const stack = getCurrentPages()
+        const prev = stack.length >= 2 ? stack[stack.length - 2] : null
+        const prevRoute = prev ? '/' + prev.route : ''
+        if (prev && prevRoute === target) {
+          prev._needReload = true
+          wx.navigateBack()
+        } else {
+          wx.redirectTo({ url: target })
+        }
+      }, 700)
     } catch (error) {
       popup.toast(this, error.message || '发布失败，请重试', { tone: 'error' })
     } finally {

@@ -14,6 +14,8 @@
         <option :value="0">全部学校</option>
         <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
       </select>
+      <!-- 运营直接建活动，不用先去小程序发一条 -->
+      <button v-if="active === 'activities'" class="no-btn-primary no-btn-sm" @click="openCreate">新增活动</button>
     </div>
 
     <NoTable
@@ -51,15 +53,16 @@
             {{ isOnline(row) ? '下架' : '上架' }}
           </button>
           <button v-if="active === 'jobs'" class="no-btn-ghost no-btn-sm !text-[#a4553f]" @click="remove(row)">删除</button>
+          <button v-if="active === 'activities'" class="no-btn-ghost no-btn-sm !text-[#a4553f]" @click="remove(row)">删除</button>
         </div>
       </template>
     </NoTable>
 
-    <!-- 活动编辑 -->
+    <!-- 活动编辑 / 新建 -->
     <NoModal
       :open="modal.open && active === 'activities'"
-      title="编辑活动"
-      hint="用于修正活动信息或更换海报"
+      :title="modal.id ? '编辑活动' : '新建活动'"
+      :hint="modal.id ? '用于修正活动信息或更换海报' : '运营直接创建，学生端立刻可见'"
       :submitting="modal.submitting"
       @close="modal.open = false"
       @confirm="save"
@@ -86,6 +89,32 @@
         <div>
           <label class="block mb-2 text-sm font-medium text-stone-700">活动海报（选填）</label>
           <NoImageUpload v-model="modal.form.poster" />
+        </div>
+        <!-- 报名设置：按活动单独开关（一键报名 / 填表+材料+审核） -->
+        <div class="rounded-[1.25rem] border border-stone-200 p-4 space-y-4">
+          <div>
+            <label class="block mb-2 text-sm font-medium text-stone-700">报名方式</label>
+            <select v-model="modal.form.enrollMode" class="no-input">
+              <option value="simple">一键报名（点一下就算报上）</option>
+              <option value="material">填表 + 上传材料 + 管理员审核</option>
+            </select>
+            <p class="mt-1 text-xs text-stone-500">
+              {{ modal.form.enrollMode === 'material'
+                ? '学生需填写姓名/电话并上传材料，提交后进入待审核；通过后才计入报名人数。'
+                : '学生点「报名」即成功，立即计入报名人数。' }}
+            </p>
+          </div>
+          <template v-if="modal.form.enrollMode === 'material'">
+            <div>
+              <label class="block mb-2 text-sm font-medium text-stone-700">报名须知（选填）</label>
+              <input v-model.trim="modal.form.enrollHint" class="no-input" maxlength="200"
+                     placeholder="如：请上传伴奏音频与个人照片" />
+            </div>
+            <div>
+              <label class="block mb-2 text-sm font-medium text-stone-700">材料数量上限</label>
+              <input v-model.number="modal.form.enrollMaxFiles" class="no-input" type="number" min="1" max="9" />
+            </div>
+          </template>
         </div>
       </div>
     </NoModal>
@@ -176,12 +205,27 @@ const modal = reactive({
   form: { title: '', timeDesc: '', location: '', description: '', poster: '', price: 0, category: '其他', conditionLevel: '九成新', image: '' }
 })
 
+// 新建活动：复用同一个弹窗，id 置空表示新建
+function openCreate() {
+  modal.id = null
+  modal.form = {
+    title: '', timeDesc: '', location: '', description: '', poster: '',
+    enrollMode: 'simple', enrollHint: '', enrollMaxFiles: 3,
+    price: 0, category: '其他', conditionLevel: '九成新', image: ''
+  }
+  modal.open = true
+}
+
 function openEdit(row) {
   modal.id = row.id
   if (active.value === 'activities') {
     modal.form = {
       title: row.title || '', timeDesc: row.timeDesc || '', location: row.location || '',
       description: row.description || '', poster: row.poster || '',
+      // 报名设置：老活动默认一键报名，不受影响
+      enrollMode: row.enrollMode || 'simple',
+      enrollHint: row.enrollHint || '',
+      enrollMaxFiles: Number(row.enrollMaxFiles) || 3,
       price: 0, category: '其他', conditionLevel: '九成新', image: ''
     }
   } else {
@@ -200,11 +244,31 @@ async function save() {
   modal.submitting = true
   try {
     if (active.value === 'activities') {
-      await http.put(`/admin/activities/${modal.id}`, {
-        title: modal.form.title, timeDesc: modal.form.timeDesc,
-        location: modal.form.location, description: modal.form.description,
-        poster: modal.form.poster
-      })
+      if (modal.id) {
+        // 编辑：正文和报名设置分两个接口
+        await http.put(`/admin/activities/${modal.id}`, {
+          title: modal.form.title, timeDesc: modal.form.timeDesc,
+          location: modal.form.location, description: modal.form.description,
+          poster: modal.form.poster
+        })
+        await http.put(`/admin/activities/${modal.id}/enroll-config`, {
+          enrollMode: modal.form.enrollMode,
+          enrollHint: modal.form.enrollHint || '',
+          enrollMaxFiles: Number(modal.form.enrollMaxFiles) || 3
+        })
+      } else {
+        // 新建：一次带上正文 + 报名设置 + 归属学校
+        if (isSuper.value && !schoolId.value) { alert('请先在上方选择学校，活动要归属到某所学校'); modal.submitting = false; return }
+        await http.post('/admin/activities', {
+          title: modal.form.title, timeDesc: modal.form.timeDesc,
+          location: modal.form.location, description: modal.form.description,
+          poster: modal.form.poster,
+          enrollMode: modal.form.enrollMode,
+          enrollHint: modal.form.enrollHint || '',
+          enrollMaxFiles: Number(modal.form.enrollMaxFiles) || 3,
+          schoolId: schoolId.value || undefined
+        })
+      }
     } else {
       const price = Number(modal.form.price)
       if (!(price >= 0) || price > 99999) { alert('价格须为 0 至 99999'); modal.submitting = false; return }
@@ -296,9 +360,14 @@ async function toggle(row) {
 }
 
 async function remove(row) {
-  if (!confirm(`确定删除「${row.title}」？`)) return
+  // 活动删除有额外约束（已有人报名的不能删），提示写清楚免得以为是 bug
+  const tip = active.value === 'activities'
+    ? `确定删除活动「${row.title}」？\n\n注意：已经有人报名的活动无法删除（请改用「下架」）。`
+    : `确定删除「${row.title}」？`
+  if (!confirm(tip)) return
   try {
-    await http.delete(`/admin/jobs/${row.id}`)
+    const path = active.value === 'activities' ? 'activities' : 'jobs'
+    await http.delete(`/admin/${path}/${row.id}`)
     await load(page.value)
   } catch (e) {
     alert(e.message)

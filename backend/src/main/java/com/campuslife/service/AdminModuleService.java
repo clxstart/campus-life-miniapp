@@ -186,6 +186,60 @@ public class AdminModuleService {
         mapper.updateActivityContent(row);
     }
 
+    /**
+     * 管理端直接新建活动。
+     *
+     * 之前只能编辑学生发出来的活动，运营想上一个「校园歌手大赛」得先去小程序发一条，
+     * 再回管理端改 —— 绕。这里给运营一个直接入口，归属学校必须显式指定（超管选、校管固定本校）。
+     *
+     * user_id 记成发布的管理员账号，保持「活动有发布人」这个语义不破。
+     */
+    public Map<String, Object> createActivity(Long scopeSchoolId, Long adminId, Map<String, Object> body) {
+        Long schoolId = scopeSchoolId != null ? scopeSchoolId : longOr(body.get("schoolId"), 0);
+        if (schoolId < 1) throw new IllegalArgumentException("请指定所属学校");
+        if (mapper.schoolBrief(schoolId) == null) throw new IllegalArgumentException("学校不存在");
+
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("title", requireText(body.get("title"), "活动名称", 64));
+        row.put("poster", imageOrEmpty(body.get("poster"), "活动海报"));
+        row.put("timeDesc", trim(body.get("timeDesc")));
+        row.put("location", trim(body.get("location")));
+        row.put("description", trim(body.get("description")));
+        row.put("status", intOr(body.get("status"), 1) == 0 ? 0 : 1);
+        row.put("userId", adminId == null ? null : adminId);
+        row.put("schoolId", schoolId);
+        // 报名设置：默认一键报名，和课程/活动页保持一致
+        row.put("enrollMode", "material".equals(trim(body.get("enrollMode"))) ? "material" : "simple");
+        String hint = trim(body.get("enrollHint"));
+        if (hint.length() > 200) throw new IllegalArgumentException("报名须知不能超过 200 字");
+        row.put("enrollHint", hint);
+        row.put("enrollMaxFiles", Math.min(9, Math.max(1, intOr(body.get("enrollMaxFiles"), 3))));
+
+        mapper.insertActivityByAdmin(row);
+        return Map.of("id", row.get("id"));
+    }
+
+    /**
+     * 删除活动。
+     *
+     * 带两级保护：
+     *   1. 校管只能删本校的；
+     *   2. 已经有人报名的不让删（报名记录跟着活动一起消失，等于把人家的材料一起抹了），
+     *      要求先下架或先把报名处理掉。
+     */
+    public void deleteActivity(Long scopeSchoolId, Long id) {
+        Map<String, Object> brief = mapper.activityBrief(id);
+        if (brief == null) throw new IllegalArgumentException("活动不存在");
+        assertSameSchool(scopeSchoolId, brief.get("schoolId"));
+        int enrolled = mapper.countEnrollmentsOfActivity(id);
+        if (enrolled > 0) {
+            throw new IllegalArgumentException("该活动已有 " + enrolled + " 条报名记录，请先下架而不是删除；确需删除请先清理报名");
+        }
+        mapper.deleteActivityMaterials(id);
+        mapper.deleteActivityEnrollments(id);
+        if (mapper.deleteActivity(id) != 1) throw new IllegalArgumentException("活动不存在");
+    }
+
     // ---- 用户头像 ----
     public void setUserAvatar(Long scopeSchoolId, Long id, Map<String, Object> body) {
         Map<String, Object> brief = mapper.userBrief(id);

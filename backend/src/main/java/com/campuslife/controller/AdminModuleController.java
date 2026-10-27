@@ -332,11 +332,29 @@ public class AdminModuleController {
         return ApiResponse.ok(service.activities(effectiveSchool(req, schoolId), keyword, page, size));
     }
 
+    // 管理端直接新建活动（运营不用先去小程序发一条）
+    @PostMapping("/activities")
+    public ApiResponse<Map<String, Object>> createActivity(@RequestBody Map<String, Object> body, HttpServletRequest req) {
+        Object adminId = req.getAttribute(AdminInterceptor.ADMIN_ID);
+        Long uid = adminId instanceof Number n ? n.longValue() : null;
+        Map<String, Object> out = service.createActivity(scope(req), uid, body);
+        log(req, "create", "activity", String.valueOf(out.get("id")), "新建活动 " + body.get("title"));
+        return ApiResponse.ok(out);
+    }
+
     @PostMapping("/activities/{id}/status")
     public ApiResponse<Object> setActivityStatus(@PathVariable Long id, @RequestBody Map<String, Object> body, HttpServletRequest req) {
         int status = intOr(body.get("status"), 1);
         service.setActivityStatus(id, status);
         log(req, "update", "activity", String.valueOf(id), "设置活动状态 " + status);
+        return ApiResponse.ok(null);
+    }
+
+    // 删除活动（已有报名的不让删，避免把报名材料一起抹掉）
+    @DeleteMapping("/activities/{id}")
+    public ApiResponse<Object> deleteActivity(@PathVariable Long id, HttpServletRequest req) {
+        service.deleteActivity(scope(req), id);
+        log(req, "delete", "activity", String.valueOf(id), "删除活动");
         return ApiResponse.ok(null);
     }
 

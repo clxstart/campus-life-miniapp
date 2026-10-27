@@ -191,7 +191,7 @@ const {
   localFoodAddresses, cacheFoodAddresses,
   getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail, payOrder, getOrderDetail, getFoodOrder,
   getGoodsList, getGoodsDetail, publishGoods, viewGoods, contactGoods, favoriteGoods, isGoodsFavorite,
-  getJobs, getActivities, enrollActivity, publishJob, publishActivity, getMyPublishCount,
+  getJobs, getActivities, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
   uploadImage, uploadImages,
   getHomeRecommend
 } = market
@@ -200,7 +200,7 @@ Object.assign(module.exports, {
   localFoodAddresses, cacheFoodAddresses,
   getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail, payOrder, getOrderDetail, getFoodOrder,
   getGoodsList, getGoodsDetail, publishGoods, viewGoods, contactGoods, favoriteGoods, isGoodsFavorite,
-  getJobs, getActivities, enrollActivity, publishJob, publishActivity, getMyPublishCount,
+  getJobs, getActivities, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
   uploadImage, uploadImages, getHomeRecommend
 })
 
@@ -219,6 +219,7 @@ const learn = require('./api/learn')
 const pet = require('./api/pet')
 Object.assign(module.exports, { getLearnTopics: learn.getLearnTopics, getLearnCounts: learn.getLearnCounts })
 Object.assign(module.exports, { getPet: pet.getPet, petFeed: pet.petFeed, petTouch: pet.petTouch, petCheckin: pet.petCheckin })
+
 
 
 

@@ -30,6 +30,7 @@
     "pages/market-publish/market-publish",
     "pages/jobs/jobs",
     "pages/activities/activities",
+    "pages/activity-enroll/activity-enroll",
     "pages/search/search",
     "pages/campus-offer/campus-offer",
     "pages/adopt/adopt",

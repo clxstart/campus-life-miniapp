@@ -122,6 +122,22 @@ function enrollActivity(id, userId = currentUserId()) {
   })
 }
 
+/**
+ * 材料模式报名：带表单与材料，提交后进入待审核。
+ * 这条路径**不做离线兜底** —— 报名是要审核的正式动作，离线假装成功会让用户
+ * 以为报上了、实际没有记录，比直接报错更糟。
+ */
+function enrollActivityWithForm(id, payload = {}, userId = currentUserId()) {
+  return request(`/activities/${id}/enroll`, 'POST', {
+    userId,
+    realName: payload.realName || '',
+    studentNo: payload.studentNo || '',
+    phone: payload.phone || '',
+    remark: payload.remark || '',
+    materials: Array.isArray(payload.materials) ? payload.materials : []
+  })
+}
+
 // ---- 兼职 / 活动发布（对应「发布」页的后两个选项）----
 function publishJob(payload) {
   const body = {
@@ -244,7 +260,8 @@ module.exports = {
   localFoodAddresses, cacheFoodAddresses,
   getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail, payOrder, getOrderDetail, getFoodOrder,
   getGoodsList, getGoodsDetail, publishGoods, viewGoods, contactGoods, favoriteGoods, isGoodsFavorite, markGoodsFavorite,
-  getJobs, getActivities, enrollActivity, publishJob, publishActivity, getMyPublishCount,
+  getJobs, getActivities, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
   uploadImage, uploadImages,
   getHomeRecommend, localRecommend
 }
+

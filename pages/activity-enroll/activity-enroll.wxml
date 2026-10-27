@@ -1,0 +1,85 @@
+<view class="ae-page">
+  <view class="ae-nav">
+    <view class="ae-back" catchtap="goBack">‹</view>
+    <view class="ae-title">活动报名</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="ae-state">正在加载…</view>
+  <view wx:elif="{{error}}" class="ae-state" catchtap="goBack">{{error}}（点击返回）</view>
+
+  <block wx:else>
+    <!-- 活动信息 -->
+    <view class="ae-card ae-activity">
+      <image wx:if="{{activity.poster}}" class="ae-poster" src="{{activity.poster}}" mode="aspectFill" />
+      <view class="ae-activity-meta">
+        <view class="ae-activity-title">{{activity.title}}</view>
+        <view class="ae-activity-sub">{{activity.timeDesc}} · {{activity.location}}</view>
+        <view wx:if="{{activity.enrollHint}}" class="ae-hint">{{activity.enrollHint}}</view>
+      </view>
+    </view>
+
+    <!-- 已提交 -->
+    <view wx:if="{{submitted}}" class="ae-card ae-done">
+      <view class="ae-done-icon">✓</view>
+      <view class="ae-done-title">提交成功</view>
+      <view class="ae-done-text">报名材料已提交，等待管理员审核。审核结果会在「消息」里通知你。</view>
+      <button class="ae-btn ae-btn-ghost" catchtap="goBack">返回活动列表</button>
+    </view>
+
+    <!-- 表单 -->
+    <block wx:else>
+      <view class="ae-card">
+        <view class="ae-section-title">报名信息</view>
+
+        <view class="ae-field">
+          <view class="ae-label">真实姓名 <text class="ae-req">*</text></view>
+          <input class="ae-input" value="{{realName}}" data-field="realName" bindinput="onInput"
+                 maxlength="32" placeholder="与学籍一致" />
+        </view>
+
+        <view class="ae-field">
+          <view class="ae-label">学号</view>
+          <input class="ae-input" value="{{studentNo}}" data-field="studentNo" bindinput="onInput"
+                 maxlength="32" placeholder="选填" />
+        </view>
+
+        <view class="ae-field">
+          <view class="ae-label">联系电话 <text class="ae-req">*</text></view>
+          <input class="ae-input" value="{{phone}}" data-field="phone" bindinput="onInput"
+                 type="number" maxlength="20" placeholder="便于主办方联系你" />
+        </view>
+
+        <view class="ae-field">
+          <view class="ae-label">自我介绍</view>
+          <textarea class="ae-textarea" value="{{remark}}" data-field="remark" bindinput="onInput"
+                    maxlength="200" placeholder="选填，如擅长的曲风" />
+        </view>
+      </view>
+
+      <!-- 材料 -->
+      <view class="ae-card">
+        <view class="ae-section-title">
+          报名材料 <text class="ae-req">*</text>
+          <text class="ae-count">{{materials.length}}/{{maxFiles}}</text>
+        </view>
+        <view class="ae-material-tip">图片或视频，单个文件不超过 5MB</view>
+
+        <view class="ae-materials">
+          <view wx:for="{{materials}}" wx:key="*this" class="ae-material">
+            <image class="ae-material-img" src="{{item}}" mode="aspectFill"
+                   data-url="{{item}}" catchtap="previewMaterial" />
+            <view class="ae-material-del" data-index="{{index}}" catchtap="removeMaterial">×</view>
+          </view>
+          <view wx:if="{{materials.length < maxFiles}}" class="ae-material-add" catchtap="chooseMaterial">
+            <view class="ae-plus">＋</view>
+            <view class="ae-add-text">{{uploading ? '上传中…' : '添加材料'}}</view>
+          </view>
+        </view>
+      </view>
+
+      <button class="ae-btn ae-btn-primary {{submitting ? 'ae-btn-disabled' : ''}}"
+              catchtap="submit">{{submitting ? '提交中…' : '提交报名'}}</button>
+      <view class="ae-footnote">提交后需管理员审核，通过后才计入报名人数</view>
+    </block>
+  </block>
+</view>

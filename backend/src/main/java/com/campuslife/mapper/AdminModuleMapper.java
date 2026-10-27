@@ -563,6 +563,29 @@ import java.util.Map;
         """)
     Map<String,Object> activityBrief(@Param("id") Long id);
 
+    // ---- 管理端新建 / 删除活动 ----
+    // 学生侧发活动走 BizService.publishActivity；这里是运营直接建，需要显式指定 school_id
+    @Insert("""
+        INSERT INTO campus_activity(title, poster, time_desc, location, enrolled, status, user_id, description, school_id,
+                                    enroll_mode, enroll_hint, enroll_max_files)
+        VALUES(#{title}, #{poster}, #{timeDesc}, #{location}, 0, #{status}, #{userId}, #{description}, #{schoolId},
+               #{enrollMode}, #{enrollHint}, #{enrollMaxFiles})
+        """)
+    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
+    int insertActivityByAdmin(Map<String,Object> row);
+
+    @Delete("DELETE FROM campus_activity WHERE id = #{id}")
+    int deleteActivity(@Param("id") Long id);
+
+    @Select("SELECT COUNT(*) FROM activity_enroll WHERE activity_id = #{activityId}")
+    int countEnrollmentsOfActivity(@Param("activityId") Long activityId);
+
+    @Delete("DELETE FROM activity_enroll_material WHERE enroll_id IN (SELECT id FROM activity_enroll WHERE activity_id = #{activityId})")
+    int deleteActivityMaterials(@Param("activityId") Long activityId);
+
+    @Delete("DELETE FROM activity_enroll WHERE activity_id = #{activityId}")
+    int deleteActivityEnrollments(@Param("activityId") Long activityId);
+
     // ---- 用户头像 ----
     @Update("UPDATE `user` SET avatar = #{avatar} WHERE id = #{id}")
     int setUserAvatar(@Param("id") Long id, @Param("avatar") String avatar);

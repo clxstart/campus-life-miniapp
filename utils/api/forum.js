@@ -22,15 +22,25 @@ function localForumPosts() {
   }))
 }
 function mockForum(tag, page, size, scope) {
+  const seen = new Set()
   const all = localForumPosts().concat((mock.discoveryPosts || []).map(p => ({
     id: p.id, authorId: p.authorId || p.id, authorNickname: p.author || '校园同学', authorAvatar: p.avatar || '', title: p.title,
     content: p.content, image: p.image || '', tag: p.tag || '校园日常', location: p.location || '',
     likeCount: p.likes || 0, commentCount: p.comments || 0, liked: !!p.liked, followed: !!p.followed,
     createdAt: p.time || '刚刚'
-  }))).filter(p => {
-    if (scope === 'followed') return !!p.followed
-    return !tag || tag === '推荐' || p.tag.includes(tag) || (tag === '生活' && p.tag === '校园日常') || (tag === '社团' && p.tag === '社团活动') || (tag === '二手' && p.tag === '校园市集')
-  })
+  })))
+    // 按 id 去重：本机发布的帖子与演示数据 id 可能撞车，
+    // 同一篇内容在列表里出现两次会被误认为「发重了」。
+    .filter(p => {
+      const key = String(p.id)
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .filter(p => {
+      if (scope === 'followed') return !!p.followed
+      return !tag || tag === '推荐' || p.tag.includes(tag) || (tag === '生活' && p.tag === '校园日常') || (tag === '社团' && p.tag === '社团活动') || (tag === '二手' && p.tag === '校园市集')
+    })
   const start = (page - 1) * size
   return { list: all.slice(start, start + size), total: all.length }
 }

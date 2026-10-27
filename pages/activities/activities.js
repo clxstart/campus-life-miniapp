@@ -6,6 +6,7 @@ const popup = require('../../utils/ui-popup-helper')
 Page({
   data: { ...getNavigationMetrics(), activities: [], loading: true, enrollingId: 0, schoolScope: 'local', uiPopup: null },
   onLoad() { this._alive = true },
+  // 每次显示都加载；从报名页返回时也走这里，状态自然刷新（不需要额外的 _needReload 标记）
   onShow() { this.loadActivities() },
   onUnload() { this._alive = false },
   onPullDownRefresh() { this.loadActivities().finally(() => wx.stopPullDownRefresh()) },
@@ -26,10 +27,18 @@ Page({
     const id = Number(e.currentTarget.dataset.id)
     const item = (this.data.activities || []).find(activity => Number(activity.id) === id)
     if (!item || item.enrolledByMe || this.data.enrollingId) return
+
+    // 报名方式由活动自己决定（管理端按活动开关）：
+    // material → 跳到填表 + 上传材料页；simple → 一键报名
+    if (item.enrollMode === 'material') {
+      wx.navigateTo({ url: `/pages/activity-enroll/activity-enroll?id=${id}` })
+      return
+    }
+
     this.setData({ enrollingId: id })
     try {
       await api.enrollActivity(id, api.currentUserId())
-      const activities = this.data.activities.map(activity => Number(activity.id) === id ? { ...activity, enrolled: Number(activity.enrolled || 0) + 1, enrolledByMe: true } : activity)
+      const activities = this.data.activities.map(activity => Number(activity.id) === id ? { ...activity, enrolled: Number(activity.enrolled || 0) + 1, enrolledByMe: true, myEnrollStatus: 'approved' } : activity)
       this.setData({ activities })
       popup.toast(this, '报名成功', { tone: 'success' })
     } catch (error) {
@@ -38,6 +47,9 @@ Page({
       this.setData({ enrollingId: 0 })
     }
   },
+  // 注意：不要在这里再写一个 onShow —— 同名的键会覆盖上面那个，
+  // 导致页面首次进入永远不加载（曾经踩过：加报名跳转时多写了一个 onShow）。
+  // 「从报名页返回要刷新」的逻辑已经合并进顶部那个 onShow 里。
   goBack() { wx.navigateBack() },
   // 本校/全部切换：校园活动按校隔离
   switchSchoolScope(e) {
