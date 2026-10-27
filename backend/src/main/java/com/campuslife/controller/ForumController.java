@@ -23,6 +23,8 @@ import java.util.*;
 public class ForumController {
     private final ForumService service;
     private final SearchService searchService;
+    private final com.campuslife.service.FeatureFlags flags;
+    private final com.campuslife.service.RateLimiter limiter;
 
     @GetMapping("/learn/topics")
     public ApiResponse<Map<String, Object>> learnTopics(@RequestParam(required = false) String category,
@@ -82,7 +84,9 @@ public class ForumController {
 
     @PostMapping("/posts")
     public ApiResponse<Object> create(@Valid @RequestBody CreatePostRequest r, HttpServletRequest request) {
+        requirePublishEnabled();
         r.setUserId(CurrentUser.resolve(request, r.getUserId()));
+        limiter.acquire(com.campuslife.service.RateLimiter.PUBLISH, "post:" + r.getUserId());
         return ApiResponse.ok(service.create(r));
     }
 
@@ -106,7 +110,9 @@ public class ForumController {
 
     @PostMapping("/posts/{id}/comments")
     public ApiResponse<Object> comment(@PathVariable Long id, @Valid @RequestBody CommentRequest r, HttpServletRequest request) {
+        requirePublishEnabled();
         r.setUserId(CurrentUser.resolve(request, r.getUserId()));
+        limiter.acquire(com.campuslife.service.RateLimiter.PUBLISH, "comment:" + r.getUserId());
         return ApiResponse.ok(service.addComment(id, r));
     }
 
@@ -145,4 +151,16 @@ public class ForumController {
     public ApiResponse<List<com.campuslife.entity.Banner>> banners(@RequestParam(defaultValue = "discover") String slot) {
         return ApiResponse.ok(service.banners(slot));
     }
+
+    /**
+     * 发帖/评论总开关。
+     * 关闭后写入入口统一返回可读提示（读帖、点赞不受影响），
+     * 用于内容出现集中违规、或需要临时禁言时快速止血。
+     */
+    private void requirePublishEnabled() {
+        if (!flags.isEnabled("post.publish.enabled")) {
+            throw new IllegalArgumentException(flags.disabledMessage("post.publish.enabled", "发帖功能维护中，请稍后再试"));
+        }
+    }
 }
+

@@ -43,17 +43,20 @@ public class BizService {
     private final com.campuslife.mapper.RecommendMapper recommendMapper;
     private final ObjectMapper json;
     private final AuditService auditService;
+    private final FeatureFlags featureFlags;
     private static final BigDecimal PACKING_FEE = new BigDecimal("2.00");
 
     // 外卖店铺：按校隔离（各校商家不同），schoolScope=all 时看全部学校
     public List<Map<String,Object>> shops(String category, String schoolScope, Long explicitSchoolId, Long userId) {
         String c = category == null ? "" : category.trim();
         Long schoolId = resolveSchoolId(schoolScope, explicitSchoolId, userId);
+        // 上限保护：店铺列表不分页，但必须有硬上限，避免店铺多了首屏返回全量
         List<Shop> shops = shopMapper.selectList(new LambdaQueryWrapper<Shop>()
             .eq(Shop::getStatus, 1)
             .eq(!c.isEmpty() && !"全部".equals(c), Shop::getCategory, c)
             .eq(schoolId != null, Shop::getSchoolId, schoolId)
-            .orderByAsc(Shop::getId));
+            .orderByAsc(Shop::getId)
+            .last("LIMIT 200"));
         return shops.stream().map(this::publicShop).toList();
     }
 
@@ -355,8 +358,12 @@ public class BizService {
         if (moduleMapper.countEnrollment(activityId, userId) > 0) throw new IllegalStateException("已经报名过啦");
 
         String mode = text(activity.get("enrollMode"));
-        if ("material".equals(mode)) {
+        // 材料报名总开关：关闭时降级为一键报名，避免材料通道出问题导致整场活动无法报名
+        if ("material".equals(mode) && featureFlags.isEnabled("enroll.material.enabled")) {
             return submitMaterialEnrollment(activityId, userId, activity, body);
+        }
+        if ("material".equals(mode)) {
+            log.warn("材料报名开关已关闭，活动 {} 降级为一键报名", activityId);
         }
 
         // 一键报名
@@ -558,3 +565,4 @@ public class BizService {
 
     private String snapshotJson(List<Map<String, Object>> items) { try { return json.writeValueAsString(items); } catch (JsonProcessingException e) { throw new IllegalStateException("订单商品保存失败", e); } }
 }
+

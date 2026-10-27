@@ -3,6 +3,7 @@ package com.campuslife.controller;
 import com.campuslife.config.AuthInterceptor;
 import com.campuslife.config.UnauthorizedException;
 import com.campuslife.dto.ApiResponse;
+import com.campuslife.service.FeatureFlags;
 import com.campuslife.service.PayService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +19,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PayController {
     private final PayService payService;
+    private final FeatureFlags flags;
 
     @PostMapping("/orders/{id}/pay")
     public ApiResponse<Map<String, Object>> pay(@PathVariable Long id, HttpServletRequest request) {
+        // 支付开关：通道异常或对账期间可以一键关闭支付（订单仍可下单，只是不能付）
+        if (!flags.isEnabled("pay.enabled")) {
+            throw new IllegalArgumentException(flags.disabledMessage("pay.enabled", "支付通道维护中，请稍后再试"));
+        }
         return ApiResponse.ok(payService.createPayment(id, requestUserId(request)));
     }
 
@@ -53,3 +59,4 @@ public class PayController {
         throw new UnauthorizedException("请先登录后操作订单");
     }
 }
+

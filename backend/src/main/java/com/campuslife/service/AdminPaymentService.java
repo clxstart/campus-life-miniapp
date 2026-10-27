@@ -50,25 +50,52 @@ public class AdminPaymentService {
         return Map.of("list", result.getRecords().stream().map(this::row).toList(), "total", result.getTotal(), "page", result.getCurrent(), "size", result.getSize());
     }
 
+    /**
+     * 支付统计。
+     *
+     * 改造点：全部改成数据库聚合，不再把订单读进内存循环，也不再有逐条 selectById 的 N+1。
+     * 改造前：1 万笔订单 = 1 万条对象进堆 + 未核验/退款各一轮 N+1 查询；
+     * 改造后：固定 3 条聚合 SQL，耗时与数据量基本无关。
+     */
     public Map<String, Object> stats(Long schoolId, String role, String startDate, String endDate) {
         List<Long> shopIds = accessibleShopIds(schoolId, role, null);
         LocalDateTime from = AdminOrderService.parseStart(startDate), to = AdminOrderService.parseEnd(endDate);
-        LambdaQueryWrapper<UserOrder> wrapper = new LambdaQueryWrapper<UserOrder>().in(!shopIds.isEmpty(), UserOrder::getShopId, shopIds).eq(UserOrder::getPayStatus, "paid");
-        if (from != null) wrapper.ge(UserOrder::getPaidAt, from); if (to != null) wrapper.lt(UserOrder::getPaidAt, to);
-        List<UserOrder> paid = shopIds.isEmpty() ? List.of() : orderMapper.selectList(wrapper);
+        // 超管不按店铺限制；其余角色没有任何可见店铺时不该看到数据
+        boolean confined = !"super".equalsIgnoreCase(role);
+        if (confined && shopIds.isEmpty()) {
+            return Map.of("todayAmountCents", 0, "todayOrderCount", 0, "totalAmountCents", 0,
+                "unverifiedCount", 0, "refundAmountCents", 0);
+        }
+        List<Long> scope = confined ? shopIds : null;
+
+        Map<String, Object> total = orderMapper.sumPaid(scope, from, to);
+        int totalAmount = num(total, "amount");
+        int totalCount = num(total, "cnt");
+
         LocalDateTime today = LocalDateTime.now().toLocalDate().atStartOfDay();
-        int todayAmount = 0, todayCount = 0, totalAmount = 0;
-        for (UserOrder order : paid) { int cents = order.getPayAmountCents() == null ? 0 : order.getPayAmountCents(); totalAmount += cents; if (order.getPaidAt() != null && !order.getPaidAt().isBefore(today)) { todayAmount += cents; todayCount++; } }
-        LambdaQueryWrapper<PaymentRecord> recordWrapper = new LambdaQueryWrapper<PaymentRecord>().eq(PaymentRecord::getVerified, 0);
-        if (from != null) recordWrapper.ge(PaymentRecord::getCreatedAt, from); if (to != null) recordWrapper.lt(PaymentRecord::getCreatedAt, to);
-        int unverified = paymentRecordMapper.selectList(recordWrapper).stream().filter(record -> {
-            UserOrder order = orderMapper.selectById(record.getOrderId());
-            return order != null && ("super".equalsIgnoreCase(role) || shopIds.contains(order.getShopId()));
-        }).toList().size();
-        LambdaQueryWrapper<RefundRecord> refundWrapper = new LambdaQueryWrapper<RefundRecord>().eq(RefundRecord::getStatus, "success");
-        if (from != null) refundWrapper.ge(RefundRecord::getCreatedAt, from); if (to != null) refundWrapper.lt(RefundRecord::getCreatedAt, to);
-        int refundAmount = refundRecordMapper.selectList(refundWrapper).stream().filter(r -> { UserOrder o = orderMapper.selectById(r.getOrderId()); return o != null && ("super".equalsIgnoreCase(role) || shopIds.contains(o.getShopId())); }).mapToInt(r -> r.getAmountCents() == null ? 0 : r.getAmountCents()).sum();
-        return Map.of("todayAmountCents", todayAmount, "todayOrderCount", todayCount, "totalAmountCents", totalAmount, "unverifiedCount", unverified, "refundAmountCents", refundAmount);
+        Map<String, Object> todayRow = orderMapper.sumPaid(scope, today, null);
+        int todayAmount = num(todayRow, "amount");
+        int todayCount = num(todayRow, "cnt");
+
+        long unverified = orderMapper.countUnverifiedPayments(scope, from, to);
+        long refundAmount = orderMapper.sumRefunded(scope, from, to);
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("todayAmountCents", todayAmount);
+        out.put("todayOrderCount", todayCount);
+        out.put("totalAmountCents", totalAmount);
+        out.put("totalOrderCount", totalCount);
+        out.put("unverifiedCount", unverified);
+        out.put("refundAmountCents", refundAmount);
+        return out;
+    }
+
+    private static int num(Map<String, Object> row, String key) {
+        if (row == null) return 0;
+        Object value = row.get(key);
+        if (value instanceof Number n) return n.intValue();
+        if (value == null) return 0;
+        try { return new java.math.BigDecimal(String.valueOf(value)).intValue(); } catch (Exception e) { return 0; }
     }
 
     public Map<String, Object> detail(String outTradeNo, Long schoolId, String role) {

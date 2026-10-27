@@ -41,7 +41,9 @@ const routes = [
       // 运营配置（Banner）暂时隐藏：小程序轮播位已改成「热门圈子」，banner 没有展示位。
       // 后端 /api/banners 与 Ops.vue 都保留着，将来需要展示位时把这一行放回来即可。
       // { path: 'ops', name: 'ops', component: () => import('../views/Ops.vue'), meta: { title: '运营配置', icon: '✦' } },
-      { path: 'logs', name: 'logs', component: () => import('../views/Logs.vue'), meta: { title: '操作日志', icon: '❐' } }
+      { path: 'logs', name: 'logs', component: () => import('../views/Logs.vue'), meta: { title: '操作日志', icon: '❐' } },
+      // 系统状态：服务健康/内存/连接池/磁盘/慢请求，出问题先看这里
+      { path: 'system', name: 'system', component: () => import('../views/System.vue'), meta: { title: '系统状态', icon: '◉' } }
     ]
   },
   // 骑手端 4 个页面（工作台/待抢订单/我的配送/配送记录）已移除：

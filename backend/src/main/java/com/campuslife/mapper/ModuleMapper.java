@@ -69,6 +69,8 @@ public interface ModuleMapper {
           1 = 1
         </where>
         ORDER BY j.created_at DESC, j.id DESC
+        <!-- 上限保护：不分页时也要有硬上限，否则兼职涨起来会把整表塞进响应体 -->
+        LIMIT 200
         </script>
         """)
     List<Map<String, Object>> selectJobs(@Param("settle") String settle, @Param("keyword") String keyword,
@@ -97,6 +99,8 @@ public interface ModuleMapper {
         <!-- 按校隔离：校园活动是各校自己的；schoolId 为 null 时看全部学校 -->
         <if test="schoolId != null">AND a.school_id = #{schoolId}</if>
         ORDER BY a.created_at DESC, a.id DESC
+        <!-- 上限保护：活动不分页时也要有硬上限，避免首屏返回全量 -->
+        LIMIT 200
         </script>
         """)
     List<Map<String, Object>> selectActivities(@Param("userId") Long userId, @Param("schoolId") Long schoolId);
@@ -207,3 +211,4 @@ public interface ModuleMapper {
     int updateActivityEnrollConfig(@Param("id") Long id, @Param("enrollMode") String enrollMode,
                                    @Param("enrollHint") String enrollHint, @Param("enrollMaxFiles") int enrollMaxFiles);
 }
+

@@ -81,3 +81,27 @@ wxpay:
   notify-url: ${WXPAY_NOTIFY_URL:https://your-domain.example/api/pay/notify}
   refund-notify-url: ${WXPAY_REFUND_NOTIFY_URL:https://your-domain.example/api/pay/refund/notify}
   sandbox: false
+
+# ============================================================
+# 健康检查与指标（Spring Boot Actuator）
+# 只暴露 health / info / metrics 三个端点。其余（beans、env、heapdump 等）默认关闭，
+# 避免把内部配置和内存快照暴露出去。
+# 访问控制：路径在 /actuator/** 下，由 Nginx 限制为仅本机或内网访问；
+# 管理端要看数据走 /api/admin/system/overview（带管理员鉴权）。
+# ============================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      # 对外只返回 UP/DOWN，不暴露数据库地址、磁盘路径等细节；
+      # 完整明细通过 /api/admin/system/overview（管理员鉴权）读取
+      show-details: never
+      show-components: never
+  health:
+    diskspace:
+      enabled: true
+      threshold: 1GB
+

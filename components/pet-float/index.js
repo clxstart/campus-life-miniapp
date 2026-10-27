@@ -64,7 +64,13 @@ Component({
   },
 
   pageLifetimes: {
-    show() { if (this._alive) this._readCache() }
+    show() {
+      if (!this._alive) return
+      this._readCache()
+      // 回到栈里已有的页面时组件不会重建，这里重新按存储校准一次位置，
+      // 保证在别的页面拖动过之后，切回来位置也是同一个
+      this._syncSavedPosition()
+    }
   },
 
   methods: {
@@ -77,7 +83,15 @@ Component({
       } catch (e) {}
     },
 
-    /** 计算可移动区域，并恢复上次位置 */
+    /**
+     * 计算可移动区域，并恢复上次位置
+     *
+     * 位置按「距右边 / 距底边」的偏移量存储，而不是绝对坐标。
+     * 原因：不同页面 windowHeight 不一样（有 tabBar 的页面少约 100rpx），
+     * 存绝对 y 时会被 maxY 压缩、压缩后的值又被存回去，
+     * 结果每切换一次页面猫就往上挪一点。
+     * 存右下角偏移后，各页面视觉位置完全一致。
+     */
     _initPosition() {
       let winW = 375, winH = 667
       try {
@@ -91,22 +105,60 @@ Component({
       const maxX = Math.max(0, winW - ballPx)
       const maxY = Math.max(0, winH - ballPx)
 
-      let x = maxX
-      let y = Math.max(0, maxY - Math.round((200 / 750) * winW))
+      // 默认位置：贴右下角。
+      // 底部偏移用页面传入的 bottom 属性（rpx）换算成 px —— 各页面已经按
+      // 自己的底部导航 / 输入框高度调好了这个值（tabBar 页 260、普通页 200），
+      // 直接复用就不会压住底部导航。
+      const defaultBottomPx = Math.round(((this.properties.bottom || 200) / 750) * winW)
+      let right = 8
+      let bottom = defaultBottomPx
 
       // 恢复上次位置
+      // 只认 {right,bottom} 格式。旧版存的 {x,y} 是绝对坐标，
+      // 在不同 windowHeight 的页面之间会漂移（每切一次页面就往上挪），
+      // 所以直接忽略，让它回到干净的默认右下角。
       try {
         const saved = wx.getStorageSync(POS_KEY)
-        if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
-          x = Math.min(Math.max(0, saved.x), maxX)
-          y = Math.min(Math.max(0, saved.y), maxY)
+        if (saved && typeof saved.right === 'number' && typeof saved.bottom === 'number') {
+          right = Math.max(0, saved.right)
+          bottom = Math.max(0, saved.bottom)
         }
       } catch (e) {}
+
+      // 偏移量不能超过可移动范围，否则球会跑出屏幕
+      right = Math.min(right, maxX)
+      bottom = Math.min(bottom, maxY)
+
+      const x = maxX - right
+      const y = maxY - bottom
 
       this._maxX = maxX
       this._maxY = maxY
       this._ballPx = ballPx
       this.setData({ areaHeight: winH, x, y })
+    },
+
+    /**
+     * 按本地存储重新校准位置（页面 show 时调用）
+     *
+     * 场景：在 A 页拖过猫，切到 B 页，再返回 A 页（A 没被销毁）——
+     * A 页的组件实例还停留在旧位置，这里重新读存储把它拉到同一处。
+     */
+    _syncSavedPosition() {
+      if (this._maxX == null || this._maxY == null) return
+      let saved = null
+      try { saved = wx.getStorageSync(POS_KEY) } catch (e) { return }
+      if (!saved) return
+      // 只认新格式，旧 {x,y} 会被忽略，回到默认右下角
+      if (typeof saved.right !== 'number' || typeof saved.bottom !== 'number') return
+
+      const right = Math.min(Math.max(0, saved.right), this._maxX)
+      const bottom = Math.min(Math.max(0, saved.bottom), this._maxY)
+
+      const x = this._maxX - right
+      const y = this._maxY - bottom
+      if (x === this.data.x && y === this.data.y) return
+      this.setData({ x, y })
     },
 
 
@@ -148,7 +200,13 @@ Component({
       this.setData({ x: finalX, y: finalY, dragging: false })
 
       try {
-        wx.setStorageSync(POS_KEY, { x: finalX, y: finalY })
+        // 存「距右边 / 距底边」的偏移，切页面时视觉位置不变
+        const maxX = this._maxX || 0
+        const maxY = this._maxY || 0
+        wx.setStorageSync(POS_KEY, {
+          right: Math.max(0, maxX - finalX),
+          bottom: Math.max(0, maxY - finalY)
+        })
       } catch (e) {}
 
       // 延迟复位，避免同一次手势里 bindtap 又触发

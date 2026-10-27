@@ -3,6 +3,8 @@ package com.campuslife.controller;
 import com.campuslife.config.CurrentUser;
 import com.campuslife.dto.ApiResponse;
 import com.campuslife.service.AiChatService;
+import com.campuslife.service.FeatureFlags;
+import com.campuslife.service.RateLimiter;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -20,11 +22,19 @@ import java.util.Map;
 public class AiChatController {
 
     private final AiChatService service;
+    private final FeatureFlags flags;
+    private final RateLimiter limiter;
 
     /** 发一条消息，拿到回复。游客可用；已登录时以 token 身份为准，回复能带本校数据。 */
     @PostMapping("/chat")
     public ApiResponse<Map<String, Object>> chat(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        // 功能开关：AI 出问题（或成本失控）时可以一键关掉，用户看到明确提示
+        if (!flags.isEnabled("ai_chat.enabled")) {
+            throw new IllegalArgumentException(flags.disabledMessage("ai_chat.enabled", "AI 陪聊维护中，请稍后再来"));
+        }
         Long userId = CurrentUser.resolve(request, longOr(body.get("userId"), null), 1L);
+        // 防刷：同用户每小时 60 条
+        limiter.acquire(RateLimiter.AI_CHAT, "ai:" + userId);
         Long schoolId = body.get("schoolId") == null ? null : longOr(body.get("schoolId"), 0L);
         String message = body.get("message") == null ? "" : String.valueOf(body.get("message"));
         return ApiResponse.ok(service.chat(userId, schoolId, message));

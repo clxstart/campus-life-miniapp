@@ -2,7 +2,8 @@ package com.campuslife.controller;
 
 import com.campuslife.config.AdminInterceptor;
 import com.campuslife.dto.*;
-import com.campuslife.service.UploadRateLimiter;
+import com.campuslife.service.FeatureFlags;
+import com.campuslife.service.RateLimiter;
 import com.campuslife.service.UploadService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +15,15 @@ import java.util.*;
 @RestController @RequestMapping("/api") @RequiredArgsConstructor
 public class UploadController {
     private final UploadService service;
-    private final UploadRateLimiter limiter;
+    private final RateLimiter limiter;
+    private final FeatureFlags flags;
+
+    /** 上传开关：关闭后统一返回可读提示，而不是 500 或静默失败。 */
+    private void requireUploadEnabled() {
+        if (!flags.isEnabled("upload.enabled")) {
+            throw new IllegalArgumentException(flags.disabledMessage("upload.enabled", "上传功能维护中，请稍后再试"));
+        }
+    }
 
     // 单图上传：小程序 wx.uploadFile 使用 name="file"。
     // 刻意保持无鉴权 —— 小程序要支持「未登录也能演示」，收紧会破坏既有行为。
@@ -22,7 +31,8 @@ public class UploadController {
     @PostMapping("/upload")
     public ApiResponse<Map<String,Object>> upload(@RequestParam("file") MultipartFile file,
                                                   HttpServletRequest request) {
-        limiter.acquire(clientKey(request));
+        requireUploadEnabled();
+        limiter.acquire(RateLimiter.UPLOAD, clientKey(request));
         return ApiResponse.ok(service.store(file));
     }
 
@@ -31,7 +41,8 @@ public class UploadController {
     @PostMapping("/admin/upload")
     public ApiResponse<Map<String,Object>> adminUpload(@RequestParam("file") MultipartFile file,
                                                        HttpServletRequest request) {
-        limiter.acquire(adminKey(request));
+        requireUploadEnabled();
+        limiter.acquire(RateLimiter.UPLOAD, adminKey(request));
         return ApiResponse.ok(service.store(file));
     }
 
@@ -40,7 +51,8 @@ public class UploadController {
     @PostMapping("/admin/upload/private")
     public ApiResponse<Map<String,Object>> adminUploadPrivate(@RequestParam("file") MultipartFile file,
                                                               HttpServletRequest request) {
-        limiter.acquire(privateUploadKey(request));
+        requireUploadEnabled();
+        limiter.acquire(RateLimiter.UPLOAD, privateUploadKey(request));
         return ApiResponse.ok(service.storePrivate(file));
     }
 
@@ -69,3 +81,4 @@ public class UploadController {
         return "guest:" + request.getRemoteAddr();
     }
 }
+

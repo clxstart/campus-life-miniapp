@@ -3,6 +3,8 @@ package com.campuslife.controller;
 import com.campuslife.config.AuthInterceptor;
 import com.campuslife.dto.ApiResponse;
 import com.campuslife.service.CircleChatService;
+import com.campuslife.service.FeatureFlags;
+import com.campuslife.service.RateLimiter;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,8 @@ import java.util.*;
 public class CircleChatController {
     private final CircleChatService chat;
     private final com.campuslife.config.CircleWebSocketManager sockets;
+    private final FeatureFlags flags;
+    private final RateLimiter limiter;
 
     @GetMapping
     public ApiResponse<Map<String, Object>> history(@RequestParam Long circleId,
@@ -29,9 +33,13 @@ public class CircleChatController {
     @PostMapping
     public ApiResponse<Map<String, Object>> send(@RequestBody(required = false) Map<String, Object> body,
                                                  HttpServletRequest request) {
+        if (!flags.isEnabled("circle_chat.enabled")) {
+            throw new IllegalArgumentException(flags.disabledMessage("circle_chat.enabled", "群聊维护中，请稍后再试"));
+        }
         Map<String, Object> input = body == null ? Map.of() : body;
         Long circleId = number(input.get("circleId"));
         Long userId = resolveUser(request);
+        limiter.acquire(RateLimiter.PUBLISH, "circle-send:" + userId);
         CircleChatService.SendResult result = chat.send(circleId, userId, text(input.get("type")),
             text(input.get("content")), text(input.get("image")), text(input.get("clientId")));
         if (result.created()) sockets.broadcast(circleId, Map.of("type", "message", "data", result.message()));
@@ -64,3 +72,4 @@ public class CircleChatController {
 
     private static String text(Object value) { return value == null ? "" : String.valueOf(value); }
 }
+
