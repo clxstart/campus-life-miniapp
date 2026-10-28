@@ -48,6 +48,9 @@ Page({
     }
   },
 
+  // 从结算页返回时解除「正在结算」锁，否则再也点不了去结算
+  onShow() { this._checkingOut = false },
+
   onUnload() { this._alive = false },
 
   chooseCategory(event) {
@@ -83,11 +86,14 @@ Page({
   },
 
   checkout() {
+    // 防重复跳转：连点「去结算」会连续 navigateTo，栈里叠出多个结算页
+    if (this._checkingOut) return
     try {
       if (!this.data.shop?.isOpen) { popup.toast(this, '本店休息中，可浏览但不能下单'); return }
       const items = this.cartItems()
       if (!items.length) { popup.toast(this, '先选一份喜欢的菜'); return }
       if (Number(this.data.missing) > 0) { popup.toast(this, '还差 ¥' + this.data.missing + ' 起送'); return }
+      this._checkingOut = true
       wx.setStorageSync('pending_order', {
         shopId: this.data.shop.id,
         shopName: this.data.shop.name,
@@ -95,6 +101,7 @@ Page({
       })
       wx.navigateTo({ url: '/pages/food-order/food-order' })
     } catch (error) {
+      this._checkingOut = false
       popup.toast(this, error.message || '无法保存订单，请重试', { tone: 'error' })
     }
   },

@@ -68,8 +68,12 @@ Component({
       value: false
     },
     // sheet 操作项：[{ label }]
+    // 用 type:null 不校验类型：页面的 uiPopup 初始为 null，
+    // wxml 里 actions="{{uiPopup.actions}}" 会传进 undefined，
+    // 声明成 Array 会触发「expected Array but got non-array」警告。
+    // 这里与本文件其他属性保持一致，wxml 侧 wx:for 对 null 也是安全的。
     actions: {
-      type: Array,
+      type: null,
       value: []
     },
     // 点击遮罩是否关闭
