@@ -157,7 +157,7 @@
           data-index="{{index}}"
         >
           <view class="recommend-image-wrap">
-            <image class="recommend-image" src="{{item.image}}" mode="aspectFill" />
+            <image class="recommend-image" src="{{item.image}}" mode="aspectFill" lazy-load />
             <text class="recommend-tag">{{item.tag}}</text>
           </view>
           <view class="recommend-title">
@@ -187,7 +187,7 @@
           <text class="ad-highlight">校园专属优惠</text>
           <text class="ad-desc">轻薄高能 学习更高效</text>
           <text class="ad-button">立即查看 ›</text>
-          <image class="ad-laptop" src="/assets/home/laptop-silver.webp" mode="aspectFit" />
+          <image class="ad-laptop" src="/assets/home/laptop-silver.webp" mode="aspectFit" lazy-load />
           <text class="ad-badge">广告</text>
         </view>
       </view>

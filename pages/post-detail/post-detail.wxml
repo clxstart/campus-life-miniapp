@@ -16,7 +16,7 @@
     </view>
     <view class="title">{{post.title}}</view>
     <view class="content">{{post.content}}</view>
-    <image hover-class="tap" hover-stay-time="80" wx:if="{{post.image}}" class="post-image" src="{{post.image}}" mode="aspectFill" bindtap="previewImage"/>
+    <image hover-class="tap" hover-stay-time="80" wx:if="{{post.image}}" class="post-image" src="{{post.image}}" mode="aspectFill" lazy-load bindtap="previewImage"/>
     <view hover-class="tap" hover-stay-time="80" wx:if="{{post.tag}}" class="topic" catchtap="noop"># {{post.tag}}</view>
     <view wx:if="{{post.location}}" class="location">⌖ {{post.location}}</view>
 
