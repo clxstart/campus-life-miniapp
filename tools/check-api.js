@@ -10,23 +10,57 @@ const ctrlDir = 'backend/src/main/java/com/campuslife/controller'
 for (const name of fs.readdirSync(ctrlDir)) {
   if (!name.endsWith('.java')) continue
   const c = fs.readFileSync(path.join(ctrlDir, name), 'utf8')
-  const clsM = c.match(/@RequestMapping\(\{?([^)}]*)\}?\)/)
-  const clsPaths = clsM
-    ? clsM[1].split(',').map(s => s.trim().replace(/^"|"$/g, '')).filter(Boolean)
-    : ['']
 
-  // @XxxMapping(...) 后面可能跟 {"/a","/b"} 或 "/a" 或 空
-  const re = /@(Get|Post|Put|Delete|Patch)Mapping(?:\(\s*(\{[^}]*\}|"[^"]*")?\s*\))?/g
+  // 类级 @RequestMapping：按括号配平取参数块，再抽所有以 / 开头的字面量
+  let clsPaths = ['']
+  const clsIdx = c.indexOf('@RequestMapping')
+  if (clsIdx >= 0) {
+    let i = clsIdx + '@RequestMapping'.length
+    while (i < c.length && /\s/.test(c[i])) i++
+    if (c[i] === '(') {
+      let depth = 0
+      const s0 = i
+      for (; i < c.length; i++) {
+        if (c[i] === '(') depth++
+        else if (c[i] === ')') { depth--; if (depth === 0) { i++; break } }
+      }
+      const lits = [...c.slice(s0 + 1, i - 1).matchAll(/"([^"]*)"/g)]
+        .map(x => x[1]).filter(s => s.startsWith('/'))
+      if (lits.length) clsPaths = lits
+    }
+  }
+
+  // @XxxMapping(...) 支持三种写法：
+  //   @GetMapping                     无括号
+  //   @GetMapping("/a")               单路径
+  //   @GetMapping({"/a", "/b"})       多路径（路径里可能含 {id}，不能用 [^}]* 粗暴切）
+  const re = /@(Get|Post|Put|Delete|Patch)Mapping\b/g
   let m
   while ((m = re.exec(c))) {
     const method = m[1].toUpperCase()
-    const raw = (m[2] || '').trim()
+
+    // 从 Mapping 之后找到 '('，按括号配平取出参数块
+    let i = m.index + m[0].length
+    while (i < c.length && /\s/.test(c[i])) i++
     let subs = ['']
-    if (raw.startsWith('{')) {
-      subs = raw.slice(1, -1).split(',').map(s => s.trim().replace(/^"|"$/g, ''))
-    } else if (raw.startsWith('"')) {
-      subs = [raw.replace(/^"|"$/g, '')]
+    if (c[i] === '(') {
+      let depth = 0
+      const startIdx = i
+      for (; i < c.length; i++) {
+        if (c[i] === '(') depth++
+        else if (c[i] === ')') {
+          depth--
+          if (depth === 0) { i++; break }
+        }
+      }
+      const argBlock = c.slice(startIdx + 1, i - 1)
+      // 取出参数块里所有双引号字面量；没有字面量（如只有 name=、consumes=）就是根路径
+      const lits = [...argBlock.matchAll(/"([^"]*)"/g)]
+        .map(x => x[1])
+        .filter(s => s.startsWith('/') || s === '')
+      if (lits.length) subs = lits
     }
+
     for (const cls of clsPaths) {
       for (const sub of subs) {
         let full = (cls + sub).replace(/\/+/g, '/')
@@ -46,7 +80,15 @@ for (const name of fs.readdirSync('utils/api')) {
   let m
   while ((m = re.exec(c))) {
     const method = (m[2] || 'GET').toUpperCase()
-    let p = m[1].split('?')[0].replace(/\$\{[^}]*\}/g, '/:p').replace(/\/+/g, '/')
+    // 顺序很重要：先把 ${...} 换成占位符，再切掉查询串。
+    // 反过来（先 split('?')）会把 `/jobs${qs}` 里的 `?` 误当查询串起点，
+    // 残留的 `${qs}` 再变成 /:p，凭空多出一个不存在的 `/jobs/:p`。
+    let p = m[1].replace(/\$\{[^}]*\}/g, '\u0000')   // 模板变量 → 临时标记
+    p = p.split('?')[0]                               // 去掉查询串
+    // 标记前面是 "/" 才是路径参数（/posts/${id} → /posts/:p）；
+    // 前面不是 "/" 说明拼的是查询串（/jobs${qs}），直接删掉
+    p = p.replace(/\/\u0000/g, '/:p').replace(/\u0000/g, '')
+    p = p.replace(/\/+/g, '/')
     const full = norm('/api' + (p.startsWith('/') ? p : '/' + p))
     const key = method + ' ' + full
     if (!frontend.has(key)) frontend.set(key, new Set())
