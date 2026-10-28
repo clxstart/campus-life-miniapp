@@ -155,7 +155,20 @@
 **机制**：网络失败（`fail()`）才回落本地演示数据；
 后端返回 4xx/5xx 时会 `server: true` 并**抛错**，不会静默造假。
 
-**已核查**：会回落 mock 的页面基本都挂了 `offline-banner` 提示。
+**已运行时核查**（用 automator 逐页检查 ``offline-banner`` 挂载情况）：
+
+| 页面 | banner 数量 | 说明 |
+|---|---|---|
+| community / learn | 1 | 挂载正常 |
+| food-list / market-list / jobs / activities | 1 | 挂载正常（页面无需自己的 offline 字段，组件内部订阅 data-mode 判断） |
+| **campus-home** | **0** | 见下方说明，确认不需要 |
+
+``campus-home`` 不需要 banner 的理由（已查代码确认）：
+- 宠物接口失败时用 ``.catch(() => null)`` 静默处理
+- ``utils/pet-api.js`` **没有任何 mock 兜底**
+- 所以结果是「宠物数据为空 → 用默认值小云 Lv.1 渲染」，属于**降级显示**，
+  不是把假数据伪装成真的
+
 剩下 5 个没挂的，都**不需要**：
 
 | 页面 | 为什么不需要 |
@@ -285,3 +298,4 @@ node smoke-test.js
 1. 个人中心三个数字的点击反馈
 2. AI 聊天输入超长文字时的提示、清空对话的确认框
 3. 悬浮宠物拖动是否跟手
+
