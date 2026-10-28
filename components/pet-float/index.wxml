@@ -1,6 +1,7 @@
 <!-- pet-float：全局悬浮宠物
-     全屏可拖动：小猫跟着手指走（无阴影跟随，避免拖出拖影）
-     松手后记住位置，切页面也保留；轻点冒泡，拖动时不误触 -->
+     两种渲染模式，交互完全一致（可拖动、轻点冒泡、位置跨页保留）：
+       默认（Canvas）——首页/发现/宠物相关页，带呼吸动画
+       static        ——其余页面，用静态首帧图，省掉 Canvas 初始化 + 6 张图加载 -->
 <movable-area class="pf-area" style="height:{{areaHeight}}px;">
   <movable-view hover-class="tap" hover-stay-time="80"
     class="pf-view"
@@ -17,7 +18,14 @@
   >
     <view class="pf-ball">
       <view class="pf-pet">
+        <image
+          wx:if="{{static}}"
+          class="pf-static"
+          src="{{staticSrc}}"
+          mode="aspectFit"
+        />
         <pet-avatar
+          wx:else
           appearance="{{appearance}}"
           size="{{60}}"
           auto="{{!reduceMotion}}"

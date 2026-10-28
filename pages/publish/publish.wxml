@@ -212,4 +212,4 @@
   />
 </view>
 <!-- 全局悬浮宠物 -->
-<pet-float bottom="260" />
+<pet-float bottom="260" static />

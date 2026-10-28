@@ -41,7 +41,15 @@ Component({
     /** 保留兼容：不再使用固定 bottom，改为可拖动 */
     bottom: { type: Number, value: 200 },
     reduceMotion: { type: Boolean, value: false },
-    hasNews: { type: Boolean, value: false }
+    hasNews: { type: Boolean, value: false },
+    /**
+     * 静态模式：用一张首帧图代替 Canvas 动画。
+     *
+     * 36 个页面各挂一个 Canvas 实例，每进一页都要建 Canvas、加载 6 张图、
+     * 构 Renderer，切页明显变慢。而宠物只占角落一小块，
+     * 非核心页用静态图视觉几乎无差别，交互（拖动/冒泡/记位置）完全一致。
+     */
+    static: { type: Boolean, value: false }
   },
 
   data: {
@@ -55,6 +63,8 @@ Component({
     y: 0,
     /** 拖动中：用于暂停宠物动画、隐藏阴影 */
     dragging: false,
+    /** 静态模式用的首帧图 */
+    staticSrc: '/assets/pet-orange/idle.png',
   },
 
   lifetimes: {
@@ -102,6 +112,8 @@ Component({
 
   methods: {
     _readCache() {
+      // 静态模式用的是固定首帧图，不需要外观数据
+      if (this.properties.static) return
       try {
         const cached = wx.getStorageSync(CACHE_KEY)
         if (cached && cached.appearance) {
