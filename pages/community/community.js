@@ -10,8 +10,10 @@ Page({
   onPopupAction(e){this._popupAction&&this._popupAction(e)},
   onPopupInput(e){this._popupInput&&this._popupInput(e)},
   onPopupClose(){popup.hide(this)},
-  onLoad(q){this.initNavigation();if(q&&q.tab!==undefined&&tabs[Number(q.tab)]){this.setData({activeTab:Number(q.tab)})}this.loadPosts(true)},
+  onLoad(q){this._alive=true;this.initNavigation();if(q&&q.tab!==undefined&&tabs[Number(q.tab)]){this.setData({activeTab:Number(q.tab)})}this.loadPosts(true)},
   onShow(){ if(this._needReload){ this._needReload=false; this.loadPosts(true) } },
+  // 页面卸载后异步请求可能才回来，标记一下避免对已销毁页面 setData
+  onUnload(){ this._alive=false },
   initNavigation(){try{const w=wx.getWindowInfo?wx.getWindowInfo():wx.getSystemInfoSync();this.setData({statusBarHeight:w.statusBarHeight||20})}catch(e){}},
   loadPosts(reset=false){
     if(this.data.loading)return
@@ -19,6 +21,7 @@ Page({
     this.setData({loading:true})
     const q = tabMap[tabs[this.data.activeTab]] || {}
     api.getForumPosts({tag:q.tag||'',scope:q.scope||'',postScope:this.data.postScope,page,size:this.data.size}).then(res=>{
+      if(!this._alive)return
       const raw=res.list||[]
       const list=raw.map(x=>({...x,avatarText:(x.authorNickname||'同')[0],createdAt:formatTime(x.createdAt)}))
       // 按 id 去重后再合并：
@@ -32,7 +35,7 @@ Page({
         seen.add(key); dedup.push(item)
       }
       this.setData({posts:dedup,page,total:res.total||0,offline:!!res.offline})
-    }).catch(()=>{this.setData({offline:true})}).finally(()=>this.setData({loading:false}))
+    }).catch(()=>{if(this._alive)this.setData({offline:true})}).finally(()=>{if(this._alive)this.setData({loading:false})})
   },
   onTabTap(e){const activeTab=Number(e.currentTarget.dataset.index);if(activeTab===this.data.activeTab)return;this.setData({activeTab,posts:[],page:1});this.loadPosts(true)},
   // 本校/全部切换：清空列表重新拉取，避免两种范围的帖子混在一起

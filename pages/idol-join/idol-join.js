@@ -14,10 +14,11 @@ Page({
     uiPopup: null
   },
 
-  onLoad(query) {
+  onLoad(query) { this._alive = true;
     const gender = Number(query.gender)
     if (gender === 1 || gender === 2) this.setData({ gender })
   },
+  onUnload() { this._alive = false },
 
   setGender(event) {
     this.setData({ gender: Number(event.currentTarget.dataset.gender) })

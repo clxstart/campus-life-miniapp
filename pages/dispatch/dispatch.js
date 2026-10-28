@@ -29,7 +29,7 @@ Page({
     claimedCount: 0
   },
 
-  onLoad() {
+  onLoad() { this._alive = true;
     const metrics = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
     this.setData({ statusBarHeight: metrics.statusBarHeight || 20 })
     this._userId = getUserId()
@@ -41,7 +41,7 @@ Page({
   },
 
   onHide() { this._stopTick() },
-  onUnload() { this._stopTick() },
+  onUnload() { this._alive = false; this._stopTick() },
 
   async _load() {
     try {

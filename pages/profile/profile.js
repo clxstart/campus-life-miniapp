@@ -31,11 +31,12 @@ Page({
     uiPopup: null
   },
 
-  onLoad() {
+  onLoad() { this._alive = true;
     this.loadProfile()
     this.applyScheduleMeta()
     this.loadCounts()
   },
+  onUnload() { this._alive = false },
 
   // 真实资料：昵称/学校/头像/统计来自后端，学院与学号暂无对应字段沿用本地
   async loadProfile() {

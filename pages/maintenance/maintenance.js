@@ -1,6 +1,8 @@
 const api = require('../../utils/api')
 
 Page({
+  onLoad() { this._alive = true },
+  onUnload() { this._alive = false },
   data: { retrying: false },
 
   async retry() {

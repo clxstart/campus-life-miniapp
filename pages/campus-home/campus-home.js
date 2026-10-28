@@ -69,7 +69,7 @@ Page({
     hasBubble: false
   },
 
-  onLoad() {
+  onLoad() { this._alive = true;
     const metrics = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
     this.setData({
       statusBarHeight: metrics.statusBarHeight || 20,
@@ -87,7 +87,7 @@ Page({
   },
 
   onHide() { this._clearBubble() },
-  onUnload() {
+  onUnload() { this._alive = false;
     this._clearBubble()
     if (this._actionTimer) { clearTimeout(this._actionTimer); this._actionTimer = null }
   },

@@ -131,7 +131,7 @@ Page({
     schoolName: ''
   },
 
-  onLoad(query) {
+  onLoad(query) { this._alive = true;
     const type = query && query.type === 'terms' ? 'terms' : 'privacy'
     const doc = DOCS[type]
     this.setData({
@@ -143,6 +143,8 @@ Page({
     })
     wx.setNavigationBarTitle({ title: doc.title })
   },
+
+  onUnload() { this._alive = false },
 
   // 在隐私政策底部引导去看用户协议，两篇互相可达
   switchDoc() {

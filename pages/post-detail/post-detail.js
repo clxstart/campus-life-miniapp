@@ -9,10 +9,11 @@ Page({
   onPopupAction(e){this._popupAction&&this._popupAction(e)},
   onPopupInput(e){this._popupInput&&this._popupInput(e)},
   onPopupClose(){popup.hide(this)},
-  onLoad(q){
+  onLoad(q){ this._alive = true;
     this.postId = q.id
     this.fetch()
   },
+  onUnload() { this._alive = false },
   fetch(){
     this.setData({loading:true})
     api.getPost(this.postId).then(p=>{

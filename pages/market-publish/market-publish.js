@@ -4,6 +4,8 @@ const { getNavigationMetrics } = require('../../utils/navigation')
 const popup = require('../../utils/ui-popup-helper')
 
 Page({
+  onLoad() { this._alive = true },
+  onUnload() { this._alive = false },
   data: { ...getNavigationMetrics(), images: [], title: '', price: '', conditionLevels: GOODS_CONDITIONS, conditionLevel: '九成新', categories: GOODS_CATEGORIES, category: '其他', description: '', submitting: false, uiPopup: null },
   chooseImage() {
     const remaining = 6 - this.data.images.length

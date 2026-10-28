@@ -25,7 +25,7 @@ Page({
     reduceMotion: false
   },
 
-  onLoad() {
+  onLoad() { this._alive = true;
     const metrics = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
     let reduceMotion = false
     try {
@@ -70,7 +70,7 @@ Page({
     }, 4200)
   },
 
-  onUnload() {
+  onUnload() { this._alive = false;
     if (this._timer) { clearTimeout(this._timer); this._timer = null }
   }
 })

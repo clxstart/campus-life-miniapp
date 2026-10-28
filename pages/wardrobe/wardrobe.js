@@ -23,7 +23,7 @@ Page({
     buying: { name: '', price: 0, code: '' }
   },
 
-  onLoad() {
+  onLoad() { this._alive = true;
     const metrics = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
     this.setData({ statusBarHeight: metrics.statusBarHeight || 20 })
     this._userId = getUserId()
@@ -90,7 +90,7 @@ Page({
     }
   },
 
-  onUnload() { if (this._t) clearTimeout(this._t) }
+  onUnload() { this._alive = false; if (this._t) clearTimeout(this._t) }
 })
 
 const SYMBOL = {

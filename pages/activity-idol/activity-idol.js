@@ -25,7 +25,7 @@ Page({
     uiPopup: null
   },
 
-  onLoad() {
+  onLoad() { this._alive = true;
     this.loadActivity()
     this.loadContestants()
     this._timer = setInterval(() => {
@@ -33,7 +33,7 @@ Page({
     }, 60000)
   },
 
-  onUnload() {
+  onUnload() { this._alive = false;
     if (this._timer) clearInterval(this._timer)
   },
 

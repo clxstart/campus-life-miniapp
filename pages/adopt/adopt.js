@@ -47,7 +47,7 @@ Page({
     hatchFilter: 'none'
   },
 
-  onLoad() {
+  onLoad() { this._alive = true;
     const metrics = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
     this.setData({ statusBarHeight: metrics.statusBarHeight || 20 })
 
@@ -68,7 +68,7 @@ Page({
     this.setData({ candidates }, () => this._syncCurrent(0))
   },
 
-  onUnload() { this._stopHatch() },
+  onUnload() { this._alive = false; this._stopHatch() },
 
   onSelect(e) {
     const index = Number(e.currentTarget.dataset.index) || 0
