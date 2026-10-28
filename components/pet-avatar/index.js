@@ -1,6 +1,8 @@
 const { Controller, Renderer, ACTIONS } = require('../../utils/orange-pet-engine');
 
 Component({
+  // 允许 app.wxss 的全局类（如 hover-class 用的 .tap）作用于本组件
+  options: { addGlobalClass: true },
   properties: {
     auto: { type: Boolean, value: true, observer(value) { if (this._controller) this._controller.setAuto(value); } },
     paused: { type: Boolean, value: false, observer() { this._syncLoop(); } },

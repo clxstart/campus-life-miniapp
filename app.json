@@ -48,8 +48,9 @@
   "style": "v2",
   "usingComponents": {
     "ui-popup": "/components/ui-popup/index",
-    "offline-banner": "/components/offline-banner/index"
+    "offline-banner": "/components/offline-banner/index",
+    "empty-state": "/components/empty-state/index",
+    "skeleton-list": "/components/skeleton-list/index"
   },
   "sitemapLocation": "sitemap.json"
 }
-

@@ -1,0 +1,22 @@
+<!-- 骨架屏：列表首屏占位，比转圈更少闪烁 -->
+<view class="sk">
+  <view class="sk-row" wx:for="{{items}}" wx:key="*this">
+    <!-- 带图版本：左图右文 -->
+    <block wx:if="{{avatar}}">
+      <view class="sk-avatar sk-shine"></view>
+      <view class="sk-body">
+        <view class="sk-line sk-shine" style="width: 42%;"></view>
+        <view class="sk-line sk-line--thin sk-shine" style="width: 88%;"></view>
+        <view class="sk-line sk-line--thin sk-shine" style="width: 66%;"></view>
+      </view>
+    </block>
+    <!-- 纯文本版本 -->
+    <block wx:else>
+      <view class="sk-body sk-body--full">
+        <view class="sk-line sk-shine" style="width: {{index % 2 === 0 ? '58%' : '44%'}};"></view>
+        <view class="sk-line sk-line--thin sk-shine" style="width: 92%;"></view>
+        <view class="sk-line sk-line--thin sk-shine" style="width: 74%;"></view>
+      </view>
+    </block>
+  </view>
+</view>

@@ -1,0 +1,66 @@
+/* skeleton-list：列表骨架屏 */
+
+.sk {
+  padding: 8rpx 0;
+}
+
+.sk-row {
+  display: flex;
+  align-items: flex-start;
+  padding: 24rpx 0;
+}
+
+.sk-avatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: #ECEFEA;
+  flex: none;
+}
+
+.sk-body {
+  flex: 1;
+  min-width: 0;
+  margin-left: 20rpx;
+}
+
+.sk-body--full {
+  margin-left: 0;
+}
+
+.sk-line {
+  height: 28rpx;
+  border-radius: 8rpx;
+  background: #ECEFEA;
+}
+
+.sk-line--thin {
+  height: 20rpx;
+  margin-top: 14rpx;
+}
+
+/* 微光扫过，提示「正在加载」；尊重系统「减少动画」设置 */
+.sk-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.sk-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.55) 50%, rgba(255, 255, 255, 0) 100%);
+  animation: sk-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes sk-sweep {
+  0%   { left: -60%; }
+  100% { left: 120%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sk-shine::after { animation: none; }
+}

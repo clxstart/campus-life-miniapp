@@ -7,7 +7,9 @@ const TONE_COLORS = {
 
 Component({
   options: {
-    multipleSlots: false
+    multipleSlots: false,
+    // 允许 app.wxss 的全局类（如 hover-class 用的 .tap）作用于本组件
+    addGlobalClass: true
   },
 
   properties: {

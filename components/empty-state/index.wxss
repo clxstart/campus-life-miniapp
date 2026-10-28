@@ -1,0 +1,40 @@
+/* empty-state：通用空状态 */
+
+.es {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 40rpx;
+  text-align: center;
+}
+
+.es-icon {
+  font-size: 72rpx;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.es-title {
+  margin-top: 24rpx;
+  font-size: 29rpx;
+  color: var(--c-text, #203D34);
+  font-weight: 500;
+}
+
+.es-desc {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: var(--c-text-sub, #77847B);
+}
+
+.es-action {
+  margin-top: 32rpx;
+  padding: 16rpx 44rpx;
+  border-radius: 999rpx;
+  background: var(--c-primary, #2F6555);
+  color: #FFFFFF;
+  font-size: 26rpx;
+  line-height: 1.4;
+}

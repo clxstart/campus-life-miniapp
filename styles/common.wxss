@@ -126,12 +126,15 @@
   background: var(--c-soft) !important;
 }
 
-/* ===== 空态 ===== */
+/* ===== 空态 =====
+   15 个页面已在使用 .cp-empty，这里统一提升观感：
+   留白更足、行高更松，避免「暂无数据」四个字孤零零贴在中间。 */
 .cp-empty {
-  padding: 80rpx 0;
+  padding: 100rpx 40rpx;
   text-align: center;
   color: var(--c-text-sub);
   font-size: var(--fs-body);
+  line-height: 1.7;
 }
 
 /* ===== 减少动画（跟随系统） ===== */

@@ -1,6 +1,8 @@
 const api = require('../../utils/api')
 
 Component({
+  // 允许 app.wxss 的全局类（如 hover-class 用的 .tap）作用于本组件
+  options: { addGlobalClass: true },
   properties: {
     active: {
       type: String,

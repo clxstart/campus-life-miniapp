@@ -14,7 +14,14 @@
       <scroll-view class="category-rail" scroll-y><view hover-class="tap" hover-stay-time="80" wx:for="{{menu}}" wx:key="category" class="menu-category {{activeCategory===index?'selected':''}}" data-index="{{index}}" bindtap="chooseCategory">{{item.category}}</view></scroll-view>
       <scroll-view class="goods-scroll" scroll-y scroll-top="{{0}}">
         <view class="goods-heading title">{{menu[activeCategory].category}}</view>
-        <view wx:if="{{!visibleGoods.length}}" class="state">菜单正在准备中</view>
+        <!-- 区分「还在加载」和「真的没有」：原来一律写「菜单正在准备中」，加载完了还显示会误导 -->
+        <skeleton-list wx:if="{{loading}}" rows="{{4}}" avatar="{{true}}" />
+        <empty-state
+          wx:elif="{{!visibleGoods.length}}"
+          icon="🍽️"
+          title="这个分类还没有上架"
+          desc="换左边别的分类看看，或者稍后再来"
+        />
         <view wx:for="{{visibleGoods}}" wx:key="id" class="goods-card">
           <image class="goods-image" src="{{item.image}}" mode="aspectFill"/>
           <view class="goods-main"><text class="goods-name title">{{item.name}}</text><text class="goods-sales muted">月售 {{item.monthlySales}}</text>

@@ -171,6 +171,17 @@
         </view>
         <view wx:if="{{recommendLoading && !recommendations.length}}" class="recommend-card recommend-skeleton">正在加载今日推荐…</view>
 
+        <!-- 加载完但没内容：给明确空态，避免一片空白让人以为坏了 -->
+        <view wx:if="{{!recommendLoading && !recommendations.length}}" class="recommend-empty">
+          <empty-state
+            icon="🌱"
+            title="今日推荐还在路上"
+            desc="换个学校或稍后再看看，也可以先逛逛其他板块"
+            actionText="重新加载"
+            bind:action="changeRecommendations"
+          />
+        </view>
+
         <view hover-class="tap-card" hover-stay-time="80" class="recommend-ad-card" bindtap="openFeature" data-label="联想小新校园优惠">
           <text class="ad-title">联想小新</text>
           <text class="ad-highlight">校园专属优惠</text>

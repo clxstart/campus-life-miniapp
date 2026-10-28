@@ -539,6 +539,12 @@
   font-size: 22rpx;
 }
 
+/* 推荐位空态：横跨整行，避免挤在网格的一个格子里 */
+.recommend-empty {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
 .recommend-image-wrap {
   position: relative;
   width: 100%;

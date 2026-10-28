@@ -1,0 +1,9 @@
+<!-- 通用空状态：图标 + 标题 + 说明 + 可选操作按钮 -->
+<view class="es">
+  <view class="es-icon">{{icon || '🍃'}}</view>
+  <text class="es-title">{{title || '这里还什么都没有'}}</text>
+  <text class="es-desc" wx:if="{{desc}}">{{desc}}</text>
+  <view class="es-action" wx:if="{{actionText}}" hover-class="tap-btn" hover-stay-time="80" bindtap="onAction">
+    {{actionText}}
+  </view>
+</view>
