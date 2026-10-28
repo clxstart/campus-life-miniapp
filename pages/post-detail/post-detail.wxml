@@ -1,23 +1,23 @@
 <view class="detail-page" wx:if="{{post}}">
   <!-- 自定义导航：状态栏/胶囊避让 + 返回键，与社区页同款 -->
   <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px">
-    <view class="back" catchtap="goBack">‹</view>
+    <view hover-class="tap" hover-stay-time="80" class="back" catchtap="goBack">‹</view>
     <view class="nav-title">帖子详情</view>
     <!-- 举报入口：UGC 平台必须让用户能反馈问题内容 -->
-    <view class="nav-more" catchtap="reportPost">举报</view>
+    <view hover-class="tap" hover-stay-time="80" class="nav-more" catchtap="reportPost">更多</view>
   </view>
   <offline-banner local="{{offline}}" />
   <view class="detail-body">
-    <view class="author-row" catchtap="openAuthor">
+    <view hover-class="tap-card" hover-stay-time="80" class="author-row" catchtap="openAuthor">
       <image wx:if="{{post.authorAvatar}}" class="avatar" src="{{post.authorAvatar}}" mode="aspectFill"/>
       <view wx:else class="avatar fallback">{{post.avatarText}}</view>
       <view class="author-meta"><text class="nickname">{{post.authorNickname}}</text><text class="time">{{post.createdAt}}</text></view>
-      <view class="follow {{post.followed?'following':''}}" catchtap="onFollow">{{post.followed?'已关注':'＋ 关注'}}</view>
+      <view hover-class="tap" hover-stay-time="80" class="follow {{post.followed?'following':''}}" catchtap="onFollow">{{post.followed?'已关注':'＋ 关注'}}</view>
     </view>
     <view class="title">{{post.title}}</view>
     <view class="content">{{post.content}}</view>
-    <image wx:if="{{post.image}}" class="post-image" src="{{post.image}}" mode="aspectFill" bindtap="previewImage"/>
-    <view wx:if="{{post.tag}}" class="topic" catchtap="noop"># {{post.tag}}</view>
+    <image hover-class="tap" hover-stay-time="80" wx:if="{{post.image}}" class="post-image" src="{{post.image}}" mode="aspectFill" bindtap="previewImage"/>
+    <view hover-class="tap" hover-stay-time="80" wx:if="{{post.tag}}" class="topic" catchtap="noop"># {{post.tag}}</view>
     <view wx:if="{{post.location}}" class="location">⌖ {{post.location}}</view>
 
     <view class="comments-head">评论 {{comments.length || post.commentCount || 0}}</view>
@@ -31,10 +31,10 @@
         <view class="comment-foot">
           <text class="comment-time">{{item.createdAt}}</text>
           <text class="comment-dot">·</text>
-          <text class="comment-reply" data-id="{{item.id}}" data-name="{{item.authorNickname}}" catchtap="replyComment">回复</text>
+          <text hover-class="tap" hover-stay-time="80" class="comment-reply" data-id="{{item.id}}" data-name="{{item.authorNickname}}" catchtap="replyComment">回复</text>
         </view>
       </view>
-      <view class="comment-like {{item.liked?'liked':''}}" data-id="{{item.id}}" catchtap="onLikeComment">
+      <view hover-class="tap-card" hover-stay-time="80" class="comment-like {{item.liked?'liked':''}}" data-id="{{item.id}}" catchtap="onLikeComment">
         <text class="comment-like-icon">{{item.liked?'♥':'♡'}}</text>
         <text class="comment-like-num">{{item.likeCount||0}}</text>
       </view>
@@ -45,9 +45,9 @@
   <!-- 底部固定评论输入条 + 点赞 -->
   <view class="input-bar">
     <input class="bar-input" value="{{commentDraft}}" placeholder="友善交流，分享你的想法" placeholder-class="bar-placeholder" bindinput="onDraftInput" confirm-type="send" bindconfirm="submitComment"/>
-    <view class="bar-send {{commentDraft?'ready':''}}" catchtap="submitComment">发送</view>
-    <view class="bar-fav {{post.favored?'favored':''}}" catchtap="onFavorite">{{post.favored?'★':'☆'}} 收藏</view>
-    <view class="bar-like {{post.liked?'liked':''}}" catchtap="onLike">♥ {{post.likeCount||0}}</view>
+    <view hover-class="tap" hover-stay-time="80" class="bar-send {{commentDraft?'ready':''}}" catchtap="submitComment">发送</view>
+    <view hover-class="tap" hover-stay-time="80" class="bar-fav {{post.favored?'favored':''}}" catchtap="onFavorite">{{post.favored?'★':'☆'}} 收藏</view>
+    <view hover-class="tap" hover-stay-time="80" class="bar-like {{post.liked?'liked':''}}" catchtap="onLike">♥ {{post.likeCount||0}}</view>
   </view>
 </view>
 <view wx:if="{{!loading && !post}}" class="tip page-tip">帖子不存在或已被删除</view>
@@ -56,3 +56,4 @@
 <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" editable="{{uiPopup.editable}}" placeholder="{{uiPopup.placeholder}}" inputValue="{{uiPopup.inputValue}}" actions="{{uiPopup.actions}}" show-cancel="{{uiPopup.showCancel}}" confirm-text="{{uiPopup.confirmText}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose" />
 <!-- 全局悬浮宠物 -->
 <pet-float bottom="200" />
+

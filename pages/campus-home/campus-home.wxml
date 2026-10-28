@@ -42,7 +42,7 @@
 
     <!-- 动作选择：直接放在页面上，不需要展开 -->
     <view class="cm-actions">
-      <view
+      <view hover-class="tap-card" hover-stay-time="80"
         wx:for="{{actions}}"
         wx:key="key"
         class="cm-action {{currentAction === item.key ? 'cp-selected' : ''}}"
@@ -56,15 +56,15 @@
 
     <!-- 功能按钮 -->
     <view class="cm-yard-actions">
-      <view class="cm-yard-btn" catchtap="onGoWardrobe">收藏</view>
-      <view class="cm-yard-btn" catchtap="onGoDispatch">派遣</view>
-      <view class="cm-yard-btn cm-yard-btn--primary" catchtap="onGoChat">聊天</view>
+      <view hover-class="tap-btn" hover-stay-time="80" class="cm-yard-btn" catchtap="onGoWardrobe">收藏</view>
+      <view hover-class="tap-btn" hover-stay-time="80" class="cm-yard-btn" catchtap="onGoDispatch">派遣</view>
+      <view hover-class="tap-btn" hover-stay-time="80" class="cm-yard-btn cm-yard-btn--primary" catchtap="onGoChat">聊天</view>
     </view>
   </view>
 
   <!-- 快捷入口 -->
   <view class="cm-quick">
-    <view
+    <view hover-class="tap-card" hover-stay-time="80"
       wx:for="{{quickEntries}}"
       wx:key="key"
       class="cm-quick-item"
@@ -84,7 +84,7 @@
     </view>
 
     <block wx:if="{{feed.length > 0}}">
-      <view
+      <view hover-class="tap-card" hover-stay-time="80"
         wx:for="{{feed}}"
         wx:key="id"
         class="cp-card cm-feed-item"

@@ -14,10 +14,10 @@ import java.util.*;
 @Service @RequiredArgsConstructor
 public class CampusService {
  private final CampusMapper mapper; private final UserMapper users;
- private final AuditService auditService;
+ private final AuditService auditService; private final UserBlockService blockService;
  private static long number(Object x){return x instanceof Boolean b?(b?1:0):x instanceof Number n?n.longValue():0;}
  private User user(Long id){if(id==null||id<1)throw new IllegalArgumentException("用户参数无效");User u=users.selectById(id);if(u==null)throw new IllegalArgumentException("用户不存在");return u;}
- private void pair(Long userId,Long peerId){user(userId);user(peerId);if(userId.equals(peerId))throw new IllegalArgumentException("不能与自己聊天");}
+private void pair(Long userId,Long peerId){user(userId);user(peerId);if(userId.equals(peerId))throw new IllegalArgumentException("不能与自己聊天");if(blockService.blockedBetween(userId,peerId))throw new IllegalStateException("对方与你之间存在拉黑关系，无法聊天");}
  public List<Map<String,Object>> conversations(Long userId){user(userId);List<Map<String,Object>> rows=mapper.conversations(userId);for(Map<String,Object> row:rows){String name=String.valueOf(row.get("name"));row.put("avatarText",name.isEmpty()?"同":name.substring(0,1));row.put("color","#7EB6F6");row.put("online",false);row.put("muted",number(row.get("muted"))>0);if("image".equals(row.get("type")))row.put("preview","[图片]");}return rows;}
  public Map<String,Object> messages(Long userId,Long peerId,Long beforeId,int size){
    pair(userId,peerId);if(beforeId!=null&&beforeId<1)throw new IllegalArgumentException("分页游标无效");

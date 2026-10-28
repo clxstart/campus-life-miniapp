@@ -2,7 +2,7 @@
 <view class="cd-page">
   <view class="cd-nav" style="padding-top:{{statusBarHeight}}px;">
     <view class="cd-nav-row" style="height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px">
-      <view class="cd-back" catchtap="goBack">‹</view>
+      <view hover-class="tap" hover-stay-time="80" class="cd-back" catchtap="goBack">‹</view>
       <text class="cd-nav-title">{{circle ? circle.name : '圈子'}}</text>
     </view>
   </view>
@@ -11,7 +11,7 @@
   <view wx:if="{{loading && !circle}}" class="cd-state">正在加载圈子…</view>
   <view wx:elif="{{error}}" class="cd-state">
     <text class="cd-state-title">{{error}}</text>
-    <view class="cd-state-btn" bindtap="goBack">返回圈子列表</view>
+    <view hover-class="tap-btn" hover-stay-time="80" class="cd-state-btn" bindtap="goBack">返回圈子列表</view>
   </view>
 
   <block wx:else>
@@ -30,7 +30,7 @@
           <text>{{circle.postCount}} 帖子</text>
         </view>
       </view>
-      <view class="cd-join {{circle.joined ? 'joined' : ''}}" catchtap="toggleJoin">
+      <view hover-class="tap" hover-stay-time="80" class="cd-join {{circle.joined ? 'joined' : ''}}" catchtap="toggleJoin">
         {{circle.joined ? '已加入' : '＋ 加入圈子'}}
       </view>
     </view>
@@ -38,8 +38,8 @@
     <view class="cd-toolbar">
       <text class="cd-section">圈内动态</text>
       <view class="cd-toolbar-actions">
-        <view class="cd-chat-entry" bindtap="openChat">群聊<text wx:if="{{circle.unreadCount > 0}}" class="cd-chat-badge">{{circle.unreadCount > 99 ? '99+' : circle.unreadCount}}</text></view>
-        <view class="cd-compose" bindtap="openCompose">＋ 发帖</view>
+        <view hover-class="tap-card" hover-stay-time="80" class="cd-chat-entry" bindtap="openChat">群聊<text wx:if="{{circle.unreadCount > 0}}" class="cd-chat-badge">{{circle.unreadCount > 99 ? '99+' : circle.unreadCount}}</text></view>
+        <view hover-class="tap" hover-stay-time="80" class="cd-compose" bindtap="openCompose">＋ 发帖</view>
       </view>
     </view>
 
@@ -49,7 +49,7 @@
       <text>圈子里还没有帖子，来发第一条吧</text>
     </view>
 
-    <view
+    <view hover-class="tap-card" hover-stay-time="80"
       wx:for="{{posts}}"
       wx:key="id"
       class="cd-card"
@@ -71,14 +71,14 @@
         <text wx:if="{{item.tag}}" class="cd-tag"># {{item.tag}}</text>
         <view class="cd-actions">
           <view class="cd-action"><text>◯</text><text>{{item.comments}}</text></view>
-          <view class="cd-action {{item.liked ? 'liked' : ''}}" catchtap="toggleLike" data-id="{{item.id}}">
+          <view hover-class="tap-card" hover-stay-time="80" class="cd-action {{item.liked ? 'liked' : ''}}" catchtap="toggleLike" data-id="{{item.id}}">
             <text>{{item.liked ? '♥' : '♡'}}</text><text>{{item.likes}}</text>
           </view>
         </view>
       </view>
     </view>
 
-    <view class="cd-more" wx:if="{{hasMore}}" bindtap="loadMore">{{loadingMore ? '加载中…' : '加载更多'}}</view>
+    <view hover-class="tap" hover-stay-time="80" class="cd-more" wx:if="{{hasMore}}" bindtap="loadMore">{{loadingMore ? '加载中…' : '加载更多'}}</view>
     <view class="cd-more cd-more-end" wx:elif="{{posts.length}}">已经到底啦</view>
   </block>
 

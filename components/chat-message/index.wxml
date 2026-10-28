@@ -31,7 +31,7 @@
     <!-- 失败与重试 -->
     <view class="msg-fail" wx:if="{{status === 'failed'}}">
       <text class="msg-fail-text">{{failReason || '发送失败'}}</text>
-      <text class="msg-retry" catchtap="onRetry">重试</text>
+      <text hover-class="tap" hover-stay-time="80" class="msg-retry" catchtap="onRetry">重试</text>
     </view>
 
     <!-- Mock 演示标记 -->

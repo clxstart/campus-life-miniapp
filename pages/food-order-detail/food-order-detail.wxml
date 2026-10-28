@@ -1,8 +1,8 @@
 <view class="track-page">
-  <view class="track-nav"><view class="back" bindtap="goBack">‹</view><text>订单详情</text><view class="nav-action" bindtap="refresh">刷新</view></view>
+  <view class="track-nav"><view hover-class="tap" hover-stay-time="80" class="back" bindtap="goBack">‹</view><text>订单详情</text><view hover-class="tap" hover-stay-time="80" class="nav-action" bindtap="refresh">刷新</view></view>
   <offline-banner />
   <view wx:if="{{loading}}" class="track-state">正在获取订单状态…</view>
-  <view wx:elif="{{error}}" class="track-state"><text class="error">{{error}}</text><view class="refresh" bindtap="refresh">重新加载</view></view>
+  <view wx:elif="{{error}}" class="track-state"><text class="error">{{error}}</text><view hover-class="tap" hover-stay-time="80" class="refresh" bindtap="refresh">重新加载</view></view>
   <block wx:elif="{{order}}">
     <view class="status-block">
       <view class="status-mark">{{order.status==='completed'?'✓':'·'}}</view>

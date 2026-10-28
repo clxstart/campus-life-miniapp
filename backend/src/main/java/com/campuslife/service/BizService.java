@@ -112,6 +112,22 @@ public class BizService {
         return moduleMapper.selectGoods(safeMode, safeCategory, schoolId).stream().map(this::goodListView).toList();
     }
 
+    /** 分页版二手列表。过滤条件与 goods() 一致，只是多了 LIMIT/OFFSET 与总数。 */
+    public Map<String, Object> goodsPaged(Integer mode, String category, String schoolScope, Long explicitSchoolId,
+                                          Long userId, int page, int size) {
+        int safeMode = mode != null && mode == 2 ? 2 : 1;
+        String safeCategory = category == null ? "" : category.trim();
+        Long schoolId = resolveSchoolId(schoolScope, explicitSchoolId, userId);
+        int safeSize = Math.min(50, Math.max(1, size));
+        int safePage = Math.max(1, page);
+        List<Map<String, Object>> rows = moduleMapper.selectGoodsPaged(safeMode, safeCategory, schoolId, safeSize, (safePage - 1) * safeSize)
+            .stream().map(this::goodListView).toList();
+        long total = moduleMapper.countGoods(safeMode, safeCategory, schoolId);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("list", rows); out.put("total", total); out.put("page", safePage); out.put("size", safeSize);
+        return out;
+    }
+
     // 用户学校归属；无归属返回 null（此时不加学校过滤，避免新用户看到空列表）
     private Long userSchoolId(Long userId) {
         if (userId == null || userId < 1) return null;
@@ -238,6 +254,27 @@ public class BizService {
     }
 
     // 兼职列表：按校隔离（校内兼职），schoolScope=all 时看全部学校
+    /**
+     * 分页版兼职列表。
+     *   - page/size 由调用方给，服务端做上限保护（size ≤ 50）；
+     *   - 过滤条件与不分页版完全一致，避免两套逻辑走偏。
+     */
+    public Map<String, Object> jobsPaged(String settle, String keyword, String schoolScope, Long explicitSchoolId,
+                                        Long userId, int page, int size) {
+        String kw = keyword == null ? "" : keyword.trim();
+        if (kw.length() > 64) throw new IllegalArgumentException("搜索词不能超过64字");
+        Long schoolId = resolveSchoolId(schoolScope, explicitSchoolId, userId);
+        int safeSize = Math.min(50, Math.max(1, size));
+        int safePage = Math.max(1, page);
+        String settleValue = settle == null ? "" : settle.trim();
+        String like = kw.isEmpty() ? "" : "%" + escapeLike(kw) + "%";
+        List<Map<String, Object>> rows = moduleMapper.selectJobsPaged(settleValue, like, schoolId, safeSize, (safePage - 1) * safeSize);
+        long total = moduleMapper.countJobs(settleValue, like, schoolId);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("list", rows); out.put("total", total); out.put("page", safePage); out.put("size", safeSize);
+        return out;
+    }
+
     public List<Map<String, Object>> jobs(String settle, String keyword, String schoolScope, Long explicitSchoolId, Long userId) {
         String kw = keyword == null ? "" : keyword.trim();
         if (kw.length() > 64) throw new IllegalArgumentException("搜索词不能超过64字");
@@ -343,6 +380,20 @@ public class BizService {
         List<Map<String, Object>> rows = moduleMapper.selectActivities(safeUserId, schoolId);
         for (Map<String, Object> row : rows) row.put("enrolledByMe", number(row.get("enrolledByMe")) > 0);
         return rows;
+    }
+
+    /** 分页版活动列表。过滤条件与 activities() 一致。 */
+    public Map<String, Object> activitiesPaged(Long userId, String schoolScope, Long explicitSchoolId, int page, int size) {
+        Long safeUserId = userId == null ? 1L : userId;
+        Long schoolId = resolveSchoolId(schoolScope, explicitSchoolId, safeUserId);
+        int safeSize = Math.min(50, Math.max(1, size));
+        int safePage = Math.max(1, page);
+        List<Map<String, Object>> rows = moduleMapper.selectActivitiesPaged(safeUserId, schoolId, safeSize, (safePage - 1) * safeSize);
+        for (Map<String, Object> row : rows) row.put("enrolledByMe", number(row.get("enrolledByMe")) > 0);
+        long total = moduleMapper.countActivities(schoolId);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("list", rows); out.put("total", total); out.put("page", safePage); out.put("size", safeSize);
+        return out;
     }
 
     /**
@@ -567,5 +618,6 @@ public class BizService {
 
     private String snapshotJson(List<Map<String, Object>> items) { try { return json.writeValueAsString(items); } catch (JsonProcessingException e) { throw new IllegalStateException("订单商品保存失败", e); } }
 }
+
 
 

@@ -1,6 +1,6 @@
 <!-- 轻提示 -->
 <view class="ui-popup-mask toast-mask {{visible && mode === 'toast' ? 'show' : ''}}" bindtap="close" catchtouchmove="noop">
-  <view class="ui-toast {{visible && mode === 'toast' ? 'show' : ''}}" catchtap="noop">
+  <view hover-class="tap" hover-stay-time="80" class="ui-toast {{visible && mode === 'toast' ? 'show' : ''}}" catchtap="noop">
     <view class="toast-icon" wx:if="{{showIcon}}" style="background: {{toneColor}}">{{iconChar}}</view>
     <text class="toast-text">{{message || title}}</text>
   </view>
@@ -8,7 +8,7 @@
 
 <!-- 对话框 -->
 <view class="ui-popup-mask {{visible && mode === 'modal' ? 'show' : ''}}" bindtap="close" catchtouchmove="noop">
-  <view class="ui-modal {{visible && mode === 'modal' ? 'show' : ''}}" catchtap="noop">
+  <view hover-class="tap" hover-stay-time="80" class="ui-modal {{visible && mode === 'modal' ? 'show' : ''}}" catchtap="noop">
     <view class="modal-icon" style="background: {{toneColor}}">{{iconChar}}</view>
     <text class="modal-title" wx:if="{{title}}">{{title}}</text>
     <text class="modal-message" wx:if="{{message}}">{{message}}</text>
@@ -20,17 +20,17 @@
       bindinput="onInput"
     />
     <view class="modal-buttons">
-      <view wx:if="{{showCancel}}" class="modal-button cancel" bindtap="onCancel">{{cancelText}}</view>
-      <view class="modal-button confirm" style="background: {{toneColor}}" bindtap="onConfirm">{{confirmText}}</view>
+      <view hover-class="tap-btn" hover-stay-time="80" wx:if="{{showCancel}}" class="modal-button cancel" bindtap="onCancel">{{cancelText}}</view>
+      <view hover-class="tap-btn" hover-stay-time="80" class="modal-button confirm" style="background: {{toneColor}}" bindtap="onConfirm">{{confirmText}}</view>
     </view>
   </view>
 </view>
 
 <!-- 底部操作列表 -->
 <view class="ui-popup-mask sheet-mask {{visible && mode === 'sheet' ? 'show' : ''}}" bindtap="close" catchtouchmove="noop">
-  <view class="ui-sheet {{visible && mode === 'sheet' ? 'show' : ''}}" catchtap="noop">
+  <view hover-class="tap" hover-stay-time="80" class="ui-sheet {{visible && mode === 'sheet' ? 'show' : ''}}" catchtap="noop">
     <view class="sheet-title" wx:if="{{title}}">{{title}}</view>
-    <view
+    <view hover-class="tap-card" hover-stay-time="80"
       wx:for="{{actions}}"
       wx:key="label"
       class="sheet-item"
@@ -38,6 +38,6 @@
       data-index="{{index}}"
       bindtap="onAction"
     >{{item.label}}</view>
-    <view class="sheet-cancel" bindtap="onCancel">取消</view>
+    <view hover-class="tap" hover-stay-time="80" class="sheet-cancel" bindtap="onCancel">取消</view>
   </view>
 </view>

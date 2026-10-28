@@ -1,8 +1,8 @@
 <view class="food-page shop-page">
-  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px"><view class="back" catchtap="goBack">‹</view><view class="nav-title">店铺点餐</view></view>
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px"><view hover-class="tap" hover-stay-time="80" class="back" catchtap="goBack">‹</view><view class="nav-title">店铺点餐</view></view>
   <offline-banner />
   <view wx:if="{{loading}}" class="state">正在加载菜单…</view>
-  <view wx:elif="{{error}}" class="state"><text class="state-title">{{error}}</text><view class="muted" bindtap="goBack">返回重新选一家</view></view>
+  <view wx:elif="{{error}}" class="state"><text class="state-title">{{error}}</text><view hover-class="tap" hover-stay-time="80" class="muted" bindtap="goBack">返回重新选一家</view></view>
   <block wx:else>
     <view class="shop-head card">
       <image class="head-cover" src="{{shop.cover}}" mode="aspectFill"/>
@@ -11,19 +11,19 @@
       <view wx:if="{{!shop.isOpen}}" class="rest-notice">本店休息中，可浏览但不能下单</view>
     </view>
     <view class="menu-layout">
-      <scroll-view class="category-rail" scroll-y><view wx:for="{{menu}}" wx:key="category" class="menu-category {{activeCategory===index?'selected':''}}" data-index="{{index}}" bindtap="chooseCategory">{{item.category}}</view></scroll-view>
+      <scroll-view class="category-rail" scroll-y><view hover-class="tap" hover-stay-time="80" wx:for="{{menu}}" wx:key="category" class="menu-category {{activeCategory===index?'selected':''}}" data-index="{{index}}" bindtap="chooseCategory">{{item.category}}</view></scroll-view>
       <scroll-view class="goods-scroll" scroll-y scroll-top="{{0}}">
         <view class="goods-heading title">{{menu[activeCategory].category}}</view>
         <view wx:if="{{!visibleGoods.length}}" class="state">菜单正在准备中</view>
         <view wx:for="{{visibleGoods}}" wx:key="id" class="goods-card">
           <image class="goods-image" src="{{item.image}}" mode="aspectFill"/>
           <view class="goods-main"><text class="goods-name title">{{item.name}}</text><text class="goods-sales muted">月售 {{item.monthlySales}}</text>
-            <view class="goods-bottom"><text class="goods-price price">¥{{item.priceText}}</text><view class="quantity"><view wx:if="{{counts[item.id]}}" class="minus" data-id="{{item.id}}" data-delta="-1" catchtap="changeCount">−</view><text wx:if="{{counts[item.id]}}" class="quantity-num">{{counts[item.id]}}</text><view class="plus" data-id="{{item.id}}" data-delta="1" catchtap="changeCount">＋</view></view></view>
+            <view class="goods-bottom"><text class="goods-price price">¥{{item.priceText}}</text><view class="quantity"><view hover-class="tap" hover-stay-time="80" wx:if="{{counts[item.id]}}" class="minus" data-id="{{item.id}}" data-delta="-1" catchtap="changeCount">−</view><text wx:if="{{counts[item.id]}}" class="quantity-num">{{counts[item.id]}}</text><view hover-class="tap" hover-stay-time="80" class="plus" data-id="{{item.id}}" data-delta="1" catchtap="changeCount">＋</view></view></view>
           </view>
         </view>
       </scroll-view>
     </view>
-    <view class="bottom"><view class="bottom-inner"><view class="cart-icon"><view class="basket"><view class="basket-line"></view></view><view class="wheel-row"><view></view><view></view></view><text wx:if="{{cartCount}}" class="cart-badge">{{cartCount}}</text></view><view class="bottom-copy"><text class="bottom-price">¥{{subtotal}}</text><text class="bottom-note">{{!shop.isOpen?'本店休息中，可浏览菜单':(cartCount?'商品合计 · 结算页查看优惠':'选点喜欢的，快乐加一份')}}</text></view><button class="primary" disabled="{{!shop.isOpen || !cartCount || missing!=='0.00'}}" bindtap="checkout">{{cartCount && missing!=='0.00'?'差¥'+missing+'起送':'去结算'}}</button></view></view>
+    <view class="bottom"><view class="bottom-inner"><view class="cart-icon"><view class="basket"><view class="basket-line"></view></view><view class="wheel-row"><view></view><view></view></view><text wx:if="{{cartCount}}" class="cart-badge">{{cartCount}}</text></view><view class="bottom-copy"><text class="bottom-price">¥{{subtotal}}</text><text class="bottom-note">{{!shop.isOpen?'本店休息中，可浏览菜单':(cartCount?'商品合计 · 结算页查看优惠':'选点喜欢的，快乐加一份')}}</text></view><button hover-class="tap" hover-stay-time="80" class="primary" disabled="{{!shop.isOpen || !cartCount || missing!=='0.00'}}" bindtap="checkout">{{cartCount && missing!=='0.00'?'差¥'+missing+'起送':'去结算'}}</button></view></view>
   </block>
   <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" editable="{{uiPopup.editable}}" placeholder="{{uiPopup.placeholder}}" inputValue="{{uiPopup.inputValue}}" actions="{{uiPopup.actions}}" show-cancel="{{uiPopup.showCancel}}" confirm-text="{{uiPopup.confirmText}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose"/>
 </view>

@@ -14,7 +14,7 @@
     <view class="mt-desc mt-desc--sub">
       你可以先关掉小程序，稍后再从「最近使用」重新进入。
     </view>
-    <button class="mt-btn" bindtap="retry">重新试试</button>
+    <button hover-class="tap-btn" hover-stay-time="80" class="mt-btn" bindtap="retry">重新试试</button>
   </view>
   <view class="mt-foot">如果一直这样，请联系学校管理员</view>
 </view>

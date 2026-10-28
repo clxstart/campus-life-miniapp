@@ -46,7 +46,7 @@
 
   <!-- 快捷提问 -->
   <view class="chat-quick">
-    <view
+    <view hover-class="tap-card" hover-stay-time="80"
       wx:for="{{quickAsk}}"
       wx:key="*this"
       class="chat-quick-item"
@@ -69,7 +69,7 @@
       bindconfirm="onSend"
       cursor-spacing="20"
     />
-    <button
+    <button hover-class="tap" hover-stay-time="80"
       class="chat-send {{canSend ? '' : 'chat-send--off'}}"
       disabled="{{!canSend}}"
       bindtap="onSend"

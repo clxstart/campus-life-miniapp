@@ -51,6 +51,30 @@ function getGoodsList(mode = 1, category = '', schoolScope = 'local', schoolId =
     return wait(mock.goods.filter(item => Number(item.mode) === (Number(mode) === 2 ? 2 : 1) && (!category || item.category === category)))
   })
 }
+/**
+ * 分页版二手列表（触底加载用）。
+ * 返回 { list, total, page, size }；list 里的项已经 normalize 过，页面拿到的结构和
+ * getGoodsList 完全一致，切换分页不需要改渲染逻辑。
+ */
+function getGoodsPage(params = {}) {
+  const mode = Number(params.mode) === 2 ? 2 : 1
+  const category = params.category || ''
+  const schoolScope = params.schoolScope || 'local'
+  const schoolId = params.schoolId || null
+  const page = Math.max(1, Math.floor(Number(params.page) || 1))
+  const size = Math.min(50, Math.max(1, Math.floor(Number(params.size) || 20)))
+  const school = schoolId ? `&schoolId=${encodeURIComponent(schoolId)}` : ''
+  const query = `/goods?mode=${mode}&category=${encodeURIComponent(category)}`
+    + `&schoolScope=${encodeURIComponent(schoolScope)}&userId=${currentUserId()}`
+    + `&page=${page}&size=${size}${school}`
+  return request(query, 'GET').then(result => ({
+    list: ((result && result.list) || []).map(normalizeGoods),
+    total: Number(result && result.total) || 0,
+    page: Number(result && result.page) || page,
+    size: Number(result && result.size) || size
+  }))
+}
+
 function getGoodsDetail(id) {
   if (/^local-\d+$/.test(String(id))) {
     const item = mock.goods.find(row => String(row.id) === String(id))
@@ -115,6 +139,47 @@ function getActivities(userId = currentUserId(), schoolScope = 'local', schoolId
     return wait(mock.activities)
   })
 }
+/**
+ * 分页版兼职列表（触底加载用）。返回 { list, total, page, size }。
+ */
+function getJobsPage(params = {}) {
+  const settle = params.settle || ''
+  const kw = String(params.keyword || '').trim()
+  const schoolScope = params.schoolScope || 'local'
+  const schoolId = params.schoolId || null
+  const page = Math.max(1, Math.floor(Number(params.page) || 1))
+  const size = Math.min(50, Math.max(1, Math.floor(Number(params.size) || 20)))
+  const school = schoolId ? `&schoolId=${encodeURIComponent(schoolId)}` : ''
+  const qs = `/jobs?settle=${encodeURIComponent(settle)}&keyword=${encodeURIComponent(kw)}`
+    + `&schoolScope=${encodeURIComponent(schoolScope)}&userId=${currentUserId()}`
+    + `&page=${page}&size=${size}${school}`
+  return request(qs, 'GET').then(result => ({
+    list: (result && result.list) || [],
+    total: Number(result && result.total) || 0,
+    page: Number(result && result.page) || page,
+    size: Number(result && result.size) || size
+  }))
+}
+
+/**
+ * 分页版活动列表（触底加载用）。返回 { list, total, page, size }。
+ */
+function getActivitiesPage(params = {}) {
+  const schoolScope = params.schoolScope || 'local'
+  const schoolId = params.schoolId || null
+  const page = Math.max(1, Math.floor(Number(params.page) || 1))
+  const size = Math.min(50, Math.max(1, Math.floor(Number(params.size) || 20)))
+  const school = schoolId ? `&schoolId=${encodeURIComponent(schoolId)}` : ''
+  const qs = `/activities?userId=${currentUserId()}&schoolScope=${encodeURIComponent(schoolScope)}`
+    + `&page=${page}&size=${size}${school}`
+  return request(qs, 'GET').then(result => ({
+    list: (result && result.list) || [],
+    total: Number(result && result.total) || 0,
+    page: Number(result && result.page) || page,
+    size: Number(result && result.size) || size
+  }))
+}
+
 function enrollActivity(id, userId = currentUserId()) {
   return request(`/activities/${id}/enroll`, 'POST', { userId }).catch(error => {
     if (error.server) throw error
@@ -259,9 +324,10 @@ function localRecommend(batch, perType) {
 module.exports = {
   localFoodAddresses, cacheFoodAddresses,
   getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail, payOrder, getOrderDetail, getFoodOrder,
-  getGoodsList, getGoodsDetail, publishGoods, viewGoods, contactGoods, favoriteGoods, isGoodsFavorite, markGoodsFavorite,
-  getJobs, getActivities, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
+  getGoodsList, getGoodsPage, getGoodsDetail, publishGoods, viewGoods, contactGoods, favoriteGoods, isGoodsFavorite, markGoodsFavorite,
+  getJobs, getJobsPage, getActivities, getActivitiesPage, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
   uploadImage, uploadImages,
   getHomeRecommend, localRecommend
 }
+
 

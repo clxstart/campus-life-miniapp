@@ -26,7 +26,7 @@
 
     <!-- 三个候选：抽签前能看到预览，不是纯随机 -->
     <view class="egg-row">
-      <view
+      <view hover-class="tap" hover-stay-time="80"
         wx:for="{{candidates}}"
         wx:key="key"
         class="egg {{selected === index ? 'egg--on' : ''}}"
@@ -49,7 +49,7 @@
 
       <!-- 性格：标签式，带勾 -->
       <view class="persona-row">
-        <view
+        <view hover-class="tap-card" hover-stay-time="80"
           wx:for="{{personas}}"
           wx:key="id"
           class="persona {{persona === item.id ? 'cp-selected' : ''}}"
@@ -63,7 +63,7 @@
     </view>
 
     <!-- 用原生 button，替代 tdesign 的 t-button（为了移除整个 tdesign 依赖） -->
-    <button
+    <button hover-class="tap-btn" hover-stay-time="80"
       class="adopt-btn adopt-btn-main"
       loading="{{submitting}}"
       disabled="{{submitting}}"
@@ -91,7 +91,7 @@
         <view class="hatch-shell hatch-shell--bottom"></view>
       </view>
       <text class="hatch-title">{{hatchTitle}}</text>
-      <view class="hatch-skip" bindtap="onSkipHatch">跳过</view>
+      <view hover-class="tap" hover-stay-time="80" class="hatch-skip" bindtap="onSkipHatch">跳过</view>
     </view>
   </view>
 </view>

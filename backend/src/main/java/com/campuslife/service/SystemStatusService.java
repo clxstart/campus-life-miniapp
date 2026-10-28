@@ -34,6 +34,7 @@ public class SystemStatusService {
     private final UploadService uploadService;
     private final AdminModuleMapper adminModuleMapper;
     private final ContentReportService reportService;
+    private final ClientErrorService clientErrorService;
 
     public Map<String, Object> overview() {
         Map<String, Object> out = new LinkedHashMap<>();
@@ -173,6 +174,12 @@ public class SystemStatusService {
         } catch (Exception e) {
             row.put("pendingReports", "unknown");
         }
+        // 今日前端错误数：用户端白屏这类问题只能靠上报发现
+        try {
+            row.put("clientErrorsToday", clientErrorService.countToday());
+        } catch (Exception e) {
+            row.put("clientErrorsToday", "unknown");
+        }
         return row;
     }
 
@@ -206,5 +213,6 @@ public class SystemStatusService {
         return Math.round(v * 10) / 10.0;
     }
 }
+
 
 

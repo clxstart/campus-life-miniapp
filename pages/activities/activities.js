@@ -4,23 +4,43 @@ const { getNavigationMetrics } = require('../../utils/navigation')
 const popup = require('../../utils/ui-popup-helper')
 
 Page({
-  data: { ...getNavigationMetrics(), activities: [], loading: true, enrollingId: 0, schoolScope: 'local', uiPopup: null },
+  data: { ...getNavigationMetrics(), activities: [], loading: true, loadingMore: false, page: 1, size: 20, total: 0, enrollingId: 0, schoolScope: 'local', uiPopup: null },
   onLoad() { this._alive = true },
   // 每次显示都加载；从报名页返回时也走这里，状态自然刷新（不需要额外的 _needReload 标记）
-  onShow() { this.loadActivities() },
+  onShow() { this.loadActivities(true) },
   onUnload() { this._alive = false },
-  onPullDownRefresh() { this.loadActivities().finally(() => wx.stopPullDownRefresh()) },
-  async loadActivities() {
+  onPullDownRefresh() { this.loadActivities(true).finally(() => wx.stopPullDownRefresh()) },
+  // 触底加载下一页
+  onReachBottom() {
+    if (this.data.loadingMore || this.data.activities.length >= this.data.total) return
+    this.loadActivities(false)
+  },
+  /**
+   * 加载活动列表。
+   * @param {boolean} reset true=回到第一页，false=下一页
+   */
+  async loadActivities(reset = true) {
     const seq = this._seq = (this._seq || 0) + 1
-    this.setData({ loading: true })
+    const page = reset ? 1 : (this.data.page || 1) + 1
+    if (reset) this.setData({ loading: true })
+    else this.setData({ loadingMore: true })
     try {
-      const activities = await api.getActivities(api.currentUserId(), this.data.schoolScope, school.getSelectedId())
+      const result = await api.getActivitiesPage({
+        schoolScope: this.data.schoolScope,
+        schoolId: school.getSelectedId(),
+        page,
+        size: this.data.size || 20
+      })
       if (!this._alive || seq !== this._seq) return
-      this.setData({ activities: (activities || []).map((item, index) => ({ ...item, isFeatured: index === 0 })) })
+      const mapped = (result.list || []).map(item => ({ ...item }))
+      const merged = reset ? mapped : this.data.activities.concat(mapped.filter(next => !this.data.activities.some(old => old.id === next.id)))
+      // 只有第一条做成主打卡片，翻页来的不再重复强调
+      const activities = merged.map((item, index) => ({ ...item, isFeatured: index === 0 }))
+      this.setData({ activities, page: result.page, total: result.total })
     } catch (error) {
       if (this._alive && seq === this._seq) popup.toast(this, error.message || '活动加载失败', { tone: 'error' })
     } finally {
-      if (this._alive && seq === this._seq) this.setData({ loading: false })
+      if (this._alive && seq === this._seq) this.setData({ loading: false, loadingMore: false })
     }
   },
   async enroll(e) {
@@ -55,8 +75,8 @@ Page({
   switchSchoolScope(e) {
     const schoolScope = e.currentTarget.dataset.scope
     if (!schoolScope || schoolScope === this.data.schoolScope) return
-    this.setData({ schoolScope, activities: [] })
-    this.loadActivities()
+    this.setData({ schoolScope, activities: [], page: 1, total: 0 })
+    this.loadActivities(true)
   },
   // 校园评选入口：校草校花与歌手大赛从发现页轮播迁到此处
   openIdol() { wx.navigateTo({ url: '/pages/activity-idol/activity-idol' }) },

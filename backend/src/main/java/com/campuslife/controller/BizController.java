@@ -82,14 +82,28 @@ public class BizController {
         return id;
     }
 
+    /**
+     * 二手列表。
+     *
+     * 兼容两种调用：
+     *   - 不传 page：返回原来的扁平数组（老调用方不受影响）；
+     *   - 传 page（小程序触底加载用）：返回 {list,total,page,size}。
+     * 这样分页能力是"加法"，不会因为改分页把现有页面弄坏。
+     */
     @GetMapping("/goods")
-    public ApiResponse<List<Map<String, Object>>> goods(@RequestParam(defaultValue = "1") Integer mode,
-                                                        @RequestParam(defaultValue = "") String category,
-                                                        @RequestParam(defaultValue = "local") String schoolScope,
-                                                        @RequestParam(required = false) Long schoolId,
-                                                        @RequestParam(defaultValue = "1") Long userId,
-                                                        HttpServletRequest request) {
-        return ApiResponse.ok(service.goods(mode, category, schoolScope, schoolId, CurrentUser.resolve(request, userId)));
+    public ApiResponse<Object> goods(@RequestParam(defaultValue = "1") Integer mode,
+                                     @RequestParam(defaultValue = "") String category,
+                                     @RequestParam(defaultValue = "local") String schoolScope,
+                                     @RequestParam(required = false) Long schoolId,
+                                     @RequestParam(defaultValue = "1") Long userId,
+                                     @RequestParam(required = false) Integer page,
+                                     @RequestParam(defaultValue = "20") int size,
+                                     HttpServletRequest request) {
+        Long self = CurrentUser.resolve(request, userId);
+        if (page != null) {
+            return ApiResponse.ok(service.goodsPaged(mode, category, schoolScope, schoolId, self, page, size));
+        }
+        return ApiResponse.ok(service.goods(mode, category, schoolScope, schoolId, self));
     }
 
     @GetMapping("/goods/{id}")
@@ -111,14 +125,21 @@ public class BizController {
         return ApiResponse.ok(null);
     }
 
+    /** 兼职列表：传 page 返回分页对象，不传返回原扁平数组（兼容老调用）。 */
     @GetMapping("/jobs")
-    public ApiResponse<List<Map<String, Object>>> jobs(@RequestParam(defaultValue = "") String settle,
-                                                       @RequestParam(defaultValue = "") String keyword,
-                                                       @RequestParam(defaultValue = "local") String schoolScope,
-                                                       @RequestParam(required = false) Long schoolId,
-                                                       @RequestParam(defaultValue = "1") Long userId,
-                                                       HttpServletRequest request) {
-        return ApiResponse.ok(service.jobs(settle, keyword, schoolScope, schoolId, CurrentUser.resolve(request, userId)));
+    public ApiResponse<Object> jobs(@RequestParam(defaultValue = "") String settle,
+                                    @RequestParam(defaultValue = "") String keyword,
+                                    @RequestParam(defaultValue = "local") String schoolScope,
+                                    @RequestParam(required = false) Long schoolId,
+                                    @RequestParam(defaultValue = "1") Long userId,
+                                    @RequestParam(required = false) Integer page,
+                                    @RequestParam(defaultValue = "20") int size,
+                                    HttpServletRequest request) {
+        Long self = CurrentUser.resolve(request, userId);
+        if (page != null) {
+            return ApiResponse.ok(service.jobsPaged(settle, keyword, schoolScope, schoolId, self, page, size));
+        }
+        return ApiResponse.ok(service.jobs(settle, keyword, schoolScope, schoolId, self));
     }
 
     // 发布兼职：对应「发布」页的「兼职信息」选项
@@ -134,12 +155,19 @@ public class BizController {
         return ApiResponse.ok(service.myPublishCount(CurrentUser.resolve(request, id)));
     }
 
+    /** 活动列表：传 page 返回分页对象，不传返回原扁平数组（兼容老调用）。 */
     @GetMapping("/activities")
-    public ApiResponse<List<Map<String, Object>>> activities(@RequestParam(defaultValue = "1") Long userId,
-                                                             @RequestParam(defaultValue = "local") String schoolScope,
-                                                             @RequestParam(required = false) Long schoolId,
-                                                             HttpServletRequest request) {
-        return ApiResponse.ok(service.activities(CurrentUser.resolve(request, userId), schoolScope, schoolId));
+    public ApiResponse<Object> activities(@RequestParam(defaultValue = "1") Long userId,
+                                          @RequestParam(defaultValue = "local") String schoolScope,
+                                          @RequestParam(required = false) Long schoolId,
+                                          @RequestParam(required = false) Integer page,
+                                          @RequestParam(defaultValue = "20") int size,
+                                          HttpServletRequest request) {
+        Long self = CurrentUser.resolve(request, userId);
+        if (page != null) {
+            return ApiResponse.ok(service.activitiesPaged(self, schoolScope, schoolId, page, size));
+        }
+        return ApiResponse.ok(service.activities(self, schoolScope, schoolId));
     }
 
     // 发布活动：对应「发布」页的「活动组队」选项

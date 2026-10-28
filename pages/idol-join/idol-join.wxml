@@ -1,7 +1,7 @@
 <view class="join-page">
   <!-- 自定义导航 -->
   <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px">
-    <view class="back" catchtap="goBack">‹</view>
+    <view hover-class="tap" hover-stay-time="80" class="back" catchtap="goBack">‹</view>
     <view class="nav-title">报名参选</view>
   </view>
   <offline-banner />
@@ -13,7 +13,7 @@
 
   <view class="join-card">
     <!-- 照片：3:4 竖版 -->
-    <view class="join-photo" bindtap="choosePhoto">
+    <view hover-class="tap" hover-stay-time="80" class="join-photo" bindtap="choosePhoto">
       <image wx:if="{{photo}}" class="join-photo-img" src="{{photo}}" mode="aspectFill" />
       <view wx:else class="join-photo-add">
         <text class="plus">＋</text>
@@ -26,8 +26,8 @@
     <!-- 组别 -->
     <text class="join-label">参选组别</text>
     <view class="join-segment">
-      <view class="join-seg {{gender === 2 ? 'active' : ''}}" bindtap="setGender" data-gender="2">校花组</view>
-      <view class="join-seg {{gender === 1 ? 'active' : ''}}" bindtap="setGender" data-gender="1">校草组</view>
+      <view hover-class="tap" hover-stay-time="80" class="join-seg {{gender === 2 ? 'active' : ''}}" bindtap="setGender" data-gender="2">校花组</view>
+      <view hover-class="tap" hover-stay-time="80" class="join-seg {{gender === 1 ? 'active' : ''}}" bindtap="setGender" data-gender="1">校草组</view>
     </view>
 
     <text class="join-label">展示昵称</text>
@@ -39,7 +39,7 @@
     <text class="join-label">拉票宣言（选填）</text>
     <input class="join-input" maxlength="30" value="{{slogan}}" placeholder="一句话为自己拉票" placeholder-class="join-placeholder" bindinput="inputSlogan" />
 
-    <button class="join-submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">
+    <button hover-class="tap" hover-stay-time="80" class="join-submit" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submit">
       {{submitting ? '正在提交…' : '提交报名'}}
     </button>
     <text class="join-note">提交即同意：照片为本人在校照片，允许活动页面展示</text>

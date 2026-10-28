@@ -2,7 +2,7 @@
 <view class="idol-page">
   <!-- 自定义导航 -->
   <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px">
-    <view class="back" catchtap="goBack">‹</view>
+    <view hover-class="tap" hover-stay-time="80" class="back" catchtap="goBack">‹</view>
     <view class="nav-title">校园人气王</view>
   </view>
   <offline-banner />
@@ -28,8 +28,8 @@
 
   <!-- 分组 tab -->
   <view class="idol-tabs">
-    <view class="idol-tab {{gender === 2 ? 'active' : ''}}" bindtap="switchGender" data-gender="2">校花组</view>
-    <view class="idol-tab {{gender === 1 ? 'active' : ''}}" bindtap="switchGender" data-gender="1">校草组</view>
+    <view hover-class="tap-card" hover-stay-time="80" class="idol-tab {{gender === 2 ? 'active' : ''}}" bindtap="switchGender" data-gender="2">校花组</view>
+    <view hover-class="tap-card" hover-stay-time="80" class="idol-tab {{gender === 1 ? 'active' : ''}}" bindtap="switchGender" data-gender="1">校草组</view>
   </view>
 
   <!-- 选手卡片 -->
@@ -45,7 +45,7 @@
         <text class="idol-slogan">{{item.slogan}}</text>
         <view class="idol-card-bottom">
           <text class="idol-votes">{{item.voteCount}} 票</text>
-          <view class="idol-vote-btn {{item.voted ? 'voted' : ''}}" catchtap="onVote" data-index="{{index}}">
+          <view hover-class="tap-btn" hover-stay-time="80" class="idol-vote-btn {{item.voted ? 'voted' : ''}}" catchtap="onVote" data-index="{{index}}">
             {{item.voted ? '已投' : '投TA'}}
           </view>
         </view>
@@ -65,7 +65,7 @@
   <view class="bottom-pad"></view>
 
   <!-- 报名入口 -->
-  <view class="idol-join-fab" bindtap="goJoin">＋ 我要报名</view>
+  <view hover-class="tap" hover-stay-time="80" class="idol-join-fab" bindtap="goJoin">＋ 我要报名</view>
 </view>
 <!-- 全局悬浮宠物 -->
 <pet-float bottom="200" />

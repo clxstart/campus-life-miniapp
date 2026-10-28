@@ -3,7 +3,7 @@
   <view class="publish-navbar" style="padding-top: {{statusBarHeight}}px;">
     <view class="publish-navbar-row" style="height: {{navBarHeight}}px; padding-right: {{capsuleReservedRight}}px;">
       <text class="publish-title">发布</text>
-      <text class="draft-link" bindtap="openDrafts">草稿箱</text>
+      <text hover-class="tap" hover-stay-time="80" class="draft-link" bindtap="openDrafts">草稿箱</text>
     </view>
   </view>
   <offline-banner />
@@ -19,7 +19,7 @@
 
     <text class="section-label">选择发布类型</text>
     <view class="type-grid">
-      <view
+      <view hover-class="tap-card" hover-stay-time="80"
         wx:for="{{types}}"
         wx:key="key"
         class="type-card {{activeType === index ? 'selected' : ''}}"
@@ -56,7 +56,7 @@
       <view class="media-grid">
         <view wx:for="{{media}}" wx:key="*this" class="media-item">
           <image src="{{item}}" mode="aspectFill" />
-          <view class="media-remove" catchtap="removeMedia" data-index="{{index}}">×</view>
+          <view hover-class="tap" hover-stay-time="80" class="media-remove" catchtap="removeMedia" data-index="{{index}}">×</view>
         </view>
         <view class="media-add" wx:if="{{media.length < 6}}" bindtap="chooseMedia">
           <text class="camera-icon">⌁</text>
@@ -86,7 +86,7 @@
           bindinput="inputPrice"
         />
       </view>
-      <view class="setting-row" bindtap="chooseCondition">
+      <view hover-class="tap-card" hover-stay-time="80" class="setting-row" bindtap="chooseCondition">
         <view class="setting-left">
           <view class="setting-icon" style="background:#F0B24E">◐</view>
           <view class="setting-copy">
@@ -96,7 +96,7 @@
         </view>
         <text class="setting-arrow">›</text>
       </view>
-      <view class="setting-row" bindtap="chooseCategory">
+      <view hover-class="tap-card" hover-stay-time="80" class="setting-row" bindtap="chooseCategory">
         <view class="setting-left">
           <view class="setting-icon" style="background:#4E96F2">▤</view>
           <view class="setting-copy">
@@ -128,7 +128,7 @@
           bindinput="inputDaySalary"
         />
       </view>
-      <view class="setting-row" bindtap="chooseSettle">
+      <view hover-class="tap-card" hover-stay-time="80" class="setting-row" bindtap="chooseSettle">
         <view class="setting-left">
           <view class="setting-icon" style="background:#62C78E">⇄</view>
           <view class="setting-copy">
@@ -162,7 +162,7 @@
     </view>
 
     <view class="setting-card">
-      <view class="setting-row" bindtap="chooseLocation">
+      <view hover-class="tap-card" hover-stay-time="80" class="setting-row" bindtap="chooseLocation">
         <view class="setting-left">
           <view class="setting-icon blue-setting">⌖</view>
           <view class="setting-copy">
@@ -184,7 +184,7 @@
       </view>
     </view>
 
-    <button class="submit-button" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submitPost">
+    <button hover-class="tap-btn" hover-stay-time="80" class="submit-button" loading="{{submitting}}" disabled="{{submitting}}" bindtap="submitPost">
       {{submitting ? '正在发布…' : (activeType === 1 ? '上架到二手市场' : activeType === 2 ? '发布兼职' : activeType === 3 ? '创建活动' : '确认发布')}}
     </button>
   </view>

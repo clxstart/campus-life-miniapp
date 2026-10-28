@@ -18,6 +18,7 @@ import java.util.*;
 public class UserController {
     private final UserService service;
     private final com.campuslife.service.UserStatusGuard statusGuard;
+    private final com.campuslife.service.UserBlockService blockService;
 
     /** 只能操作自己的数据：路径里的 {id} 必须与登录身份一致。 */
     private static Long requireSelf(Long pathId, HttpServletRequest request) {
@@ -94,6 +95,25 @@ public class UserController {
     }
 
     /**
+     * 拉黑 / 取消拉黑某个用户（切换语义）。
+     *
+     * 路径里的 {id} 是**被拉黑的人**，不是自己；操作人取 token 身份。
+     * 双向不可见：拉黑后双方都看不到对方的帖子和评论，也无法互发私信。
+     */
+    @PostMapping("/users/{id}/block")
+    public ApiResponse<Map<String, Object>> toggleBlock(@PathVariable Long id, HttpServletRequest request) {
+        Long self = CurrentUser.optional(request);
+        if (self == null) throw new ForbiddenException("请先登录");
+        return ApiResponse.ok(blockService.toggle(self, id));
+    }
+
+    /** 我拉黑的人。只能看自己的，避免被人拿去看谁屏蔽了自己。 */
+    @GetMapping("/users/{id}/blocks")
+    public ApiResponse<java.util.List<Map<String, Object>>> myBlocks(@PathVariable Long id, HttpServletRequest request) {
+        return ApiResponse.ok(blockService.myBlocks(requireSelf(id, request)));
+    }
+
+    /**
      * 注销账号。
      *
      * 只能注销自己：先要求登录，再校验路径 {id} 与 token 身份一致（requireSelf）。
@@ -113,4 +133,5 @@ public class UserController {
         return ApiResponse.ok(service.feedback(r.getUserId(), r.getContent()));
     }
 }
+
 

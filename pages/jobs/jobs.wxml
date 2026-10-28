@@ -1,5 +1,5 @@
 <view class="jobs-page">
-  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px"><view class="back" catchtap="goBack">‹</view><view class="nav-title">校园兼职</view><!-- 本校/全部：兼职按校隔离 --><view class="scope-switch"><view class="scope-opt {{schoolScope==='local'?'on':''}}" data-scope="local" catchtap="switchSchoolScope">本校</view><view class="scope-opt {{schoolScope==='all'?'on':''}}" data-scope="all" catchtap="switchSchoolScope">全部</view></view></view>
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px"><view hover-class="tap" hover-stay-time="80" class="back" catchtap="goBack">‹</view><view class="nav-title">校园兼职</view><!-- 本校/全部：兼职按校隔离 --><view class="scope-switch"><view hover-class="tap" hover-stay-time="80" class="scope-opt {{schoolScope==='local'?'on':''}}" data-scope="local" catchtap="switchSchoolScope">本校</view><view hover-class="tap" hover-stay-time="80" class="scope-opt {{schoolScope==='all'?'on':''}}" data-scope="all" catchtap="switchSchoolScope">全部</view></view></view>
   <offline-banner />
 
   <!-- 搜索：按岗位名称 / 地点 / 描述查找 -->
@@ -16,18 +16,23 @@
         bindinput="search"
         bindconfirm="submitSearch"
       />
-      <view wx:if="{{keyword}}" class="search-clear" catchtap="clearSearch">×</view>
+      <view hover-class="tap" hover-stay-time="80" wx:if="{{keyword}}" class="search-clear" catchtap="clearSearch">×</view>
     </view>
   </view>
 
-  <scroll-view class="chips" scroll-x enhanced show-scrollbar="{{false}}"><view class="chip-row"><view wx:for="{{settles}}" wx:key="value" class="chip {{settle===item.value?'active':''}}" data-settle="{{item.value}}" bindtap="chooseSettle">{{item.label}}</view></view></scroll-view>
+  <scroll-view class="chips" scroll-x enhanced show-scrollbar="{{false}}"><view class="chip-row"><view hover-class="tap-card" hover-stay-time="80" wx:for="{{settles}}" wx:key="value" class="chip {{settle===item.value?'active':''}}" data-settle="{{item.value}}" bindtap="chooseSettle">{{item.label}}</view></view></scroll-view>
 
   <view class="result-hint" wx:if="{{!loading && total}}">共 {{total}} 个岗位</view>
   <view wx:if="{{loading}}" class="state">正在找合适的兼职</view>
   <view wx:elif="{{!jobs.length}}" class="state"><text class="state-title">{{keyword ? '没有匹配「' + keyword + '」的岗位' : '暂时没有符合条件的岗位'}}</text>{{keyword ? '换个关键词试试' : '稍后再来看看'}}</view>
   <view wx:else class="job-list"><view wx:for="{{jobs}}" wx:key="id" class="job-card"><view class="job-main"><view class="job-title">{{item.title}}</view><view class="job-salary">{{item.salaryText}}</view><view class="job-meta"><text class="settle-tag">{{item.settle}}</text><text class="location">⌖ {{item.location}}</text></view><view class="job-time">◷ {{item.timeDesc}}</view></view><view class="job-status"><view class="status-dot"></view><text>{{item.status || '招聘中'}}</text></view></view></view>
 
+  <!-- 触底加载状态：还有数据时提示加载中，到底了提示没有更多 -->
+  <view wx:if="{{loadingMore}}" class="list-more">加载中…</view>
+  <view wx:elif="{{jobs.length && jobs.length >= total}}" class="list-more">没有更多了</view>
+
   <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose"/>
 </view>
 <!-- 全局悬浮宠物 -->
 <pet-float bottom="200" />
+

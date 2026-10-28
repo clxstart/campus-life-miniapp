@@ -1,23 +1,23 @@
 <view class="tt-page">
   <!-- 自定义导航：与帖子详情页同款 -->
   <view class="nav" style="padding-top:{{statusBarHeight}}px">
-    <view class="back" catchtap="goBack">‹</view>
+    <view hover-class="tap" hover-stay-time="80" class="back" catchtap="goBack">‹</view>
     <view class="nav-title">课表</view>
     <view class="tt-edit-hint">可编辑</view>
   </view>
   <offline-banner local="{{offline}}" />
 
   <view wx:if="{{loading}}" class="tt-tip">正在加载课表…</view>
-  <view wx:if="{{error}}" class="tt-tip" bindtap="loadTimetable">{{error}} · 点击重试</view>
+  <view hover-class="tap" hover-stay-time="80" wx:if="{{error}}" class="tt-tip" bindtap="loadTimetable">{{error}} · 点击重试</view>
 
   <block wx:if="{{!loading && !error}}">
     <!-- 学期 + 周次切换：调休课只在对应周出现 -->
     <view class="tt-head">
       <text class="tt-term">{{termLabel}}</text>
       <view class="tt-week-switch">
-        <view class="tt-week-btn" catchtap="switchWeek" data-week="{{week - 1}}">‹</view>
+        <view hover-class="tap-btn" hover-stay-time="80" class="tt-week-btn" catchtap="switchWeek" data-week="{{week - 1}}">‹</view>
         <text class="tt-week-now">第{{week}}周</text>
-        <view class="tt-week-btn" catchtap="switchWeek" data-week="{{week + 1}}">›</view>
+        <view hover-class="tap-btn" hover-stay-time="80" class="tt-week-btn" catchtap="switchWeek" data-week="{{week + 1}}">›</view>
       </view>
       <text class="tt-today">{{header}}</text>
     </view>
@@ -40,23 +40,23 @@
         </view>
         <view wx:for="{{days}}" wx:for-item="d" wx:for-index="di" wx:key="*this" class="tt-cell {{di === todayIdx ? 'today' : ''}}">
           <!-- 有课：点击进入删除确认 -->
-          <view wx:if="{{grid[pi][di]}}" class="tt-course {{grid[pi][di].theme}}" catchtap="removeCourse" data-day="{{di}}" data-period="{{pi}}">
+          <view hover-class="tap" hover-stay-time="80" wx:if="{{grid[pi][di]}}" class="tt-course {{grid[pi][di].theme}}" catchtap="removeCourse" data-day="{{di}}" data-period="{{pi}}">
             <text class="tt-course-name">{{grid[pi][di].name}}</text>
             <text class="tt-course-room">{{grid[pi][di].room}}</text>
           </view>
           <!-- 空格：点击添加 -->
-          <view wx:else class="tt-cell-add" catchtap="openCompose" data-day="{{di}}" data-period="{{pi}}">＋</view>
+          <view hover-class="tap-card" hover-stay-time="80" wx:else class="tt-cell-add" catchtap="openCompose" data-day="{{di}}" data-period="{{pi}}">＋</view>
         </view>
       </view>
     </view>
 
     <view class="tt-tip">点空格添加课程 · 点课程删除 · 点时间改作息 · ‹›切周看调休</view>
-    <view class="tt-reset" catchtap="resetPeriods">恢复默认作息</view>
+    <view hover-class="tap" hover-stay-time="80" class="tt-reset" catchtap="resetPeriods">恢复默认作息</view>
   </block>
 
   <!-- 添加课程表单 -->
   <view wx:if="{{composing}}" class="tt-mask" catchtap="cancelCompose">
-    <view class="tt-modal" catchtap="">
+    <view hover-class="tap" hover-stay-time="80" class="tt-modal" catchtap="">
       <view class="tt-modal-title">添加课程 · 周{{days[composing.day]}}第{{periods[composing.period].label}}节</view>
       <view class="tt-field">
         <text class="tt-field-label">课程名称</text>
@@ -68,8 +68,8 @@
       </view>
       <view wx:if="{{composeError}}" class="tt-compose-error">{{composeError}}</view>
       <view class="tt-modal-btns">
-        <view class="tt-modal-btn cancel" catchtap="cancelCompose">取消</view>
-        <view class="tt-modal-btn ok {{submitting ? 'disabled' : ''}}" catchtap="submitCompose">{{submitting ? '保存中…' : '保存'}}</view>
+        <view hover-class="tap-btn" hover-stay-time="80" class="tt-modal-btn cancel" catchtap="cancelCompose">取消</view>
+        <view hover-class="tap-btn" hover-stay-time="80" class="tt-modal-btn ok {{submitting ? 'disabled' : ''}}" catchtap="submitCompose">{{submitting ? '保存中…' : '保存'}}</view>
       </view>
     </view>
   </view>

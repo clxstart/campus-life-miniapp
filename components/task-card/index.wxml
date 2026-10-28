@@ -1,7 +1,7 @@
 <!-- task-card：派遣任务卡，可展开，显示耗时/奖励/状态 -->
 <view class="tc {{expanded ? 'tc--open' : ''}} {{status === 'running' ? 'tc--running' : ''}}">
   <!-- 头部：点击展开 -->
-  <view class="tc-head" bindtap="onToggle">
+  <view hover-class="tap" hover-stay-time="80" class="tc-head" bindtap="onToggle">
     <view class="tc-title-wrap">
       <text class="tc-title">{{task.title}}</text>
       <text class="tc-status tc-status--{{status}}">{{statusLabel}}</text>
@@ -31,13 +31,13 @@
 
     <!-- 操作 -->
     <view class="tc-action">
-      <button
+      <button hover-class="tap-btn" hover-stay-time="80"
         wx:if="{{status === 'idle'}}"
         class="tc-btn tc-btn--primary"
         catchtap="onStart"
       >派它去</button>
 
-      <button
+      <button hover-class="tap-btn" hover-stay-time="80"
         wx:elif="{{status === 'claimable'}}"
         class="tc-btn tc-btn--primary"
         catchtap="onClaim"

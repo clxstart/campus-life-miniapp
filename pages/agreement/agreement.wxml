@@ -1,6 +1,6 @@
 <view class="ag-page">
   <view class="ag-nav">
-    <view class="ag-back" catchtap="goBack">‹</view>
+    <view hover-class="tap" hover-stay-time="80" class="ag-back" catchtap="goBack">‹</view>
     <view class="ag-nav-title">{{title}}</view>
   </view>
 
@@ -18,7 +18,7 @@
   </view>
 
   <view class="ag-footer">
-    <view class="ag-switch" catchtap="switchDoc">
+    <view hover-class="tap" hover-stay-time="80" class="ag-switch" catchtap="switchDoc">
       {{type === 'privacy' ? '查看《用户协议》' : '查看《隐私政策》'}}
     </view>
     <view class="ag-tip">继续使用本服务即表示你已阅读并同意上述内容</view>

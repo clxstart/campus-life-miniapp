@@ -129,6 +129,43 @@
           </p>
         </div>
       </div>
+
+      <!-- 前端错误：用户端的白屏/报错只有这里能看到 -->
+      <div class="border border-stone-200 rounded-[1.5rem] p-5 md:col-span-2">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <p class="font-medium text-stone-800">
+            前端错误
+            <span class="ml-2 text-xs font-normal text-stone-500">今日 {{ data.business?.clientErrorsToday ?? '—' }} 条</span>
+          </p>
+          <div class="flex items-center gap-2">
+            <select v-model="errorClient" class="no-input !w-auto min-w-[7rem]" @change="loadErrors">
+              <option value="">全部端</option>
+              <option value="miniapp">小程序</option>
+              <option value="web">管理端</option>
+            </select>
+            <button class="no-btn-ghost no-btn-sm" @click="loadErrors">刷新</button>
+          </div>
+        </div>
+        <p v-if="!clientErrors.length" class="text-sm text-stone-500">
+          暂无。用户端出现白屏或点击无反应时，这里会记下页面和错误信息。
+        </p>
+        <div v-else class="space-y-2">
+          <div v-for="e in clientErrors" :key="e.id" class="border border-stone-200 rounded-2xl px-4 py-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="no-badge bg-[#f0ece5] text-stone-600 border-stone-200">
+                {{ e.client === 'miniapp' ? '小程序' : '管理端' }}
+              </span>
+              <span class="text-xs text-stone-500 font-mono truncate max-w-[16rem]">{{ e.page || '—' }}</span>
+              <span class="text-xs text-stone-400 ml-auto">{{ formatDate(e.createdAt) }}</span>
+            </div>
+            <p class="text-sm text-[#a4553f] mt-1 break-all">{{ e.message }}</p>
+            <p v-if="e.stack" class="text-xs text-stone-400 mt-1 break-all line-clamp-2 font-mono">{{ e.stack }}</p>
+          </div>
+          <div v-if="errorTotal > clientErrors.length" class="text-center">
+            <button class="no-btn-ghost no-btn-sm" @click="loadMoreErrors">查看更多（共 {{ errorTotal }} 条）</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <p v-if="data" class="text-xs text-stone-400">采集时间：{{ data.timestamp }}</p>
@@ -205,6 +242,40 @@ async function toggleFlag(row) {
   }
 }
 
+// ---- 前端错误 ----
+const clientErrors = ref([])
+const errorTotal = ref(0)
+const errorClient = ref('')
+const errorPageSize = ref(10)
+const errorPages = ref(1)
+
+async function loadErrors(reset = true) {
+  try {
+    const nextPage = reset ? 1 : errorPages.value + 1
+    const data = await http.get('/admin/client-errors', {
+      params: { client: errorClient.value || undefined, page: nextPage, size: errorPageSize.value }
+    })
+    const list = data.list || []
+    clientErrors.value = reset ? list : clientErrors.value.concat(list)
+    errorTotal.value = Number(data.total) || 0
+    errorPages.value = nextPage
+  } catch {
+    if (reset) clientErrors.value = []
+    errorTotal.value = 0
+  }
+}
+
+function loadMoreErrors() {
+  loadErrors(false)
+}
+
+function formatDate(v) {
+  if (!v) return '—'
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return String(v)
+  return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
 async function load() {
   loading.value = true
   error.value = ''
@@ -217,6 +288,7 @@ async function load() {
   }
 }
 
-onMounted(() => { load(); loadFlags() })
-useAutoRefresh(() => { load(); loadFlags() })
+onMounted(() => { load(); loadFlags(); loadErrors() })
+useAutoRefresh(() => { load(); loadFlags(); loadErrors() })
 </script>
+

@@ -147,6 +147,17 @@ function submitFeedback(userId=currentUserId(), content='') { return request('/f
 function reportContent(targetType, targetId, reason, detail='') {
   return request('/reports', 'POST', { targetType, targetId, reason, detail })
 }
+/**
+ * 拉黑 / 取消拉黑某人（切换语义）。
+ * 不做离线兜底：拉黑要落库才有意义，离线假装成功会让人以为已经屏蔽了。
+ */
+function blockUser(targetId) {
+  return request(/users//block, 'POST', {})
+}
+/** 我拉黑的人（设置页展示与解除用）。 */
+function getMyBlocks(userId = currentUserId()) {
+  return request(/users//blocks, 'GET')
+}
 function deleteAccount(userId=currentUserId()) { return request(`/users/${userId}/account`, 'DELETE') }
 // 个人主页：按作者分页查帖子 + 真实统计（替代原先「取前 50 条本地筛」与写死的粉丝数）
 function getUserPosts(userId, params = {}) {
@@ -193,7 +204,7 @@ const {
   getTimetable, addCourse, removeCourse
 } = chat
 
-module.exports = { BASE_URL, DEMO_USER_ID, request, searchPosts, searchAll, getConversations, getNotifications, getProfile, publishPost, getForumPosts, getPost, likePost, addComment, getPostComments, followUser, getHotTopics, getBanners, viewPost, getIdolActivity, getIdolContestants, voteIdol, joinIdol, getUserProfile, updateUserProfile, toggleFavorite, getFavorites, getMyViews, getCoupons, getAddresses, addAddress, submitFeedback, deleteAccount, reportContent, getToken, setAuth, clearAuth, currentUserId, isLoggedIn, authStatus, loginWithWxCode, devLogin, ensureLogin }
+module.exports = { BASE_URL, DEMO_USER_ID, request, searchPosts, searchAll, getConversations, getNotifications, getProfile, publishPost, getForumPosts, getPost, likePost, addComment, getPostComments, followUser, getHotTopics, getBanners, viewPost, getIdolActivity, getIdolContestants, voteIdol, joinIdol, getUserProfile, updateUserProfile, toggleFavorite, getFavorites, getMyViews, getCoupons, getAddresses, addAddress, submitFeedback, deleteAccount, reportContent, blockUser, getMyBlocks, getToken, setAuth, clearAuth, currentUserId, isLoggedIn, authStatus, loginWithWxCode, devLogin, ensureLogin }
 
 
 // 交易域（外卖 / 二手 / 兼职 / 活动 / 发布 / 上传 / 首页推荐）已抽到 utils/api/market.js
@@ -201,8 +212,8 @@ const market = require('./api/market')
 const {
   localFoodAddresses, cacheFoodAddresses,
   getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail, payOrder, getOrderDetail, getFoodOrder,
-  getGoodsList, getGoodsDetail, publishGoods, viewGoods, contactGoods, favoriteGoods, isGoodsFavorite,
-  getJobs, getActivities, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
+  getGoodsList, getGoodsPage, getGoodsDetail, publishGoods, viewGoods, contactGoods, favoriteGoods, isGoodsFavorite,
+  getJobs, getJobsPage, getActivities, getActivitiesPage, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
   uploadImage, uploadImages,
   getHomeRecommend
 } = market
@@ -210,8 +221,8 @@ Object.assign(module.exports, {
   getUserPosts, getUserStats, assetUrl,
   localFoodAddresses, cacheFoodAddresses,
   getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail, payOrder, getOrderDetail, getFoodOrder,
-  getGoodsList, getGoodsDetail, publishGoods, viewGoods, contactGoods, favoriteGoods, isGoodsFavorite,
-  getJobs, getActivities, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
+  getGoodsList, getGoodsPage, getGoodsDetail, publishGoods, viewGoods, contactGoods, favoriteGoods, isGoodsFavorite,
+  getJobs, getJobsPage, getActivities, getActivitiesPage, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
   uploadImage, uploadImages, getHomeRecommend
 })
 
@@ -230,6 +241,9 @@ const learn = require('./api/learn')
 const pet = require('./api/pet')
 Object.assign(module.exports, { getLearnTopics: learn.getLearnTopics, getLearnCounts: learn.getLearnCounts })
 Object.assign(module.exports, { getPet: pet.getPet, petFeed: pet.petFeed, petTouch: pet.petTouch, petCheckin: pet.petCheckin })
+
+
+
 
 
 

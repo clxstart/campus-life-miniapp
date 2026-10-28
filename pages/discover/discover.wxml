@@ -4,8 +4,8 @@
     <view class="discover-navbar-row" style="height: {{navBarHeight}}px; padding-right: {{capsuleReservedRight}}px;">
       <text class="page-title">圈子</text>
       <!-- 本校/全部：圈子按校隔离 -->
-      <view class="scope-switch"><view class="scope-opt {{schoolScope==='local'?'on':''}}" data-scope="local" catchtap="switchSchoolScope">本校</view><view class="scope-opt {{schoolScope==='all'?'on':''}}" data-scope="all" catchtap="switchSchoolScope">全部</view></view>
-      <view class="discover-search" bindtap="openSearch">
+      <view class="scope-switch"><view hover-class="tap" hover-stay-time="80" class="scope-opt {{schoolScope==='local'?'on':''}}" data-scope="local" catchtap="switchSchoolScope">本校</view><view hover-class="tap" hover-stay-time="80" class="scope-opt {{schoolScope==='all'?'on':''}}" data-scope="all" catchtap="switchSchoolScope">全部</view></view>
+      <view hover-class="tap" hover-stay-time="80" class="discover-search" bindtap="openSearch">
         <image lazy-load="true" src="/assets/icons/search.svg" mode="aspectFit" />
         <text>搜索圈子</text>
       </view>
@@ -25,7 +25,7 @@
       indicator-active-color="#4d91e7"
     >
       <swiper-item wx:for="{{heroCircles}}" wx:key="id" class="swiper-item">
-        <view class="discover-hero {{item.theme}}" data-index="{{index}}" bindtap="openHero">
+        <view hover-class="tap-card" hover-stay-time="80" class="discover-hero {{item.theme}}" data-index="{{index}}" bindtap="openHero">
           <view class="hero-copy">
             <text class="hero-eyebrow">{{item.eyebrow}}</text>
             <text class="hero-title">{{item.title}}</text>
@@ -42,7 +42,7 @@
     </view>
 
     <view class="category-tabs">
-      <view
+      <view hover-class="tap-card" hover-stay-time="80"
         wx:for="{{categories}}"
         wx:key="*this"
         class="category-tab {{activeCategory === index ? 'selected' : ''}}"
@@ -57,7 +57,7 @@
       <text>这个分类下还没有圈子</text>
     </view>
 
-    <view
+    <view hover-class="tap-card" hover-stay-time="80"
       wx:for="{{circles}}"
       wx:key="id"
       class="circle-card"
@@ -78,7 +78,7 @@
           <text>{{item.postText}} 帖子</text>
         </view>
       </view>
-      <view
+      <view hover-class="tap-card" hover-stay-time="80"
         class="circle-join {{item.joined ? 'joined' : ''}}"
         catchtap="toggleJoin"
         data-id="{{item.id}}"

@@ -100,21 +100,6 @@ Page({
     popup.toast(this, event.currentTarget.dataset.label)
   },
 
-  // 设置：目前放协议入口与注销账号。注销是不可逆操作，二次确认 + 输入确认词。
-  openSettings() {
-    const items = ['隐私政策', '用户协议', '注销账号']
-    popup.sheet(this, {
-      title: '设置',
-      actions: items.map((label, index) => ({ label, index })),
-      action: ({ item }) => {
-        const label = item && item.label
-        if (label === '隐私政策') wx.navigateTo({ url: '/pages/agreement/agreement?type=privacy' })
-        else if (label === '用户协议') wx.navigateTo({ url: '/pages/agreement/agreement?type=terms' })
-        else if (label === '注销账号') this.confirmDeleteAccount()
-      }
-    })
-  },
-
   confirmDeleteAccount() {
     popup.modal(this, {
       title: '注销账号',
@@ -255,16 +240,53 @@ Page({
     })
   },
 
+  /**
+   * 设置。
+   *
+   * 注意：这个方法历史上被定义过两次，后者覆盖前者，导致先写的那份成了死代码。
+   * 现在只保留这一份，所有入口都在这里。
+   */
   openSettings() {
+    const items = ['隐私政策', '用户协议', '黑名单', '注销账号']
     popup.sheet(this, {
       title: '设置',
-      actions: [
-        { label: '账号与安全' },
-        { label: '隐私设置' },
-        { label: '消息通知' },
-        { label: '关于校园生活' }
-      ],
-      action: () => {}
+      actions: items.map(label => ({ label })),
+      action: ({ item }) => {
+        const label = item && item.label
+        if (label === '隐私政策') wx.navigateTo({ url: '/pages/agreement/agreement?type=privacy' })
+        else if (label === '用户协议') wx.navigateTo({ url: '/pages/agreement/agreement?type=terms' })
+        else if (label === '黑名单') this.openBlocks()
+        else if (label === '注销账号') this.confirmDeleteAccount()
+      }
+    })
+  },
+
+  /** 黑名单：展示我拉黑的人，可逐个解除。 */
+  async openBlocks() {
+    let list = []
+    try {
+      list = await api.getMyBlocks(api.currentUserId()) || []
+    } catch (error) {
+      popup.toast(this, error.message || '黑名单加载失败', { tone: 'error' })
+      return
+    }
+    if (!list.length) {
+      popup.toast(this, '黑名单是空的')
+      return
+    }
+    popup.sheet(this, {
+      title: `黑名单（${list.length} 人）`,
+      actions: list.map(row => ({ label: row.nickname || `用户#${row.userId}`, userId: row.userId })),
+      action: async ({ item }) => {
+        const userId = item && item.userId
+        if (!userId) return
+        try {
+          const result = await api.blockUser(userId)
+          popup.toast(this, result && result.blocked ? '已重新屏蔽' : '已解除屏蔽', { tone: 'success' })
+        } catch (error) {
+          popup.toast(this, error.message || '操作失败', { tone: 'error' })
+        }
+      }
     })
   },
 

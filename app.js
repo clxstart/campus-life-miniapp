@@ -1,5 +1,47 @@
 const api = require('./utils/api')
 
+// 前端错误上报
+//
+// 为什么要有：真机上的白屏、点击无反应，服务端日志里一条记录都没有，
+// 只能等用户投诉，而且往往复现不了。这里把错误发到后端，管理端「系统状态」能看到。
+//
+// 三点注意：
+//   1. 用 wx.request 直接发，不走 utils/api（避免上报逻辑本身又触发业务层的兜底/登录流程）；
+//   2. 同一个错误 10 秒内只报一次，否则连环报错会把后端刷满；
+//   3. 上报失败静默忽略 —— 上报不该影响用户正常使用。
+const ERROR_ENDPOINT = '/log/client'
+let lastErrorKey = ''
+let lastErrorAt = 0
+
+function reportClientError(page, message, stack) {
+  try {
+    const text = String(message || '未知错误')
+    const key = page + '|' + text.slice(0, 120)
+    const now = Date.now()
+    if (key === lastErrorKey && now - lastErrorAt < 10000) return
+    lastErrorKey = key
+    lastErrorAt = now
+
+    wx.request({
+      url: api.BASE_URL + ERROR_ENDPOINT,
+      method: 'POST',
+      header: Object.assign(
+        { 'content-type': 'application/json' },
+        api.getToken() ? { Authorization: 'Bearer ' + api.getToken() } : {}
+      ),
+      data: {
+        client: 'miniapp',
+        page: String(page || ''),
+        message: text.slice(0, 500),
+        stack: String(stack || '').slice(0, 2000)
+      },
+      fail: () => {}
+    })
+  } catch (error) {
+    // 上报本身出错就彻底放弃，不能再抛
+  }
+}
+
 App({
   globalData: {
     schoolName: '内蒙古大学',
@@ -9,6 +51,26 @@ App({
     socketCircleId: null,
     socketListeners: [],
     socketState: 'closed'
+  },
+
+  // 运行时错误：微信会把 JS 异常送到这里
+  onError(error) {
+    const pages = getCurrentPages()
+    const route = pages.length ? pages[pages.length - 1].route : ''
+    reportClientError(route, error, '')
+  },
+
+  // 未捕获的 Promise 拒绝：async/await 里漏掉的 catch 会落到这里
+  onUnhandledRejection(res) {
+    const pages = getCurrentPages()
+    const route = pages.length ? pages[pages.length - 1].route : ''
+    const reason = res && res.reason
+    reportClientError(route, (reason && (reason.message || reason.errMsg)) || String(reason), reason && reason.stack)
+  },
+
+  /** 页面可主动上报（例如 catch 到了但仍认为是异常） */
+  reportError(page, error) {
+    reportClientError(page, (error && (error.message || error.errMsg)) || String(error), error && error.stack)
   },
 
   onLaunch() {

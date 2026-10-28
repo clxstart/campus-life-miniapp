@@ -6,7 +6,7 @@
       class="navbar-row"
       style="height: {{navBarHeight}}px; padding-right: {{capsuleReservedRight}}px;"
     >
-      <view class="school-selector" bindtap="chooseSchool">
+      <view hover-class="tap" hover-stay-time="80" class="school-selector" bindtap="chooseSchool">
         <!-- 学校 logo：管理端填了才显示，没填就只显示名字 -->
         <image wx:if="{{schoolLogo}}" class="school-logo" src="{{schoolLogo}}" mode="aspectFill" />
         <text class="school-name">{{schoolName}}</text>
@@ -26,16 +26,16 @@
       </view>
 
       <!-- 我的宠物入口 -->
-      <view class="ai-entry" bindtap="openPet">
+      <view hover-class="tap-card" hover-stay-time="80" class="ai-entry" bindtap="openPet">
         <text class="ai-entry-icon">🐾</text>
       </view>
 
       <!-- AI 校园助手入口 -->
-      <view class="ai-entry" bindtap="openAiChat">
+      <view hover-class="tap-card" hover-stay-time="80" class="ai-entry" bindtap="openAiChat">
         <text class="ai-entry-icon">✦</text>
       </view>
 
-      <view class="notification-entry" bindtap="openNotifications">
+      <view hover-class="tap-card" hover-stay-time="80" class="notification-entry" bindtap="openNotifications">
         <image class="notification-icon" src="/assets/icons/bell.svg" mode="aspectFit" />
       </view>
     </view>
@@ -43,12 +43,12 @@
   <offline-banner />
 
   <view class="content">
-    <view class="hero-card" bindtap="openFeature" data-label="开学优惠">
+    <view hover-class="tap-card" hover-stay-time="80" class="hero-card" bindtap="openFeature" data-label="开学优惠">
       <image class="hero-image" src="/assets/home/hero-campus.webp" mode="aspectFill" />
     </view>
 
     <view class="feature-top-row">
-      <view class="feature-card delivery-card" bindtap="openFeature" data-label="外卖">
+      <view hover-class="tap-card" hover-stay-time="80" class="feature-card delivery-card" bindtap="openFeature" data-label="外卖">
         <view class="card-copy delivery-copy">
           <text class="feature-title">外卖</text>
           <text class="feature-subtitle">校园美食 快速送达</text>
@@ -63,7 +63,7 @@
       </view>
 
       <view class="feature-right-column">
-        <view class="feature-card market-card" bindtap="openFeature" data-label="二手市场">
+        <view hover-class="tap-card" hover-stay-time="80" class="feature-card market-card" bindtap="openFeature" data-label="二手市场">
           <view class="card-copy compact-copy">
             <text class="feature-title">二手市场</text>
             <text class="feature-subtitle compact-subtitle">闲置流转 低价好物</text>
@@ -71,7 +71,7 @@
           <image class="market-art" src="/assets/home/secondhand-box.webp" mode="aspectFit" />
         </view>
 
-        <view class="feature-card forum-card" bindtap="openFeature" data-label="校园论坛">
+        <view hover-class="tap-card" hover-stay-time="80" class="feature-card forum-card" bindtap="openFeature" data-label="校园论坛">
           <view class="card-copy compact-copy">
             <text class="feature-title">校园论坛</text>
             <text class="feature-subtitle compact-subtitle">分享生活 发现同好</text>
@@ -83,7 +83,7 @@
     </view>
 
     <view class="feature-bottom-row">
-      <view class="feature-card parttime-card" bindtap="openFeature" data-label="兼职">
+      <view hover-class="tap-card" hover-stay-time="80" class="feature-card parttime-card" bindtap="openFeature" data-label="兼职">
         <view class="card-copy">
           <text class="feature-title">兼职</text>
           <text class="feature-subtitle parttime-subtitle">靠谱兼职 灵活赚零花</text>
@@ -95,7 +95,7 @@
         <image class="parttime-art" src="/assets/home/parttime-worker.webp" mode="aspectFit" />
       </view>
 
-      <view class="feature-card event-card" bindtap="openFeature" data-label="季节活动">
+      <view hover-class="tap-card" hover-stay-time="80" class="feature-card event-card" bindtap="openFeature" data-label="季节活动">
         <view class="card-copy event-copy">
           <text class="feature-title">季节活动</text>
           <text class="feature-subtitle">精彩活动 不负好时光</text>
@@ -114,21 +114,21 @@
       <text class="thesis-badge">真人辅导</text>
 
       <view class="thesis-actions">
-        <view class="thesis-action" catchtap="openFeature" data-label="作业答疑">
+        <view hover-class="tap" hover-stay-time="80" class="thesis-action" catchtap="openFeature" data-label="作业答疑">
           <image class="thesis-action-icon" src="/assets/icons/structure.svg" mode="aspectFit" />
           <view class="thesis-action-copy">
             <text class="thesis-action-name">作业答疑</text>
             <text class="thesis-action-desc">全科可问</text>
           </view>
         </view>
-        <view class="thesis-action" catchtap="openFeature" data-label="论文指导">
+        <view hover-class="tap" hover-stay-time="80" class="thesis-action" catchtap="openFeature" data-label="论文指导">
           <image class="thesis-action-icon" src="/assets/icons/topic.svg" mode="aspectFit" />
           <view class="thesis-action-copy">
             <text class="thesis-action-name">论文指导</text>
             <text class="thesis-action-desc">选题·结构·格式</text>
           </view>
         </view>
-        <view class="thesis-action" catchtap="openFeature" data-label="学习好物">
+        <view hover-class="tap" hover-stay-time="80" class="thesis-action" catchtap="openFeature" data-label="学习好物">
           <image class="thesis-action-icon" src="/assets/icons/format.svg" mode="aspectFit" />
           <view class="thesis-action-copy">
             <text class="thesis-action-name">学习好物</text>
@@ -143,13 +143,13 @@
     <view class="recommend-section">
       <view class="recommend-header">
         <text class="recommend-heading">校园今日推荐</text>
-        <view class="refresh-entry" bindtap="changeRecommendations">
+        <view hover-class="tap-card" hover-stay-time="80" class="refresh-entry" bindtap="changeRecommendations">
           <text>换一批</text>
           <image class="refresh-icon" src="/assets/icons/refresh.svg" mode="aspectFit" />
         </view>      </view>
 
       <view class="recommend-grid">
-        <view
+        <view hover-class="tap-card" hover-stay-time="80"
           wx:for="{{recommendations}}"
           wx:key="type"
           class="recommend-card"
@@ -171,7 +171,7 @@
         </view>
         <view wx:if="{{recommendLoading && !recommendations.length}}" class="recommend-card recommend-skeleton">正在加载今日推荐…</view>
 
-        <view class="recommend-ad-card" bindtap="openFeature" data-label="联想小新校园优惠">
+        <view hover-class="tap-card" hover-stay-time="80" class="recommend-ad-card" bindtap="openFeature" data-label="联想小新校园优惠">
           <text class="ad-title">联想小新</text>
           <text class="ad-highlight">校园专属优惠</text>
           <text class="ad-desc">轻薄高能 学习更高效</text>

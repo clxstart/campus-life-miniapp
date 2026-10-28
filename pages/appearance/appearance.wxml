@@ -21,7 +21,7 @@
   <view class="appear-panel">
     <text class="cp-hint action-label">让它试试</text>
     <view class="action-grid">
-      <view
+      <view hover-class="tap-btn" hover-stay-time="80"
         wx:for="{{actions}}"
         wx:key="key"
         class="action-btn {{currentAction === item.key ? 'cp-selected' : ''}}"

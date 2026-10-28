@@ -15,3 +15,26 @@ input {
 button::after {
   border: 0;
 }
+
+/* ===== 全局点击反馈（hover-class）=====
+   小程序默认点击没有任何视觉反馈，用户会以为没点上而反复点，
+   这也是「重复提交」的诱因之一。
+   统一三档，配合 hover-stay-time="80" 使用：
+     tap       文字 / 图标按钮
+     tap-card  卡片 / 列表项
+     tap-btn   主按钮
+   放在 app.wxss 里是为了全站生效，不需要每个页面再 @import。 */
+
+.tap {
+  opacity: 0.55;
+}
+
+.tap-card {
+  opacity: 0.9;
+  transform: scale(0.985);
+}
+
+.tap-btn {
+  opacity: 0.9;
+  transform: scale(0.96);
+}

@@ -65,6 +65,8 @@ public class AuthInterceptor implements HandlerInterceptor {
         "/api/pay/notify",
         "/api/pay/refund/notify",
         "/api/ai/",
+        // 前端错误上报：未登录也可能崩溃，必须允许匿名上报，否则最该被看到的问题收不上来（靠限流防刷）
+        "/api/log/client",
         "/api/upload"
     );
 
@@ -154,4 +156,5 @@ public class AuthInterceptor implements HandlerInterceptor {
         response.getWriter().flush();
     }
 }
+
 

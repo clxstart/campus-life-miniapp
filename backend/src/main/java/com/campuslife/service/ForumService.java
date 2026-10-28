@@ -1,7 +1,7 @@
 package com.campuslife.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper; import com.baomidou.mybatisplus.extension.plugins.pagination.Page; import com.campuslife.dto.*; import com.campuslife.entity.*; import com.campuslife.mapper.*; import lombok.RequiredArgsConstructor; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional; import java.time.LocalDateTime; import java.util.*;
 @Service @RequiredArgsConstructor public class ForumService {
- private final CampusMapper campusMapper; private final CircleService circleService; private final PostMapper postMapper; private final UserMapper userMapper; private final PostLikeMapper likeMapper; private final CommentMapper commentMapper; private final FollowMapper followMapper; private final PostViewMapper viewMapper; private final FavoriteMapper favoriteMapper; private final com.campuslife.mapper.BannerMapper bannerMapper; private final AuditService auditService;
+ private final CampusMapper campusMapper; private final CircleService circleService; private final PostMapper postMapper; private final UserMapper userMapper; private final PostLikeMapper likeMapper; private final CommentMapper commentMapper; private final FollowMapper followMapper; private final PostViewMapper viewMapper; private final FavoriteMapper favoriteMapper; private final com.campuslife.mapper.BannerMapper bannerMapper; private final AuditService auditService; private final UserBlockService blockService;
  public List<com.campuslife.entity.Banner> banners(String slot){return bannerMapper.selectList(new LambdaQueryWrapper<com.campuslife.entity.Banner>().eq(com.campuslife.entity.Banner::getSlot,slot).eq(com.campuslife.entity.Banner::getStatus,1).orderByAsc(com.campuslife.entity.Banner::getSort));}
  public Map<String,Object> page(String tag,String scope,String postScope,Long userId,int page,int size){
    return page(tag,scope,postScope,userId,page,size,null);
@@ -23,6 +23,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper; import
      wrapper.in(Post::getUserId,ids);
    }
    if(!Strings.isBlank(tag)){ wrapper.and(q->q.eq(Post::getTag,tag).or().like(Post::getTag,tag)); }
+  // 拉黑过滤：双向不可见，避免被拉黑方继续单向骚扰
+  java.util.List<Long> hidden=blockService.hiddenUserIds(userId);
+  if(!hidden.isEmpty()){ wrapper.notIn(Post::getUserId,hidden); }
    if("hot".equals(scope)){
      // 发现页热度流：只收被点赞或浏览过的帖子，按 点赞>浏览>评论 排序
      wrapper.and(q->q.gt(Post::getLikeCount,0).or().gt(Post::getViewCount,0));
@@ -183,3 +186,4 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper; import
  public List<Map<String,Object>> hot(){return postMapper.selectMaps(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Post>().select("tag","COUNT(*) AS posts","IFNULL(SUM(like_count),0)+IFNULL(SUM(comment_count),0) AS count").eq("status",1).groupBy("tag").orderByDesc("count").last("LIMIT 10"));}
  static class Strings{static boolean isBlank(String s){return s==null||s.isBlank();}}
 }
+

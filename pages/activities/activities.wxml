@@ -1,5 +1,5 @@
 <view class="activities-page">
-  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px"><view class="back" catchtap="goBack">‹</view><view class="nav-title">季节活动</view><!-- 本校/全部：校园活动按校隔离 --><view class="scope-switch"><view class="scope-opt {{schoolScope==='local'?'on':''}}" data-scope="local" catchtap="switchSchoolScope">本校</view><view class="scope-opt {{schoolScope==='all'?'on':''}}" data-scope="all" catchtap="switchSchoolScope">全部</view></view></view>
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px"><view hover-class="tap" hover-stay-time="80" class="back" catchtap="goBack">‹</view><view class="nav-title">季节活动</view><!-- 本校/全部：校园活动按校隔离 --><view class="scope-switch"><view hover-class="tap" hover-stay-time="80" class="scope-opt {{schoolScope==='local'?'on':''}}" data-scope="local" catchtap="switchSchoolScope">本校</view><view hover-class="tap" hover-stay-time="80" class="scope-opt {{schoolScope==='all'?'on':''}}" data-scope="all" catchtap="switchSchoolScope">全部</view></view></view>
   <offline-banner />
   <view wx:if="{{loading}}" class="state">正在整理校园活动</view>
   <view wx:elif="{{!activities.length}}" class="state"><text class="state-title">暂时没有活动</text>新的精彩很快就来</view>
@@ -8,13 +8,13 @@
     <view class="feature-entry">
       <view class="feature-entry-title">校园评选</view>
       <view class="feature-entry-row">
-        <view class="feature-entry-card idol" bindtap="openIdol">
+        <view hover-class="tap-card" hover-stay-time="80" class="feature-entry-card idol" bindtap="openIdol">
           <text class="feature-entry-badge">人气评选</text>
           <text class="feature-entry-name">校草校花评选</text>
           <text class="feature-entry-desc">上传照片 · 赢校园人气王</text>
           <text class="feature-entry-go">进入投票 ›</text>
         </view>
-        <view class="feature-entry-card singer" bindtap="openSinger">
+        <view hover-class="tap-card" hover-stay-time="80" class="feature-entry-card singer" bindtap="openSinger">
           <text class="feature-entry-badge">12.05 决赛</text>
           <text class="feature-entry-name">校园歌手大赛</text>
           <text class="feature-entry-desc">大礼堂 19:00 · 现场投票</text>
@@ -22,11 +22,15 @@
         </view>
       </view>
     </view>
-    <block wx:for="{{activities}}" wx:key="id"><view wx:if="{{item.isFeatured}}" class="featured-card"><image lazy-load="true" src="{{item.poster}}" mode="aspectFill"/><view class="featured-shade"></view><view class="featured-copy"><text class="featured-badge">本周主打</text><text class="featured-title">{{item.title}}</text><text class="featured-meta">{{item.timeDesc}} · {{item.location}}</text></view><view class="featured-count">{{item.enrolled}}人已报名</view><button class="featured-button {{item.enrolledByMe?'joined':''}}" data-id="{{item.id}}" disabled="{{item.enrolledByMe || enrollingId===item.id}}" bindtap="enroll">{{item.enrolledByMe?'已报名':'报名'}}</button></view></block>
-    <view class="activity-list"><block wx:for="{{activities}}" wx:key="id"><view wx:if="{{!item.isFeatured}}" class="activity-card"><image lazy-load="true" class="poster" src="{{item.poster}}" mode="aspectFill"/><view class="activity-copy"><view class="activity-title">{{item.title}}</view><view class="activity-meta">{{item.timeDesc}}</view><view class="activity-meta">{{item.location}}</view><view class="activity-count">{{item.enrolled}}人已报名</view></view><button class="enroll-button {{item.enrolledByMe?'joined':''}}" data-id="{{item.id}}" disabled="{{item.enrolledByMe || enrollingId===item.id}}" bindtap="enroll">{{item.enrolledByMe?'已报名':'报名'}}</button></view></block></view>
+    <block wx:for="{{activities}}" wx:key="id"><view wx:if="{{item.isFeatured}}" class="featured-card"><image lazy-load="true" src="{{item.poster}}" mode="aspectFill"/><view class="featured-shade"></view><view class="featured-copy"><text class="featured-badge">本周主打</text><text class="featured-title">{{item.title}}</text><text class="featured-meta">{{item.timeDesc}} · {{item.location}}</text></view><view class="featured-count">{{item.enrolled}}人已报名</view><button hover-class="tap-btn" hover-stay-time="80" class="featured-button {{item.enrolledByMe?'joined':''}}" data-id="{{item.id}}" disabled="{{item.enrolledByMe || enrollingId===item.id}}" bindtap="enroll">{{item.enrolledByMe?'已报名':'报名'}}</button></view></block>
+    <view class="activity-list"><block wx:for="{{activities}}" wx:key="id"><view wx:if="{{!item.isFeatured}}" class="activity-card"><image lazy-load="true" class="poster" src="{{item.poster}}" mode="aspectFill"/><view class="activity-copy"><view class="activity-title">{{item.title}}</view><view class="activity-meta">{{item.timeDesc}}</view><view class="activity-meta">{{item.location}}</view><view class="activity-count">{{item.enrolled}}人已报名</view></view><button hover-class="tap-btn" hover-stay-time="80" class="enroll-button {{item.enrolledByMe?'joined':''}}" data-id="{{item.id}}" disabled="{{item.enrolledByMe || enrollingId===item.id}}" bindtap="enroll">{{item.enrolledByMe?'已报名':'报名'}}</button></view></block></view>
+    <!-- 触底加载状态 -->
+    <view wx:if="{{loadingMore}}" class="list-more">加载中…</view>
+    <view wx:elif="{{activities.length >= total && total > 0}}" class="list-more">没有更多了</view>
   </block>
   <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose"/>
 </view>
 <!-- 全局悬浮宠物 -->
 <pet-float bottom="200" />
+
 

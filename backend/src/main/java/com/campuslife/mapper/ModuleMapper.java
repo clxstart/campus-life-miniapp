@@ -30,6 +30,35 @@ public interface ModuleMapper {
     List<Map<String, Object>> selectGoods(@Param("mode") Integer mode, @Param("category") String category,
         @Param("schoolId") Long schoolId);
 
+    /** 分页版商品列表（与 selectGoods 同一套过滤条件，多 LIMIT/OFFSET）。 */
+    @Select("""
+        <script>
+        SELECT g.id, g.mode, g.title, g.price, g.condition_level AS conditionLevel,
+               g.category, g.image, g.images, g.description, g.created_at AS createdAt,
+               g.school_id AS schoolId,
+               u.id AS sellerId, u.nickname AS sellerNickname
+        FROM goods g LEFT JOIN `user` u ON u.id = g.user_id
+        WHERE g.status = 1 AND g.audit_status = 'passed' AND g.mode = #{mode}
+        <if test="category != null and category != ''">AND g.category = #{category}</if>
+        <if test="schoolId != null">AND g.school_id = #{schoolId}</if>
+        ORDER BY g.created_at DESC, g.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+        </script>
+        """)
+    List<Map<String, Object>> selectGoodsPaged(@Param("mode") Integer mode, @Param("category") String category,
+        @Param("schoolId") Long schoolId, @Param("limit") int limit, @Param("offset") int offset);
+
+    /** 分页用的总数（过滤条件必须与 selectGoodsPaged 完全一致，否则分页会错位）。 */
+    @Select("""
+        <script>
+        SELECT COUNT(*) FROM goods g
+        WHERE g.status = 1 AND g.audit_status = 'passed' AND g.mode = #{mode}
+        <if test="category != null and category != ''">AND g.category = #{category}</if>
+        <if test="schoolId != null">AND g.school_id = #{schoolId}</if>
+        </script>
+        """)
+    long countGoods(@Param("mode") Integer mode, @Param("category") String category, @Param("schoolId") Long schoolId);
+
     @Select("""
         SELECT g.id, g.mode, g.title, g.price, g.condition_level AS conditionLevel,
                g.category, g.image, g.images, g.description, g.created_at AS createdAt,
@@ -76,6 +105,45 @@ public interface ModuleMapper {
     List<Map<String, Object>> selectJobs(@Param("settle") String settle, @Param("keyword") String keyword,
         @Param("schoolId") Long schoolId);
 
+    /** 分页版兼职列表（过滤条件与 selectJobs 一致）。 */
+    @Select("""
+        <script>
+        SELECT j.id, j.title, j.day_salary AS daySalary, j.settle, j.location,
+               j.time_desc AS timeDesc, j.status, j.description, j.user_id AS userId,
+               j.created_at AS createdAt, j.school_id AS schoolId, u.nickname AS publisherName
+        FROM job j LEFT JOIN `user` u ON u.id = j.user_id
+        <where>
+          j.audit_status = 'passed' AND j.status = '招聘中' AND
+          <if test="settle != null and settle != ''">j.settle = #{settle} AND</if>
+          <if test="keyword != null and keyword != ''">
+            (j.title LIKE #{keyword} OR j.location LIKE #{keyword} OR j.description LIKE #{keyword}) AND
+          </if>
+          <if test="schoolId != null">j.school_id = #{schoolId} AND</if>
+          1 = 1
+        </where>
+        ORDER BY j.created_at DESC, j.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+        </script>
+        """)
+    List<Map<String, Object>> selectJobsPaged(@Param("settle") String settle, @Param("keyword") String keyword,
+        @Param("schoolId") Long schoolId, @Param("limit") int limit, @Param("offset") int offset);
+
+    @Select("""
+        <script>
+        SELECT COUNT(*) FROM job j
+        <where>
+          j.audit_status = 'passed' AND j.status = '招聘中' AND
+          <if test="settle != null and settle != ''">j.settle = #{settle} AND</if>
+          <if test="keyword != null and keyword != ''">
+            (j.title LIKE #{keyword} OR j.location LIKE #{keyword} OR j.description LIKE #{keyword}) AND
+          </if>
+          <if test="schoolId != null">j.school_id = #{schoolId} AND</if>
+          1 = 1
+        </where>
+        </script>
+        """)
+    long countJobs(@Param("settle") String settle, @Param("keyword") String keyword, @Param("schoolId") Long schoolId);
+
     // 发布兼职：与 goods 同一套归属模型，发布者即当前用户；school_id 必须写入
     @Insert("""
         INSERT INTO job(title, day_salary, settle, location, time_desc, status, user_id, description, school_id, audit_status, audit_reason, audit_at)
@@ -104,6 +172,36 @@ public interface ModuleMapper {
         </script>
         """)
     List<Map<String, Object>> selectActivities(@Param("userId") Long userId, @Param("schoolId") Long schoolId);
+
+    /** 分页版活动列表（过滤条件与 selectActivities 一致）。 */
+    @Select("""
+        <script>
+        SELECT a.id, a.title, a.poster, a.time_desc AS timeDesc, a.location, a.enrolled,
+               a.description, a.user_id AS userId, a.created_at AS createdAt, a.school_id AS schoolId,
+               a.enroll_mode AS enrollMode, a.enroll_hint AS enrollHint, a.enroll_max_files AS enrollMaxFiles,
+               u.nickname AS publisherName,
+               CASE WHEN e.id IS NULL THEN 0 ELSE 1 END AS enrolledByMe,
+               e.status AS myEnrollStatus
+        FROM campus_activity a
+        LEFT JOIN activity_enroll e ON e.activity_id = a.id AND e.user_id = #{userId}
+        LEFT JOIN `user` u ON u.id = a.user_id
+        WHERE a.status = 1
+        <if test="schoolId != null">AND a.school_id = #{schoolId}</if>
+        ORDER BY a.created_at DESC, a.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+        </script>
+        """)
+    List<Map<String, Object>> selectActivitiesPaged(@Param("userId") Long userId, @Param("schoolId") Long schoolId,
+        @Param("limit") int limit, @Param("offset") int offset);
+
+    @Select("""
+        <script>
+        SELECT COUNT(*) FROM campus_activity a
+        WHERE a.status = 1
+        <if test="schoolId != null">AND a.school_id = #{schoolId}</if>
+        </script>
+        """)
+    long countActivities(@Param("schoolId") Long schoolId);
 
     // 发布活动：报名数从 0 起算，由 activity_enroll 累加；school_id 必须写入
     // enroll_mode：simple=一键报名（默认），material=填表+材料+审核

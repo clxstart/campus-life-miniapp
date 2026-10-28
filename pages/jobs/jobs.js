@@ -13,6 +13,9 @@ Page({
     schoolScope: 'local',
     jobs: [],
     total: 0,
+    page: 1,
+    size: 20,
+    loadingMore: false,
     loading: true,
     uiPopup: null
   },
@@ -25,18 +28,38 @@ Page({
   },
   onPullDownRefresh() { this.loadJobs().finally(() => wx.stopPullDownRefresh()) },
 
-  async loadJobs() {
+  // 触底加载下一页
+  onReachBottom() {
+    if (this.data.loadingMore || this.data.jobs.length >= this.data.total) return
+    this.loadJobs(false)
+  },
+
+  /**
+   * 加载兼职列表。
+   * @param {boolean} reset true=回到第一页，false=下一页
+   */
+  async loadJobs(reset = true) {
     const seq = this._seq = (this._seq || 0) + 1
-    this.setData({ loading: true })
+    const page = reset ? 1 : (this.data.page || 1) + 1
+    if (reset) this.setData({ loading: true })
+    else this.setData({ loadingMore: true })
     try {
-      const rows = await api.getJobs(this.data.settle, this.data.keyword, this.data.schoolScope, school.getSelectedId())
+      const result = await api.getJobsPage({
+        settle: this.data.settle,
+        keyword: this.data.keyword,
+        schoolScope: this.data.schoolScope,
+        schoolId: school.getSelectedId(),
+        page,
+        size: this.data.size || 20
+      })
       if (!this._alive || seq !== this._seq) return
-      const jobs = (rows || []).map(item => ({ ...item, salaryText: `¥${item.daySalary}/天` }))
-      this.setData({ jobs, total: jobs.length })
+      const mapped = (result.list || []).map(item => ({ ...item, salaryText: `¥${item.daySalary}/天` }))
+      const jobs = reset ? mapped : this.data.jobs.concat(mapped.filter(next => !this.data.jobs.some(old => old.id === next.id)))
+      this.setData({ jobs, page: result.page, total: result.total })
     } catch (error) {
       if (this._alive && seq === this._seq) popup.toast(this, error.message || '兼职加载失败', { tone: 'error' })
     } finally {
-      if (this._alive && seq === this._seq) this.setData({ loading: false })
+      if (this._alive && seq === this._seq) this.setData({ loading: false, loadingMore: false })
     }
   },
 
@@ -82,3 +105,4 @@ Page({
   onPopupInput(e) { this._popupInput && this._popupInput({ detail: e.detail }) },
   onPopupClose() { popup.hide(this) }
 })
+

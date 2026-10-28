@@ -1,5 +1,5 @@
 <!-- campus-result-card：校园数据结果卡片，带来源与更新时间 -->
-<view class="rc" bindtap="onOpen">
+<view hover-class="tap" hover-stay-time="80" class="rc" bindtap="onOpen">
   <view class="rc-head">
     <text class="rc-type">{{typeName}}</text>
     <text class="rc-title">{{result.title}}</text>

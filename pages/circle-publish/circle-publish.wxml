@@ -2,7 +2,7 @@
 <view class="publish-page">
   <view class="publish-navbar" style="padding-top: {{statusBarHeight}}px;">
     <view class="publish-navbar-row" style="height: {{navBarHeight}}px; padding-right: {{capsuleReservedRight}}px;">
-      <view class="cp-back" catchtap="goBack">‹</view>
+      <view hover-class="tap" hover-stay-time="80" class="cp-back" catchtap="goBack">‹</view>
       <text class="publish-title">发帖</text>
     </view>
   </view>
@@ -43,7 +43,7 @@
       <view class="media-grid">
         <view wx:for="{{media}}" wx:key="*this" class="media-item">
           <image src="{{item}}" mode="aspectFill" />
-          <view class="media-remove" catchtap="removeMedia" data-index="{{index}}">×</view>
+          <view hover-class="tap" hover-stay-time="80" class="media-remove" catchtap="removeMedia" data-index="{{index}}">×</view>
         </view>
         <view class="media-add" wx:if="{{media.length < 6}}" bindtap="chooseMedia">
           <text class="camera-icon">⌁</text>
@@ -54,7 +54,7 @@
     </view>
 
     <view class="setting-card">
-      <view class="setting-row" bindtap="chooseLocation">
+      <view hover-class="tap-card" hover-stay-time="80" class="setting-row" bindtap="chooseLocation">
         <view class="setting-left">
           <view class="setting-icon blue-setting">⌖</view>
           <view class="setting-copy">
@@ -76,7 +76,7 @@
       </view>
     </view>
 
-    <button class="submit-button" loading="{{submitting}}" disabled="{{submitting || !circle}}" bindtap="submit">
+    <button hover-class="tap-btn" hover-stay-time="80" class="submit-button" loading="{{submitting}}" disabled="{{submitting || !circle}}" bindtap="submit">
       {{submitting ? '正在发布…' : '发布到圈子'}}
     </button>
   </view>

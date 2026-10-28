@@ -1,11 +1,11 @@
 <view class="ae-page">
   <view class="ae-nav">
-    <view class="ae-back" catchtap="goBack">‹</view>
+    <view hover-class="tap" hover-stay-time="80" class="ae-back" catchtap="goBack">‹</view>
     <view class="ae-title">活动报名</view>
   </view>
 
   <view wx:if="{{loading}}" class="ae-state">正在加载…</view>
-  <view wx:elif="{{error}}" class="ae-state" catchtap="goBack">{{error}}（点击返回）</view>
+  <view hover-class="tap" hover-stay-time="80" wx:elif="{{error}}" class="ae-state" catchtap="goBack">{{error}}（点击返回）</view>
 
   <block wx:else>
     <!-- 活动信息 -->
@@ -23,7 +23,7 @@
       <view class="ae-done-icon">✓</view>
       <view class="ae-done-title">提交成功</view>
       <view class="ae-done-text">报名材料已提交，等待管理员审核。审核结果会在「消息」里通知你。</view>
-      <button class="ae-btn ae-btn-ghost" catchtap="goBack">返回活动列表</button>
+      <button hover-class="tap-btn" hover-stay-time="80" class="ae-btn ae-btn-ghost" catchtap="goBack">返回活动列表</button>
     </view>
 
     <!-- 表单 -->
@@ -66,9 +66,9 @@
 
         <view class="ae-materials">
           <view wx:for="{{materials}}" wx:key="*this" class="ae-material">
-            <image class="ae-material-img" src="{{item}}" mode="aspectFill"
+            <image hover-class="tap" hover-stay-time="80" class="ae-material-img" src="{{item}}" mode="aspectFill"
                    data-url="{{item}}" catchtap="previewMaterial" />
-            <view class="ae-material-del" data-index="{{index}}" catchtap="removeMaterial">×</view>
+            <view hover-class="tap" hover-stay-time="80" class="ae-material-del" data-index="{{index}}" catchtap="removeMaterial">×</view>
           </view>
           <view wx:if="{{materials.length < maxFiles}}" class="ae-material-add" catchtap="chooseMaterial">
             <view class="ae-plus">＋</view>
@@ -77,7 +77,7 @@
         </view>
       </view>
 
-      <button class="ae-btn ae-btn-primary {{submitting ? 'ae-btn-disabled' : ''}}"
+      <button hover-class="tap-btn" hover-stay-time="80" class="ae-btn ae-btn-primary {{submitting ? 'ae-btn-disabled' : ''}}"
               catchtap="submit">{{submitting ? '提交中…' : '提交报名'}}</button>
       <view class="ae-footnote">提交后需管理员审核，通过后才计入报名人数</view>
     </block>

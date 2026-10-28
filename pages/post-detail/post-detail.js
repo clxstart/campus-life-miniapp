@@ -133,13 +133,28 @@ Page({
     wx.navigateTo({url:`/pages/chat/chat?id=${p.authorId||0}&name=${encodeURIComponent(p.authorNickname||'同学')}&avatar=${encodeURIComponent(p.authorNickname?p.authorNickname[0]:'同')}&color=${encodeURIComponent('#7EB6F6')}`})
   },
   previewImage(){ const p=this.data.post; if(p&&p.image) wx.previewImage({urls:[p.image]}) },
-  // 举报：选原因后提交到管理端队列，由人判断，不自动下架
+  // 「更多」菜单：举报（事后处理）+ 屏蔽（事前自保），两个动作放一起
   reportPost(){
+    const p = this.data.post
+    if (!p || !p.id) return
+    popup.sheet(this, {
+      title: '这条帖子',
+      actions: [{ label: '举报这条帖子' }, { label: '屏蔽作者' }],
+      action: ({ item }) => {
+        const label = item && item.label
+        if (!label) return
+        if (label === '屏蔽作者') this.blockAuthor()
+        else this.chooseReportReason()
+      }
+    })
+  },
+  // 举报：选原因后提交到管理端队列，由人判断，不自动下架
+  chooseReportReason(){
     const p = this.data.post
     if (!p || !p.id) return
     const reasons = ['广告', '辱骂', '色情', '诈骗', '侵权', '其他']
     popup.sheet(this, {
-      title: '举报这条帖子',
+      title: '举报原因',
       actions: reasons.map(r => ({ label: r })),
       action: async ({ item }) => {
         const reason = item && item.label
@@ -149,6 +164,32 @@ Page({
           popup.toast(this, '已收到举报，我们会尽快处理', { tone: 'success' })
         } catch (error) {
           popup.toast(this, error.message || '举报失败，请稍后再试', { tone: 'error' })
+        }
+      }
+    })
+  },
+  // 屏蔽作者：双向不可见（你看不到 TA 的帖子，TA 也看不到你的，也无法互发私信）
+  blockAuthor(){
+    const p = this.data.post
+    const authorId = p && p.authorId
+    if (!authorId) { popup.toast(this, '无法获取作者信息', { tone: 'warn' }); return }
+    if (Number(authorId) === Number(api.currentUserId())) { popup.toast(this, '不能屏蔽自己', { tone: 'warn' }); return }
+    popup.modal(this, {
+      title: '屏蔽作者',
+      message: '屏蔽后你们将互相看不到对方的帖子和评论，也无法互发私信。可在「我的 → 设置 → 黑名单」里解除。',
+      showCancel: true,
+      confirmText: '屏蔽',
+      confirm: async () => {
+        try {
+          const result = await api.blockUser(authorId)
+          if (result && result.blocked) {
+            popup.toast(this, '已屏蔽，将不再看到 TA 的内容', { tone: 'success' })
+            setTimeout(() => this.goBack(), 800)
+          } else {
+            popup.toast(this, '已解除屏蔽', { tone: 'success' })
+          }
+        } catch (error) {
+          popup.toast(this, error.message || '操作失败，请稍后再试', { tone: 'error' })
         }
       }
     })

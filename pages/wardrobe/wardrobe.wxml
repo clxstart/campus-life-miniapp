@@ -44,7 +44,7 @@
           <text class="cp-hint wd-item-desc">{{item.description}}</text>
         </view>
         <view class="wd-item-action">
-          <button
+          <button hover-class="tap-btn" hover-stay-time="80"
             wx:if="{{!item.owned}}"
             class="wd-btn wd-btn--primary"
             catchtap="onBuy"
@@ -67,8 +67,8 @@
       <view class="wd-dialog-title">兑换{{buying.name}}</view>
       <view class="wd-dialog-content">将消耗 {{buying.price}} 积分，当前有 {{balance}} 积分。确认兑换吗？</view>
       <view class="wd-dialog-actions">
-        <view class="wd-dialog-btn wd-dialog-btn--ghost" bindtap="onBuyCancel">再想想</view>
-        <view class="wd-dialog-btn wd-dialog-btn--primary" bindtap="onBuyConfirm">确认兑换</view>
+        <view hover-class="tap-btn" hover-stay-time="80" class="wd-dialog-btn wd-dialog-btn--ghost" bindtap="onBuyCancel">再想想</view>
+        <view hover-class="tap-btn" hover-stay-time="80" class="wd-dialog-btn wd-dialog-btn--primary" bindtap="onBuyConfirm">确认兑换</view>
       </view>
     </view>
   </view>

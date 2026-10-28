@@ -2,7 +2,7 @@
      全屏可拖动：小猫跟着手指走（无阴影跟随，避免拖出拖影）
      松手后记住位置，切页面也保留；轻点冒泡，拖动时不误触 -->
 <movable-area class="pf-area" style="height:{{areaHeight}}px;">
-  <movable-view
+  <movable-view hover-class="tap" hover-stay-time="80"
     class="pf-view"
     direction="all"
     inertia="{{false}}"

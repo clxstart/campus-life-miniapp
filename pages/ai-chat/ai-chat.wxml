@@ -1,8 +1,8 @@
 <view class="ai-page">
   <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px">
-    <view class="back" catchtap="goBack">‹</view>
+    <view hover-class="tap" hover-stay-time="80" class="back" catchtap="goBack">‹</view>
     <view class="nav-title">校园小助手</view>
-    <view class="nav-action" catchtap="clearChat">清空</view>
+    <view hover-class="tap" hover-stay-time="80" class="nav-action" catchtap="clearChat">清空</view>
   </view>
 
   <offline-banner local="{{offline}}" />
@@ -38,7 +38,7 @@
 
   <!-- 快捷关键词：优先用回复自带的追问，没有就显示常驻关键词，保证底部永远有可点的词 -->
   <view wx:if="{{!sending}}" class="quick-row">
-    <view
+    <view hover-class="tap" hover-stay-time="80"
       wx:for="{{quickReplies.length ? quickReplies : starterChips}}"
       wx:key="*this"
       class="quick-chip"
@@ -60,7 +60,7 @@
       bindconfirm="sendCurrent"
       cursor-spacing="20"
     />
-    <view
+    <view hover-class="tap-btn" hover-stay-time="80"
       class="send-btn {{inputValue && !sending ? 'send-on' : ''}}"
       catchtap="sendCurrent"
     >发送</view>
