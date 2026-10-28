@@ -223,17 +223,65 @@ verify-ai-popup : id 存在 ✅
 
 ---
 
-## 七、本次未验证的部分
+## 七、运行时验证（已补齐）
 
-| 项 | 原因 |
+之前只有静态分析。后来用 `miniprogram-automator` 连上开发者工具，
+做了真实的页面跳转与点击验证，**13 项全部通过**：
+
+```
+=== 页面渲染 ===
+  ✅ pages/index/index
+  ✅ pages/community/community
+  ✅ pages/food-list/food-list
+  ✅ pages/profile/profile
+  ✅ pages/ai-chat/ai-chat
+  ✅ pages/market-list/market-list
+  ✅ pages/discover/discover
+
+=== 个人中心统计行（Bug 1）===
+  ✅ 找到 3 个统计行
+  ✅ 点「发布」跳个人主页  pages/user-home/user-home
+  ✅ 点「关注」弹提示  「关注和粉丝名单还在开发中，暂时看不了」
+
+=== AI 聊天弹窗（Bug 2）===
+  ✅ selectComponent('#ui-popup') 能找到组件
+  ✅ 设置 visible 后标题正确
+  ✅ 弹窗 DOM 真的渲染出来（15 个节点）
+
+结果：13 通过，0 失败
+```
+
+**这证明了两件事**：
+1. 小程序**编译是成功的**，7 个主要页面都能正常渲染
+2. 两个 bug 的修复**在运行时确实生效**，不是只改了代码
+
+### 怎么复现这个验证
+
+```bash
+# 1. 开发者工具打开项目后，另开终端：
+cd "D:\JavaStudy\微信web开发者工具"
+cli.bat auto --project "E:\goodworlk\campus-life-miniapp" --port 38038 --auto-port 9420 --lang zh
+
+# 2. 跑冒烟测试
+cd E:\goodworlk\campus-life-miniapp\tools
+node smoke-test.js
+```
+
+> automator 的 `checkVersion()` 在版本串为空时会崩，脚本里用直接 `connect` 绕过了。
+
+---
+
+## 八、仍然未验证的部分
+
+| 项 | 状态 |
 |---|---|
-| **小程序编译成功的目视确认** | 视觉服务不可用（模型配置 404），截图读不出来 |
-| **真机点击测试** | 无真机环境 |
-| Bug 1 / Bug 2 的实际交互效果 | 依赖上面两项 |
+| 小程序编译 | ✅ 已通过 automator 验证（7 个页面正常渲染） |
+| 两个 Bug 的修复效果 | ✅ 已验证（见第七节） |
+| **真机表现** | ❌ 无真机环境，未测 |
+| **视觉观感** | ❌ 视觉服务不可用（模型 404），截图读不出来 |
+| **并发/压力** | ❌ 未做，见 docs/压测方案与性能基线.md |
 
-Bug 的**存在性**是确定的（绑定缺失、属性未声明都是静态事实）；
-**修复效果**建议你在开发者工具里手动点一遍确认：
-
-1. 个人中心 → 点「发布」应跳个人主页，点「关注/粉丝」应有提示
-2. AI 聊天 → 输入超长文字应有提示；点清空应有确认框
-
+真机需要你用自己的 AppID 预览后确认，重点看：
+1. 个人中心三个数字的点击反馈
+2. AI 聊天输入超长文字时的提示、清空对话的确认框
+3. 悬浮宠物拖动是否跟手
