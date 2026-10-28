@@ -43,6 +43,9 @@ Page({
     this.syncSchoolLogo()
     // 首次进入必须先选学校，否则各列表不知道该看哪所学校的数据
     this.ensureSchool()
+    // 上面三件事互不依赖，都是并行发起。
+    // 学校列表在 utils/school.js 里做了「同一时刻单请求 + 5 分钟缓存」，
+    // 所以 syncSchoolLogo 和 ensureSchool 不会再各打一次 /api/schools。
     this.loadRecommendations(0)
   },
 

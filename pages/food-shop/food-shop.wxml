@@ -23,7 +23,7 @@
           desc="换左边别的分类看看，或者稍后再来"
         />
         <view wx:for="{{visibleGoods}}" wx:key="id" class="goods-card">
-          <image class="goods-image" src="{{item.image}}" mode="aspectFill"/>
+          <image class="goods-image" src="{{item.image}}" mode="aspectFill" lazy-load/>
           <view class="goods-main"><text class="goods-name title">{{item.name}}</text><text class="goods-sales muted">月售 {{item.monthlySales}}</text>
             <view class="goods-bottom"><text class="goods-price price">¥{{item.priceText}}</text><view class="quantity"><view hover-class="tap" hover-stay-time="80" wx:if="{{counts[item.id]}}" class="minus" data-id="{{item.id}}" data-delta="-1" catchtap="changeCount">−</view><text wx:if="{{counts[item.id]}}" class="quantity-num">{{counts[item.id]}}</text><view hover-class="tap" hover-stay-time="80" class="plus" data-id="{{item.id}}" data-delta="1" catchtap="changeCount">＋</view></view></view>
           </view>

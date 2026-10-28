@@ -65,23 +65,55 @@ function hasSelected() {
  * 拉取可选学校列表。后端不可用时回落到本地兜底，保证离线也能进得去。
  * 返回值统一带 offline 标记，页面据此显示离线提示。
  */
+// 学校列表缓存。
+// 首页会同时调用 syncSchoolLogo() 和 ensureSchool()，两者都要学校列表，
+// 原来各请求一次 /api/schools。学校数据几乎不变，这里做两件事：
+//   1) 同一时刻只发一个请求（_pending 复用），避免并发重复
+//   2) 成功后短时缓存，页面来回切换不再重复拉
+const CACHE_TTL = 5 * 60 * 1000
+let _cache = null
+let _cacheAt = 0
+let _pending = null
+
+/** 让缓存失效（管理端改了学校信息、切学校时调用） */
+function invalidateSchools() {
+  _cache = null
+  _cacheAt = 0
+  _pending = null
+}
+
 async function fetchSchools() {
-  try {
-    const rows = await api.getSchools()
-    if (Array.isArray(rows) && rows.length) {
-      return rows.map(row => ({
-        id: Number(row.id),
-        name: String(row.name || ''),
-        city: String(row.city || ''),
-        // 作息配置与 logo 原样保留：作息给课表页用，logo 给首页学校标识用
-        periodConfig: row.periodConfig || '',
-        logo: String(row.logo || '')
-      }))
+  const now = Date.now()
+  if (_cache && now - _cacheAt < CACHE_TTL) return _cache.map(s => ({ ...s }))
+  if (_pending) return _pending
+
+  _pending = (async () => {
+    try {
+      const rows = await api.getSchools()
+      if (Array.isArray(rows) && rows.length) {
+        const mapped = rows.map(row => ({
+          id: Number(row.id),
+          name: String(row.name || ''),
+          city: String(row.city || ''),
+          // 作息配置与 logo 原样保留：作息给课表页用，logo 给首页学校标识用
+          periodConfig: row.periodConfig || '',
+          logo: String(row.logo || '')
+        }))
+        _cache = mapped
+        _cacheAt = Date.now()
+        return mapped
+      }
+      // 拿到空列表：不缓存，下次重试
+      return FALLBACK_SCHOOLS.map(s => ({ ...s }))
+    } catch (error) {
+      // 网络失败：回落到兜底列表，同样不缓存
+      return FALLBACK_SCHOOLS.map(s => ({ ...s }))
+    } finally {
+      _pending = null
     }
-    return FALLBACK_SCHOOLS.map(s => ({ ...s }))
-  } catch (error) {
-    return FALLBACK_SCHOOLS.map(s => ({ ...s }))
-  }
+  })()
+
+  return _pending
 }
 
 const PERIOD_COUNT = 5
@@ -152,6 +184,7 @@ module.exports = {
   getSelectedName,
   hasSelected,
   fetchSchools,
+  invalidateSchools,
   parsePeriodConfig,
   getSelectedPeriodTimes,
   getSelectedLocations

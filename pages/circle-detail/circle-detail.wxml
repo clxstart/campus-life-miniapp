@@ -57,7 +57,7 @@
       bindtap="openPost"
     >
       <view class="cd-author">
-        <image wx:if="{{item.avatar}}" class="cd-avatar" src="{{item.avatar}}" mode="aspectFill" />
+        <image wx:if="{{item.avatar}}" class="cd-avatar" src="{{item.avatar}}" mode="aspectFill" lazy-load />
         <view wx:else class="cd-avatar cd-avatar-text">{{item.avatarText}}</view>
         <view class="cd-author-copy">
           <text class="cd-author-name">{{item.author}}</text>
@@ -66,7 +66,7 @@
       </view>
       <text class="cd-title">{{item.title}}</text>
       <text class="cd-text">{{item.content}}</text>
-      <image wx:if="{{item.image}}" class="cd-image" src="{{item.image}}" mode="aspectFill" />
+      <image wx:if="{{item.image}}" class="cd-image" src="{{item.image}}" mode="aspectFill" lazy-load />
       <view class="cd-footer">
         <text wx:if="{{item.tag}}" class="cd-tag"># {{item.tag}}</text>
         <view class="cd-actions">
