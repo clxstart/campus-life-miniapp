@@ -8,7 +8,7 @@ const { categories, findCategory } = require('../../utils/learn')
 Page({
   data: {
     ...getNavigationMetrics(), categories, category: 'daike', current: findCategory('daike'),
-    schoolName: '', schoolId: null, counts: {}, posts: [], page: 0, cursor: '', size: 10,
+    schoolName: '', schoolId: null, posts: [], page: 0, cursor: '', size: 10,
     total: 0, loading: false, hasMore: false, offline: false, error: '', uiPopup: null
   },
   onLoad(query = {}) {
@@ -29,17 +29,8 @@ Page({
     }
   },
   onUnload() { this._alive = false; this._generation += 1 },
-  refresh() { return Promise.all([this.loadPosts(true), this.loadCounts()]) },
-  async loadCounts() {
-    const schoolId = this.data.schoolId
-    try {
-      const counts = await api.getLearnCounts(schoolId)
-      if (this._alive && this.data.schoolId === schoolId) this.setData({ counts })
-    } catch (error) {
-      // 数量是辅助信息；计数失败不清空仍可阅读的列表。
-      if (this._alive && this.data.schoolId === schoolId) this.setData({ counts: {} })
-    }
-  },
+  // 分类标签上的数量角标已下线（用户觉得那个数字没用），这里不再请求计数接口
+  refresh() { return this.loadPosts(true) },
   async loadPosts(reset = false) {
     if (!reset && (this.data.loading || !this.data.hasMore)) return
     const generation = reset ? ++this._generation : this._generation
@@ -92,6 +83,8 @@ Page({
   },
   openAuthor(event) { wx.navigateTo({ url: `/pages/user-home/user-home?id=${encodeURIComponent(event.currentTarget.dataset.id)}` }) },
   openAiChat() { wx.navigateTo({ url: '/pages/ai-chat/ai-chat' }) },
+  // 论文指导咨询：跳到二维码页（二维码与微信号由管理端「运营设置」配置）
+  openWechatQr() { wx.navigateTo({ url: '/pages/wechat-qr/wechat-qr' }) },
   openGuide() {
     const current = this.data.current
     popup.modal(this, { title: current.guide, message: current.tips.join('\n\n'), showCancel: false, confirmText: '开始学习' })
@@ -131,3 +124,6 @@ Page({
   onPopupInput(event) { this._popupInput && this._popupInput(event.detail) },
   onPopupClose() { popup.hide(this) }
 })
+
+
+

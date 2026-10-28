@@ -2,7 +2,7 @@
 <view class="msg msg--{{role}}">
   <!-- 宠物头像 -->
   <view class="msg-avatar" wx:if="{{role === 'pet'}}">
-    <pet-avatar appearance="{{appearance}}" size="{{48}}" crop="{{true}}" />
+    <pet-avatar size="{{48}}" />
   </view>
 
   <view class="msg-main">

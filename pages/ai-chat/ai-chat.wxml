@@ -66,8 +66,22 @@
     >发送</view>
   </view>
 
-  <ui-popup
-    uiPopup="{{uiPopup}}"
+  <!-- 弹窗：必须逐个传声明的属性。
+       原来只传了 uiPopup="{{uiPopup}}"（组件没有这个属性），
+       visible 一直是默认 false，导致本页所有弹窗都不显示。 -->
+  <ui-popup id="ui-popup"
+    visible="{{uiPopup.visible}}"
+    mode="{{uiPopup.mode}}"
+    tone="{{uiPopup.tone}}"
+    title="{{uiPopup.title}}"
+    message="{{uiPopup.message}}"
+    editable="{{uiPopup.editable}}"
+    placeholder="{{uiPopup.placeholder}}"
+    inputValue="{{uiPopup.inputValue}}"
+    actions="{{uiPopup.actions}}"
+    show-cancel="{{uiPopup.showCancel}}"
+    confirm-text="{{uiPopup.confirmText}}"
+    cancel-text="{{uiPopup.cancelText}}"
     bind:confirm="onPopupConfirm"
     bind:cancel="onPopupCancel"
     bind:action="onPopupAction"

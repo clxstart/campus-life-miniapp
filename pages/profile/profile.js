@@ -24,6 +24,8 @@ Page({
       { key: 'address', icon: '⌖', title: '地址管理', value: '', tone: 'green' },
       { key: 'coupon', icon: '券', title: '优惠与权益', value: '', tone: 'yellow' },
       { key: 'feedback', icon: '?', title: '帮助与反馈', value: '', tone: 'purple' },
+      // 微信群入口：点开是二维码页，扫码进群（二维码由管理端「运营设置」配置）
+      { key: 'wechat-group', icon: '群', title: '微信群聊', value: '扫码加入', tone: 'green' },
       { key: 'settings', icon: '⚙', title: '设置', value: '', tone: 'gray' }
     ],
     uiPopup: null
@@ -87,6 +89,25 @@ Page({
     if (key === 'views') this.openViews()
   },
 
+  /**
+   * 个人信息卡的统计行：发布 / 关注 / 粉丝
+   *
+   * wxml 一直绑着 openItem，但这里原本没有这个方法，
+   * 微信会报 "does not have a method openItem"，点了完全没反应。
+   *
+   * 现状：「发布」能进个人主页；
+   * 「关注」「粉丝」目前既没有列表页、后端也没有列表接口（只有计数），
+   * 所以给明确提示，不假装能进去。
+   */
+  openItem(event) {
+    const label = String(event.currentTarget.dataset.label || '')
+    if (label === '我的发布') {
+      wx.navigateTo({ url: `/pages/user-home/user-home?id=${api.currentUserId()}` })
+      return
+    }
+    popup.toast(this, '关注和粉丝名单还在开发中，暂时看不了', { tone: 'info' })
+  },
+
   openMenu(event) {
     const key = event.currentTarget.dataset.key
     if (key === 'food-orders') return wx.navigateTo({ url: '/pages/food-orders/food-orders' })
@@ -94,6 +115,8 @@ Page({
     if (key === 'address') return this.openAddresses()
     if (key === 'coupon') return this.openCoupons()
     if (key === 'feedback') return this.openFeedback()
+    // 微信群聊：跳二维码页（type=group），扫码进群
+    if (key === 'wechat-group') return wx.navigateTo({ url: '/pages/wechat-qr/wechat-qr?type=group' })
     if (key === 'privacy') return wx.navigateTo({ url: '/pages/agreement/agreement?type=privacy' })
     if (key === 'terms') return wx.navigateTo({ url: '/pages/agreement/agreement?type=terms' })
     if (key === 'settings') return this.openSettings()

@@ -44,6 +44,8 @@ const routes = [
       // 后端 /api/banners 与 Ops.vue 都保留着，将来需要展示位时把这一行放回来即可。
       // { path: 'ops', name: 'ops', component: () => import('../views/Ops.vue'), meta: { title: '运营配置', icon: '✦' } },
       { path: 'logs', name: 'logs', component: () => import('../views/Logs.vue'), meta: { title: '操作日志', icon: '❐' } },
+      // 运营设置：咨询二维码、微信号、入口开关（小程序「论文指导」卡片点进去的内容）
+      { path: 'settings', name: 'settings', component: () => import('../views/Settings.vue'), meta: { title: '运营设置', icon: '⚙' } },
       // 系统状态：服务健康/内存/连接池/磁盘/慢请求，出问题先看这里
       { path: 'system', name: 'system', component: () => import('../views/System.vue'), meta: { title: '系统状态', icon: '◉' } }
     ]

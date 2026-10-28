@@ -1,0 +1,52 @@
+<view class="qr-page">
+  <view class="qr-nav">
+    <view class="qr-back" catchtap="goBack">‹</view>
+    <view class="qr-nav-title">{{title}}</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="qr-state">正在加载…</view>
+
+  <view wx:elif="{{error}}" class="qr-state" catchtap="loadConfig">{{error}}（点击重试）</view>
+
+  <block wx:else>
+    <view class="qr-card">
+      <view class="qr-title">{{title}}</view>
+
+      <!-- 二维码配好了才显示 -->
+      <block wx:if="{{configured}}">
+        <view class="qr-image-wrap" catchtap="previewQr">
+          <!-- show-menu-by-longpress：长按可保存/识别，微信里最自然的用法 -->
+          <image class="qr-image" src="{{qrUrl}}" mode="aspectFit" show-menu-by-longpress="true" />
+        </view>
+        <view class="qr-tip-main">{{type === 'group' ? '长按二维码 → 识别加入群聊' : '长按二维码 → 识别图中二维码'}}</view>
+        <view class="qr-tip-sub">或保存图片后，在微信「扫一扫」里从相册选择</view>
+      </block>
+
+      <!-- 没配二维码时的兜底说明，不让页面空白 -->
+      <block wx:else>
+        <view class="qr-empty">
+          <view class="qr-empty-icon">{{type === 'group' ? '👥' : '💬'}}</view>
+          <view class="qr-empty-title">{{type === 'group' ? '群二维码尚未配置' : '咨询入口尚未配置'}}</view>
+          <view class="qr-empty-text">
+            {{type === 'group'
+              ? '管理员可在管理端「运营设置」里上传微信群二维码，配置后这里会显示。'
+              : '管理员可在管理端「运营设置」里上传咨询二维码与微信号，配置后这里会显示。'}}
+          </view>
+        </view>
+      </block>
+
+      <!-- 微信号：有就展示并支持一键复制（仅一对一咨询会有） -->
+      <view wx:if="{{wechatId}}" class="qr-wechat">
+        <view class="qr-wechat-label">微信号</view>
+        <view class="qr-wechat-value" catchtap="copyWechatId">
+          <text class="qr-wechat-id">{{wechatId}}</text>
+          <text class="qr-wechat-copy">复制</text>
+        </view>
+      </view>
+
+      <view wx:if="{{hint}}" class="qr-hint">{{hint}}</view>
+    </view>
+
+    <view class="qr-footnote">{{type === 'group' ? '群二维码有有效期（一般 7 天），过期请找管理员更新' : '咨询为人工回复，非工作时间可能稍晚一些'}}</view>
+  </block>
+</view>

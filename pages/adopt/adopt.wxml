@@ -33,7 +33,7 @@
         data-index="{{index}}"
         bindtap="onSelect"
       >
-        <pet-avatar appearance="{{item.appearance}}" size="{{58}}" />
+        <pet-avatar size="{{58}}" />
         <text class="egg-name">{{item.name}}</text>
         <!-- 选中：边框 + 勾 + 文字三重表达 -->
         <text class="egg-check" wx:if="{{selected === index}}">✓</text>

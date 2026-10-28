@@ -32,6 +32,7 @@
     "pages/activities/activities",
     "pages/activity-enroll/activity-enroll",
     "pages/agreement/agreement",
+    "pages/wechat-qr/wechat-qr",
     "pages/maintenance/maintenance",
     "pages/search/search",
     "pages/campus-offer/campus-offer",
@@ -54,3 +55,4 @@
   },
   "sitemapLocation": "sitemap.json"
 }
+

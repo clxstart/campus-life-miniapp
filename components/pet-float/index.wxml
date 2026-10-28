@@ -26,7 +26,6 @@
         />
         <pet-avatar
           wx:else
-          appearance="{{appearance}}"
           size="{{60}}"
           auto="{{!reduceMotion}}"
           paused="{{dragging}}"
