@@ -24,7 +24,17 @@ Page({
     const id = Number(options.id)
     try {
       if (!Number.isSafeInteger(id) || id < 1) throw new Error('店铺不存在')
-      const [shops, menu] = await Promise.all([api.getFoodShops(), api.getFoodMenu(id)])
+      // 用 schoolScope='all' 拉店铺，而不是默认的本校范围。
+      //
+      // 原因：店铺 id 已经确定了，这里只是要它的展示信息（名称/配送费/是否营业）。
+      // 如果按默认的本校范围查，用户切过学校后会出问题：
+      //   列表页按「选中学校」筛出店铺 5（北大）→ 点进来 →
+      //   详情页却只拉到当前账号学校（内大）的店铺 1-4 → 找不到 5 → 报「店铺不存在」。
+      // 用 all 范围能覆盖任何入口（列表、推荐位、分享链接）进来的店铺。
+      const [shops, menu] = await Promise.all([
+        api.getFoodShops('', 'all', null),
+        api.getFoodMenu(id)
+      ])
       if (!this._alive) return
       const shop = shops.find(row => Number(row.id) === id)
       if (!shop) throw new Error('店铺不存在')
