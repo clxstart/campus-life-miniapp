@@ -32,10 +32,15 @@ public class ClientErrorService {
 
     public void report(String client, String page, String message, String stack, String userAgent, Long userId) {
         String safeClient = CLIENTS.contains(client) ? client : "web";
+        // 空消息没有排查价值：常见于浏览器某些资源加载失败事件，留着只会把列表刷成噪音。
+        // 前端也做了同样的过滤，这里是后端兜底 —— 客户端代码可能被缓存成旧版本。
+        String safeMessage = cut(message, 500);
+        if (safeMessage.isBlank()) return;
+
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("client", safeClient);
         row.put("page", cut(page, 128));
-        row.put("message", cut(message, 500));
+        row.put("message", safeMessage);
         row.put("stack", cut(stack, 2000));
         row.put("userAgent", cut(userAgent, 300));
         row.put("userId", userId);

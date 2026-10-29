@@ -33,6 +33,7 @@ const STATIC = [
 
 const RUNTIME_CHECKS = [
   { file: 'smoke-test.js', name: '冒烟测试', timeout: 400000 },
+  { file: 'test-flows.js', name: '业务流程', timeout: 900000 },
   { file: 'check-pages.js', name: '全页面渲染', timeout: 900000 },
   { file: 'check-requests.js', name: '首屏请求', timeout: 240000 }
 ]
