@@ -179,7 +179,7 @@ Page({
     })
   },
 
-  // 地址管理：列表 + 新增
+  // 地址管理：列表 + 新增 + 编辑 + 删除
   async openAddresses() {
     let list
     try { list = (await api.getAddresses(api.currentUserId())) || [] }
@@ -190,7 +190,64 @@ Page({
       actions: [{ label: '＋ 新增收货地址' }].concat(list.map((item) => ({ label: `${item.detail}（${item.contact}）` }))),
       action: ({ index }) => {
         if (index === 0) return this.promptAddress()
-        popup.toast(this, '演示地址，暂不支持编辑')
+        // 点已有地址：给出编辑/删除
+        const item = list[index - 1]
+        if (item) this._openAddressActions(item)
+      }
+    })
+  },
+
+  /** 单条地址的操作面板 */
+  _openAddressActions(item) {
+    popup.sheet(this, {
+      title: item.detail,
+      actions: [{ label: '编辑地址' }, { label: '删除这条地址' }],
+      action: ({ index }) => {
+        if (index === 0) this.editAddress(item)
+        else if (index === 1) this.confirmDeleteAddress(item)
+      }
+    })
+  },
+
+  /** 编辑单条地址（复用 promptAddress 的弹窗写法） */
+  editAddress(item) {
+    popup.modal(this, {
+      title: '编辑收货地址',
+      editable: true,
+      placeholder: '如：学生公寓 6 号楼 312',
+      inputValue: item.detail || '',
+      confirmText: '保存',
+      confirm: async (res) => {
+        const detail = String((res && res.inputValue) || '').trim()
+        if (!detail) {
+          popup.toast(this, '地址不能为空', { tone: 'warn' })
+          return
+        }
+        try {
+          await api.updateAddress(api.currentUserId(), item.id, detail)
+          popup.toast(this, '地址已更新', { tone: 'success' })
+          this.openAddresses()
+        } catch (error) {
+          popup.toast(this, error.message || '更新失败', { tone: 'error' })
+        }
+      }
+    })
+  },
+
+  /** 删除单条地址（二次确认） */
+  confirmDeleteAddress(item) {
+    popup.confirm(this, {
+      title: '删除地址',
+      message: `确定删除「${item.detail}」吗？`,
+      confirmText: '删除',
+      confirm: async () => {
+        try {
+          await api.deleteAddress(api.currentUserId(), item.id)
+          popup.toast(this, '已删除', { tone: 'success' })
+          this.openAddresses()
+        } catch (error) {
+          popup.toast(this, error.message || '删除失败', { tone: 'error' })
+        }
       }
     })
   },

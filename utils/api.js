@@ -136,6 +136,28 @@ function getMyViews(userId=currentUserId()) { return fallback(request(`/users/${
 function getCoupons(userId=currentUserId()) { return fallback(request(`/users/${userId}/coupons`, 'GET'), () => wait([])) }
 function getAddresses(userId=currentUserId()) { return fallback(request(`/users/${userId}/addresses`, 'GET').then(list => { cacheFoodAddresses(userId,list); return list }), () => wait(localFoodAddresses(userId))) }
 function addAddress(userId=currentUserId(), detail='') { return request(`/users/${userId}/addresses`, 'POST', {detail}).then(address => { cacheFoodAddresses(userId,[address].concat(localFoodAddresses(userId).filter(a => String(a.id)!==String(address.id)))); return address }).catch(error => { if (error.server) throw error; const address=mock.makeFoodAddress(detail); cacheFoodAddresses(userId,[address].concat(localFoodAddresses(userId))); return wait(address) }) }
+
+/**
+ * 修改收货地址
+ * 之前只有新增：用户填错字只能再加一条，地址列表越用越乱。
+ */
+function updateAddress(userId=currentUserId(), addressId='', detail='') {
+  return request(`/users/${userId}/addresses/${addressId}`, 'PUT', { detail })
+    .then(address => {
+      const rows = localFoodAddresses(userId).map(a => String(a.id) === String(addressId) ? { ...a, ...address } : a)
+      cacheFoodAddresses(userId, rows)
+      return address
+    })
+}
+
+/** 删除收货地址 */
+function deleteAddress(userId=currentUserId(), addressId='') {
+  return request(`/users/${userId}/addresses/${addressId}`, 'DELETE')
+    .then(() => {
+      cacheFoodAddresses(userId, localFoodAddresses(userId).filter(a => String(a.id) !== String(addressId)))
+      return { deleted: true }
+    })
+}
 function submitFeedback(userId=currentUserId(), content='') { return request('/feedback', 'POST', {userId, content}).catch(error => { if (error.server) throw error; return wait({received:true}) }) }
 /**
  * 注销账号。
@@ -215,7 +237,7 @@ const {
   getTimetable, addCourse, removeCourse
 } = chat
 
-module.exports = { BASE_URL, DEMO_USER_ID, request, searchPosts, searchAll, getConversations, getNotifications, getProfile, publishPost, getForumPosts, getPost, likePost, addComment, getPostComments, followUser, getHotTopics, getBanners, viewPost, getIdolActivity, getIdolContestants, voteIdol, joinIdol, getUserProfile, updateUserProfile, toggleFavorite, getFavorites, getMyViews, getCoupons, getAddresses, addAddress, submitFeedback, deleteAccount, reportContent, blockUser, getMyBlocks, getContactConfig, getGroupConfig, getToken, setAuth, clearAuth, currentUserId, isLoggedIn, authStatus, loginWithWxCode, devLogin, ensureLogin }
+module.exports = { BASE_URL, DEMO_USER_ID, request, searchPosts, searchAll, getConversations, getNotifications, getProfile, publishPost, getForumPosts, getPost, likePost, addComment, getPostComments, followUser, getHotTopics, getBanners, viewPost, getIdolActivity, getIdolContestants, voteIdol, joinIdol, getUserProfile, updateUserProfile, toggleFavorite, getFavorites, getMyViews, getCoupons, getAddresses, addAddress, updateAddress, deleteAddress, submitFeedback, deleteAccount, reportContent, blockUser, getMyBlocks, getContactConfig, getGroupConfig, getToken, setAuth, clearAuth, currentUserId, isLoggedIn, authStatus, loginWithWxCode, devLogin, ensureLogin }
 
 
 // 交易域（外卖 / 二手 / 兼职 / 活动 / 发布 / 上传 / 首页推荐）已抽到 utils/api/market.js

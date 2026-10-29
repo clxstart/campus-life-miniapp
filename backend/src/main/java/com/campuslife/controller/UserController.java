@@ -95,6 +95,27 @@ public class UserController {
     }
 
     /**
+     * 修改收货地址
+     * 之前只有新增、没有编辑：用户填错字只能再加一条，地址列表越来越乱。
+     */
+    @PutMapping("/users/{id}/addresses/{addressId}")
+    public ApiResponse<UserAddress> updateAddress(@PathVariable Long id,
+                                                  @PathVariable Long addressId,
+                                                  @Valid @RequestBody AddressAddRequest r,
+                                                  HttpServletRequest request) {
+        return ApiResponse.ok(service.updateAddress(requireSelf(id, request), addressId, r));
+    }
+
+    /** 删除收货地址 */
+    @DeleteMapping("/users/{id}/addresses/{addressId}")
+    public ApiResponse<Object> deleteAddress(@PathVariable Long id,
+                                             @PathVariable Long addressId,
+                                             HttpServletRequest request) {
+        service.deleteAddress(requireSelf(id, request), addressId);
+        return ApiResponse.ok(null);
+    }
+
+    /**
      * 拉黑 / 取消拉黑某个用户（切换语义）。
      *
      * 路径里的 {id} 是**被拉黑的人**，不是自己；操作人取 token 身份。

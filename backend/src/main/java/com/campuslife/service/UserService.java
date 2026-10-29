@@ -66,7 +66,28 @@ import java.time.LocalDateTime; import java.util.*;
    return out;}
  @Transactional public UserAddress addAddress(Long id,AddressAddRequest r){
    UserAddress a=new UserAddress(); a.setUserId(id); a.setContact(r.getContact()==null||r.getContact().isBlank()?"我":r.getContact()); a.setPhone(r.getPhone()==null?"":r.getPhone()); a.setDetail(r.getDetail()); addressMapper.insert(a); return a;}
- @Transactional public Map<String,Object> feedback(Long userId,String content){
+   /**
+   * 修改收货地址。
+   * 只允许改自己的地址：按 id + userId 查，查不到就当不存在，避免越权。
+   */
+  @Transactional public UserAddress updateAddress(Long userId,Long addressId,AddressAddRequest r){
+    UserAddress a=addressMapper.selectOne(new LambdaQueryWrapper<UserAddress>()
+        .eq(UserAddress::getId,addressId).eq(UserAddress::getUserId,userId));
+    if(a==null) throw new IllegalArgumentException("地址不存在");
+    a.setContact(r.getContact()==null||r.getContact().isBlank()?"我":r.getContact());
+    a.setPhone(r.getPhone()==null?"":r.getPhone());
+    a.setDetail(r.getDetail());
+    addressMapper.updateById(a);
+    return a;}
+
+  /** 删除收货地址（同样按 id + userId 限定，防止删别人的） */
+  @Transactional public void deleteAddress(Long userId,Long addressId){
+    int n=addressMapper.delete(new LambdaQueryWrapper<UserAddress>()
+        .eq(UserAddress::getId,addressId).eq(UserAddress::getUserId,userId));
+    if(n==0) throw new IllegalArgumentException("地址不存在");
+  }
+
+@Transactional public Map<String,Object> feedback(Long userId,String content){
    Feedback f=new Feedback(); f.setUserId(userId); f.setContent(content); f.setCreatedAt(LocalDateTime.now()); feedbackMapper.insert(f);
    return Map.of("received",true);}
  // 收藏/浏览的帖子卡片：列表页只需要标题与时间
