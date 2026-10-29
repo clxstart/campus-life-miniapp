@@ -11,7 +11,14 @@ Page({
       await api.ensureLogin()
       const pending = wx.getStorageSync('pending_order')
       if (!pending || !Number.isSafeInteger(Number(pending.shopId)) || Number(pending.shopId) < 1) throw new Error('暂时没有待结算订单')
-      const [shops, menu, addresses] = await Promise.all([api.getFoodShops(), api.getFoodMenu(pending.shopId), api.getAddresses(api.currentUserId())])
+      // 用 schoolScope='all' 查店铺：shopId 已经确定，这里只要它的展示信息。
+      // 按默认本校范围查的话，用户从「跨校店铺」进结算会找不到店
+      // （和 food-shop 详情页同一类问题）。
+      const [shops, menu, addresses] = await Promise.all([
+        api.getFoodShops('', 'all', null),
+        api.getFoodMenu(pending.shopId),
+        api.getAddresses(api.currentUserId())
+      ])
       if (!this._alive) return
       const shop = shops.find(s => Number(s.id) === Number(pending.shopId))
       if (!shop) throw new Error('店铺不存在，请重新选购')
