@@ -8,9 +8,35 @@
     <image wx:else class="detail-image" src="{{item.image || '/assets/home/secondhand-box.webp'}}" mode="aspectFill"/>
     <view class="detail-main"><view class="price-row"><text class="detail-price">¥{{item.priceText}}</text><text class="condition">{{item.conditionLevel || '九成新'}}</text></view><view class="created">发布于 {{item.createdAt}}<text wx:if="{{heatText}}"> · {{heatText}}</text></view><view class="detail-title">{{item.title}}</view><view class="description">{{item.description || '卖家没有填写更多描述。'}}</view></view>
     <view hover-class="tap-card" hover-stay-time="80" class="seller-card" bindtap="openSeller"><view class="seller-avatar" style="background:{{item.sellerColor}}">{{item.sellerInitial}}</view><view class="seller-copy"><text class="seller-name">{{item.sellerName}}</text><text class="seller-note">校园同学 · 查看主页了解更多</text></view><text class="seller-link">进主页 ›</text></view>
-    <view class="bottom-bar"><button hover-class="tap-btn" hover-stay-time="80" class="fav-button {{favored ? 'on' : ''}}" bindtap="toggleFavorite">{{favored ? '★ 已收藏' : '☆ 收藏'}}</button><button hover-class="tap-btn" hover-stay-time="80" class="want-button" bindtap="chatSeller">我想要 · 私聊卖家</button></view>
+    <view class="bottom-bar">
+      <!-- 自己的商品：收藏自己没意义，改成删除入口（此前没有，发了就删不掉） -->
+      <block wx:if="{{isMine}}">
+        <button hover-class="tap-btn" hover-stay-time="80" class="delete-button" bindtap="deleteItem">删除这件物品</button>
+      </block>
+      <block wx:else>
+        <button hover-class="tap-btn" hover-stay-time="80" class="fav-button {{favored ? 'on' : ''}}" bindtap="toggleFavorite">{{favored ? '★ 已收藏' : '☆ 收藏'}}</button>
+        <button hover-class="tap-btn" hover-stay-time="80" class="want-button" bindtap="chatSeller">我想要 · 私聊卖家</button>
+      </block>
+    </view>
   </block>
-  <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose"/>
+  <ui-popup id="ui-popup"
+    visible="{{uiPopup.visible}}"
+    mode="{{uiPopup.mode}}"
+    tone="{{uiPopup.tone}}"
+    title="{{uiPopup.title}}"
+    message="{{uiPopup.message}}"
+    editable="{{uiPopup.editable}}"
+    placeholder="{{uiPopup.placeholder}}"
+    inputValue="{{uiPopup.inputValue}}"
+    actions="{{uiPopup.actions}}"
+    show-cancel="{{uiPopup.showCancel}}"
+    confirm-text="{{uiPopup.confirmText}}"
+    cancel-text="{{uiPopup.cancelText}}"
+    bind:confirm="onPopupConfirm"
+    bind:cancel="onPopupCancel"
+    bind:action="onPopupAction"
+    bind:input="onPopupInput"
+    bind:close="onPopupClose"/>
 </view>
 <!-- 全局悬浮宠物 -->
 <pet-float bottom="200" static />

@@ -28,7 +28,8 @@ const STATIC = [
   { file: 'check-bindings.js', name: 'WXML 绑定' },
   { file: 'check-api.js', name: '接口对账' },
   { file: 'check-props.js', name: '组件属性' },
-  { file: 'verify-ai-popup.js', name: '弹窗传参' }
+  { file: 'verify-ai-popup.js', name: '弹窗传参' },
+  { file: 'check-popup-api.js', name: 'popup 方法' }
 ]
 
 const RUNTIME_CHECKS = [

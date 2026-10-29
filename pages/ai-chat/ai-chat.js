@@ -179,11 +179,15 @@ Page({
 
   // 清空对话
   clearChat() {
-    popup.confirm(this, {
+    // 注意：ui-popup-helper 没有 confirm 方法（只有 toast/modal/sheet/hide），
+    // 而且回调名是 confirm 不是 onConfirm。
+    // 原来用错的方法名 + 回调名，调用时直接抛 TypeError，
+    // 点「清空对话」完全没反应。
+    popup.modal(this, {
       title: '清空对话',
       message: '清空后之前的聊天记录就找不回来了',
       confirmText: '清空',
-      onConfirm: () => {
+      confirm: () => {
         const welcome = makeMessage('ai',
           '我们重新开始吧。想聊点什么？',
           ['今天吃什么', '有什么活动', '我该学习了吗'])

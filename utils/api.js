@@ -245,7 +245,7 @@ const market = require('./api/market')
 const {
   localFoodAddresses, cacheFoodAddresses,
   getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail, payOrder, getOrderDetail, getFoodOrder,
-  getGoodsList, getGoodsPage, getGoodsDetail, publishGoods, viewGoods, contactGoods, favoriteGoods, isGoodsFavorite,
+  getGoodsList, getGoodsPage, getGoodsDetail, publishGoods, viewGoods, contactGoods, deleteGoods, favoriteGoods, isGoodsFavorite,
   getJobs, getJobsPage, getActivities, getActivitiesPage, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
   uploadImage, uploadImages,
   getHomeRecommend
@@ -254,7 +254,7 @@ Object.assign(module.exports, {
   getUserPosts, getUserStats, assetUrl,
   localFoodAddresses, cacheFoodAddresses,
   getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail, payOrder, getOrderDetail, getFoodOrder,
-  getGoodsList, getGoodsPage, getGoodsDetail, publishGoods, viewGoods, contactGoods, favoriteGoods, isGoodsFavorite,
+  getGoodsList, getGoodsPage, getGoodsDetail, publishGoods, viewGoods, contactGoods, deleteGoods, favoriteGoods, isGoodsFavorite,
   getJobs, getJobsPage, getActivities, getActivitiesPage, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
   uploadImage, uploadImages, getHomeRecommend
 })

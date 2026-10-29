@@ -96,6 +96,17 @@ function publishGoods(payload) {
 // 商品行为上报：浏览/收藏/私聊，供真实热度统计
 function viewGoods(id) { return request(`/goods/${id}/view`, 'POST').catch(() => wait({})) }
 function contactGoods(id) { return request(`/goods/${id}/contact`, 'POST').catch(() => wait({})) }
+
+/**
+ * 删除自己发布的二手商品
+ *
+ * 后端 DELETE /api/goods/{id} 早就有了（身份按 token 认，传别人 userId 无效），
+ * 但前端一直没有入口——用户发了商品就删不掉。
+ */
+function deleteGoods(id, userId = currentUserId()) {
+  return request(`/goods/${id}?userId=${encodeURIComponent(userId)}`, 'DELETE')
+    .then(() => ({ deleted: true }))
+}
 function favoriteGoods(id, userId = currentUserId()) {
   return request(`/goods/${id}/favorite`, 'POST', { userId }).then(res => { markGoodsFavorite(id, res && res.favored); return res })
     .catch(error => {
@@ -324,7 +335,7 @@ function localRecommend(batch, perType) {
 module.exports = {
   localFoodAddresses, cacheFoodAddresses,
   getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail, payOrder, getOrderDetail, getFoodOrder,
-  getGoodsList, getGoodsPage, getGoodsDetail, publishGoods, viewGoods, contactGoods, favoriteGoods, isGoodsFavorite, markGoodsFavorite,
+  getGoodsList, getGoodsPage, getGoodsDetail, publishGoods, viewGoods, contactGoods, deleteGoods, favoriteGoods, isGoodsFavorite, markGoodsFavorite,
   getJobs, getJobsPage, getActivities, getActivitiesPage, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
   uploadImage, uploadImages,
   getHomeRecommend, localRecommend

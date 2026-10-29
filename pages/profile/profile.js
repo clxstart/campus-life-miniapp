@@ -236,7 +236,7 @@ Page({
 
   /** 删除单条地址（二次确认） */
   confirmDeleteAddress(item) {
-    popup.confirm(this, {
+    popup.modal(this, {
       title: '删除地址',
       message: `确定删除「${item.detail}」吗？`,
       confirmText: '删除',
