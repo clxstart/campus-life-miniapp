@@ -31,7 +31,7 @@ const forum = require('./api/forum')
 const {
   localPosts, localForumPosts, mockForum,
   getForumPosts, searchPosts, getPost, likePost,
-  getPostComments, addComment, followUser,
+  getPostComments, addComment, likeComment, followUser,
   getHotTopics, getBanners, viewPost, publishPost
 } = forum
 
@@ -237,7 +237,7 @@ const {
   getTimetable, addCourse, removeCourse
 } = chat
 
-module.exports = { BASE_URL, DEMO_USER_ID, request, searchPosts, searchAll, getConversations, getNotifications, getProfile, publishPost, getForumPosts, getPost, likePost, addComment, getPostComments, followUser, getHotTopics, getBanners, viewPost, getIdolActivity, getIdolContestants, voteIdol, joinIdol, getUserProfile, updateUserProfile, toggleFavorite, getFavorites, getMyViews, getCoupons, getAddresses, addAddress, updateAddress, deleteAddress, submitFeedback, deleteAccount, reportContent, blockUser, getMyBlocks, getContactConfig, getGroupConfig, getToken, setAuth, clearAuth, currentUserId, isLoggedIn, authStatus, loginWithWxCode, devLogin, ensureLogin }
+module.exports = { BASE_URL, DEMO_USER_ID, request, searchPosts, searchAll, getConversations, getNotifications, getProfile, publishPost, getForumPosts, getPost, likePost, addComment, likeComment, getPostComments, followUser, getHotTopics, getBanners, viewPost, getIdolActivity, getIdolContestants, voteIdol, joinIdol, getUserProfile, updateUserProfile, toggleFavorite, getFavorites, getMyViews, getCoupons, getAddresses, addAddress, updateAddress, deleteAddress, submitFeedback, deleteAccount, reportContent, blockUser, getMyBlocks, getContactConfig, getGroupConfig, getToken, setAuth, clearAuth, currentUserId, isLoggedIn, authStatus, loginWithWxCode, devLogin, ensureLogin }
 
 
 // 交易域（外卖 / 二手 / 兼职 / 活动 / 发布 / 上传 / 首页推荐）已抽到 utils/api/market.js
