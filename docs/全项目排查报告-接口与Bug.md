@@ -11,12 +11,12 @@
 | 排查项 | 结论 |
 |---|---|
 | **前端调了但后端没有的接口** | **0 个** |
-| **确认的真 Bug** | **4 个**（全部已修复） |
+| **确认的真 Bug** | **5 个**（全部已修复） |
 | **死参数（传了但组件不认）** | 5 处（已清理） |
 | 未读数重复请求 | 已加缓存（切 tab 请求量降 2/3） |
 | 结构性风险 | 3 项（见第五节） |
 
-### 4 个 Bug 一览
+### 5 个 Bug 一览
 
 | # | Bug | 影响 | 状态 |
 |---|---|---|---|
@@ -24,10 +24,15 @@
 | 2 | AI 聊天页弹窗完全不显示 | 超长提示、清空确认都失效 | ✅ 已修 |
 | 3 | **跨学校店铺打不开** | 切过学校后点外卖店报「店铺不存在」 | ✅ 已修 |
 | 4 | **结算页同类问题** | 从跨校店进结算同样失败 | ✅ 已修 |
+| 5 | **评论点赞取消不掉** | 计数只涨不跌，`liked` 不持久 | ✅ 已修 |
 
 > Bug 3/4 是写这份报告之后，用运行时测试才发现的——
 > 静态分析看不出「列表页和详情页用了不同的学校范围」。
 > 这也说明**运行时验证不可替代**：静态检查全绿，真实流程仍会挂。
+>
+> Bug 5 更绕：两个候选假设（`setData` 写法、后端接口）都被实测否掉，
+> 真凶是**开发者工具没重新编译**，`utils/api.js` 的改动根本没生效。
+> 详细教训见第三节 Bug 5 末尾。
 
 ### 运行时验证覆盖
 
@@ -40,6 +45,7 @@
 | 切 3 个 tab 的未读请求 | 缓存生效，只 2 次（原来每次切都请求） |
 | 外卖完整链路 | 进店→菜单→加购→结算 **6/6 通过** |
 | 跨学校店铺 | 修复后正常打开，空菜单显示空态 |
+| 评论点赞/取消/持久化 | **11/11 通过**（含多用户隔离） |
 
 ---
 
@@ -194,6 +200,109 @@ if (!shop) throw new Error('店铺不存在，请重新选购')
 
 ---
 
+### Bug 5：评论点赞取消不掉，计数只涨不跌
+
+**现象**：点评论的爱心，`0 → 1 → 2 → 3` 一路加，图标始终是空的（`♡`），再点也取消不掉。
+
+**定位过程**（踩了三个坑，值得记下来）：
+
+1. 先怀疑 `setData` 的数组路径写法。单独测 `comments[0].liked` 三种写法
+   （单 key / 双 key / 模板字符串）——**全部生效**，排除。
+2. 再怀疑后端。curl 直接打接口：`liked:true` → `likeCount:1`，
+   `liked:false` → `likeCount:0`，**接口完全正常**。
+3. 最后加一行 `console.log` 打印运行时状态，才抓到真凶：
+
+```
+message: "api.likeComment is not a function"
+```
+
+（这条错误来自 `popup.toast` 里残留的 `message`，不是接口报错。
+ 开发者工具没有重新编译 `utils/api.js`，所以改动没生效——
+ **诊断期间所有结论都跑在旧编译产物上，这一点一度把我带偏。**）
+
+**两个真 Bug 叠在一起**：
+
+| # | 问题 | 机制 |
+|---|---|---|
+| 5a | **回滚基线取错** | `const item = this.data.comments[idx]` 拿的是**对象引用**。`setData` 会把 `item.likeCount` **原地改成新值**，`catch` 里再读 `item.likeCount` 拿到的是改后的值，于是「回滚」实际是**把新值又写回去**。`liked` 因为用了 `!liked` 取反所以能回滚，计数回滚失效 → 只涨不跌 |
+| 5b | **`liked` 压根不持久** | 后端 `GET /api/posts/{id}/comments` **不返回 `liked` 字段**，前端 `liked:!!x.liked` 永远归一成 `false`，一刷新就丢 |
+
+**修复 5a：回滚基线改成值快照**
+
+```js
+// 基线必须在 setData 之前抓成「值」，不能留对象引用
+const item = this.data.comments[idx]
+const prevLiked = !!item.liked
+const prevCount = item.likeCount || 0
+...
+catch(error){
+  this.setData({
+    [`comments[${idx}].liked`]: prevLiked,
+    [`comments[${idx}].likeCount`]: prevCount   // 真正的旧值
+  })
+}
+```
+
+**修复 5b：给评论补上真正的点赞明细表（不是本地缓存兜底）**
+
+原来 `toggleCommentLike` 的注释写着「评论没有独立的点赞明细表，前端自己维护 liked」——
+这是把状态一致性甩给了客户端。正确做法是照 `post_like` 的样子补一张表：
+
+```sql
+CREATE TABLE `comment_like` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `comment_id` bigint NOT NULL,
+  `user_id` bigint NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_comment_user` (`comment_id`,`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+配套改动：
+
+| 层 | 改动 |
+|---|---|
+| 实体/Mapper | 新增 `CommentLike` + `CommentLikeMapper` |
+| `ForumService.toggleCommentLike` | 改成 `(commentId, userId, liked)`，**以明细表为准**：已存在就不重复 +1，不存在就不 -1（天然幂等） |
+| `ForumService.comments` | 新增重载 `comments(id, userId)`，批量查出当前用户点过赞的评论 id，列表里带上 `liked` |
+| `ForumController` | 评论列表与点赞都取 `CurrentUser.optional(request)`，**匿名不回落到默认用户**（否则会把别人的点赞状态当成自己的） |
+| 前端 | 去掉本地缓存兜底，改用服务端回传的 `res.liked` |
+
+**验证一：接口层（curl，逐条断言）**
+
+| 场景 | 期望 | 结果 |
+|---|---|---|
+| 列表 | 每条评论带 `liked` 字段 | ✅ |
+| 点赞 | `likeCount` +1，`liked:true` | ✅ |
+| 重复点赞 | **不再 +1**（幂等） | ✅ |
+| 取消点赞 | `likeCount` -1，`liked:false` | ✅ |
+| 匿名点赞 | `401 请先登录` | ✅ |
+| 用户 A 点赞后，用户 B 查看 | B 看到 `liked:false`（状态隔离） | ✅ |
+| 用户 B 取消后，用户 A 再看 | A 仍 `liked:true`，计数正确 | ✅ |
+
+**验证二：UI 层（automator 真实点击，11/11 通过）**
+
+| 场景 | 断言 | 结果 |
+|---|---|---|
+| 初始态 | 从服务端读到 `liked=false` | ✅ |
+| 点一次 | `liked=true`，计数 +1 | ✅ |
+| **点赞后重进页面** | `liked` 仍为 `true`（服务端持久化，不靠本地缓存） | ✅ |
+| 再点一次 | `liked=false`，计数回到原值 | ✅ |
+| 取消后重进页面 | `liked` 仍为 `false` | ✅ |
+| 连点两次 | 回到未点赞，计数不叠加 | ✅ |
+| 点评论 B | 评论 A 的计数不受影响 | ✅ |
+
+> **这个 Bug 的教训**：
+> 1. 两个候选假设（setData 写法、后端接口）都被实测否掉了，
+>    真正的线索来自「同一份源码、重新编译后行为变了」。
+>    遇到「代码明明写了却说不存在」，先确认编译产物是不是最新的。
+> 2. 「服务端没有明细表，前端自己维护状态」是很危险的偷懒：
+>    它把幂等性、多端一致性、越权隔离全部推给了客户端。
+>    凡是涉及「谁点过什么」的状态，服务端必须有一行记录。
+
+---
+
 ## 四、清理的死参数
 
 `pet-avatar` 组件只声明了 7 个属性：
@@ -334,6 +443,8 @@ cli.bat auto --project "E:\goodworlk\campus-life-miniapp" --port 38038 --auto-po
 | 用固定 `sleep` 等元素 | 渲染慢时误报「元素未渲染」 | 改用轮询 `waitFor` |
 | toast 类弹窗判据用 `visible` | 等太久时 toast 已自动关，误判失败 | 改判 `message` 是否写入（toast 1600ms 后关） |
 | 拿 `reLaunch` 返回的 page 句柄查元素 | 后续跳转后句柄失效 | 每次重新 `mini.currentPage()` |
+| **改了 `utils/` 下的文件就立刻跑自动化** | 报 `api.xxx is not a function`，但源码里明明有 —— 开发者工具**没重新编译**，跑的是旧产物 | 改完 `utils/` 先让工具重新编译（或重开自动化连接）再测，否则所有结论都建立在幻影代码上 |
+| 只打印 `comments[0]` 判断状态 | 数组顺序不保证，看错了下标会得出「setData 无效」的错误结论 | 打印**整个数组**（id + 状态），别只信第一个 |
 
 ## 七、运行时验证（已补齐）
 

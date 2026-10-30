@@ -11,6 +11,8 @@ uploads/
 
 # ===== 工具与缓存 =====
 .dsh-tool-vision/
+# 临时录屏/截屏实验目录（含 ffmpeg 二进制，约 69MB，不进仓库）
+tools/rec/
 .idea/
 .vscode/
 *.iml

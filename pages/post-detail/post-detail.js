@@ -85,9 +85,14 @@ Page({
     if(!id)return
     const idx=this.data.comments.findIndex(c=>String(c.id)===String(id))
     if(idx<0)return
+    // 回滚基线必须在 setData 之前抓成「值快照」。
+    // item 是 comments[idx] 的对象引用，setData 会把它的 likeCount 原地改成新值，
+    // 之后再读 item.likeCount 拿到的是改后的值，回滚就成了「把新值写回去」。
     const item=this.data.comments[idx]
-    const liked=!item.liked
-    const nextCount=Math.max(0,(item.likeCount||0)+(liked?1:-1))
+    const prevLiked=!!item.liked
+    const prevCount=item.likeCount||0
+    const liked=!prevLiked
+    const nextCount=Math.max(0,prevCount+(liked?1:-1))
     this.setData({
       [`comments[${idx}].liked`]:liked,
       [`comments[${idx}].likeCount`]:nextCount
@@ -97,11 +102,14 @@ Page({
       if(res&&typeof res.likeCount==='number'){
         this.setData({[`comments[${idx}].likeCount`]:res.likeCount})
       }
+      // 服务端以明细表为准，回传的 liked 才是真状态（多端一致）
+      if(res&&typeof res.liked==='boolean'){
+        this.setData({[`comments[${idx}].liked`]:res.liked})
+      }
     }catch(error){
-      // 回滚
       this.setData({
-        [`comments[${idx}].liked`]:!liked,
-        [`comments[${idx}].likeCount`]:item.likeCount||0
+        [`comments[${idx}].liked`]:prevLiked,
+        [`comments[${idx}].likeCount`]:prevCount
       })
       popup.toast(this,error.message||'操作失败',{tone:'error'})
     }

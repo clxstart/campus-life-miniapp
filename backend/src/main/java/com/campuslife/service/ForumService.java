@@ -1,7 +1,7 @@
 package com.campuslife.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper; import com.baomidou.mybatisplus.extension.plugins.pagination.Page; import com.campuslife.dto.*; import com.campuslife.entity.*; import com.campuslife.mapper.*; import lombok.RequiredArgsConstructor; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional; import java.time.LocalDateTime; import java.util.*;
 @Service @RequiredArgsConstructor public class ForumService {
- private final CampusMapper campusMapper; private final CircleService circleService; private final PostMapper postMapper; private final UserMapper userMapper; private final PostLikeMapper likeMapper; private final CommentMapper commentMapper; private final FollowMapper followMapper; private final PostViewMapper viewMapper; private final FavoriteMapper favoriteMapper; private final com.campuslife.mapper.BannerMapper bannerMapper; private final AuditService auditService; private final UserBlockService blockService;
+ private final CampusMapper campusMapper; private final CircleService circleService; private final PostMapper postMapper; private final UserMapper userMapper; private final PostLikeMapper likeMapper; private final CommentMapper commentMapper; private final CommentLikeMapper commentLikeMapper; private final FollowMapper followMapper; private final PostViewMapper viewMapper; private final FavoriteMapper favoriteMapper; private final com.campuslife.mapper.BannerMapper bannerMapper; private final AuditService auditService; private final UserBlockService blockService;
  public List<com.campuslife.entity.Banner> banners(String slot){return bannerMapper.selectList(new LambdaQueryWrapper<com.campuslife.entity.Banner>().eq(com.campuslife.entity.Banner::getSlot,slot).eq(com.campuslife.entity.Banner::getStatus,1).orderByAsc(com.campuslife.entity.Banner::getSort));}
  public Map<String,Object> page(String tag,String scope,String postScope,Long userId,int page,int size){
    return page(tag,scope,postScope,userId,page,size,null);
@@ -155,31 +155,60 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper; import
  }
  @Transactional public Map<String,Object> toggleLike(Long id,Long uid){LambdaQueryWrapper<PostLike> q=new LambdaQueryWrapper<PostLike>().eq(PostLike::getPostId,id).eq(PostLike::getUserId,uid);PostLike old=likeMapper.selectOne(q); boolean liked;if(old==null){PostLike x=new PostLike();x.setPostId(id);x.setUserId(uid);x.setCreatedAt(LocalDateTime.now());likeMapper.insert(x);postMapper.update(null,new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Post>().eq(Post::getId,id).setSql("like_count = like_count + 1"));liked=true;}else{likeMapper.delete(q);postMapper.update(null,new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Post>().eq(Post::getId,id).setSql("like_count = GREATEST(like_count - 1, 0)"));liked=false;}if(liked){Post post=postMapper.selectById(id);if(post!=null&&!post.getUserId().equals(uid))campusMapper.notifyUser(post.getUserId(),"收到新的赞","有同学赞了你的帖子："+post.getTitle(),"like",id);}return Map.of("liked",liked);}
  @Transactional public Comment addComment(Long id,CommentRequest r){AuditResult textAudit=auditService.checkText(r.getContent(),"comment",r.getUserId());auditService.rejectWithLog(textAudit,"comment",r.getUserId(),r.getContent());Comment c=new Comment();c.setPostId(id);c.setUserId(r.getUserId());c.setContent(r.getContent());c.setAuditStatus(textAudit.reviewing()?"reviewing":"passed");c.setAuditReason(textAudit.reason());c.setAuditAt(textAudit.reviewing()?null:LocalDateTime.now());c.setCreatedAt(LocalDateTime.now());commentMapper.insert(c);auditService.logTextResult("comment",c.getId(),r.getUserId(),r.getContent(),textAudit);if(!textAudit.reviewing()){postMapper.update(null,new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Post>().eq(Post::getId,id).setSql("comment_count = comment_count + 1"));Post post=postMapper.selectById(id);if(post!=null&&!post.getUserId().equals(r.getUserId()))campusMapper.notifyUser(post.getUserId(),"收到新的评论",r.getContent(),"comment",id);}return c;}
- public List<Map<String,Object>> comments(Long id){
+ public List<Map<String,Object>> comments(Long id){return comments(id,null);}
+ public List<Map<String,Object>> comments(Long id,Long userId){
    List<Comment> cs=commentMapper.selectList(new LambdaQueryWrapper<Comment>().eq(Comment::getPostId,id).eq(Comment::getAuditStatus,"passed").orderByAsc(Comment::getCreatedAt));
    List<Long> uids=new ArrayList<>(); for(Comment c:cs){uids.add(c.getUserId());}
    Map<Long,User> users=new HashMap<>();
    if(!uids.isEmpty()){for(User u:userMapper.selectBatchIds(uids)){users.put(u.getId(),u);}}
+   // 当前用户点过赞的评论 id 集合：列表带上 liked，重进页面状态才不会丢
+   Set<Long> likedComments=new HashSet<>();
+   if(userId!=null&&userId>0&&!cs.isEmpty()){
+     List<Long> cids=new ArrayList<>(); for(Comment c:cs){cids.add(c.getId());}
+     for(CommentLike cl:commentLikeMapper.selectList(new LambdaQueryWrapper<CommentLike>()
+         .eq(CommentLike::getUserId,userId).in(CommentLike::getCommentId,cids))){
+       likedComments.add(cl.getCommentId());
+     }
+   }
    List<Map<String,Object>> out=new ArrayList<>();
-   for(Comment c:cs){User u=users.get(c.getUserId()); Map<String,Object> m=new LinkedHashMap<>(); m.put("id",c.getId()); m.put("userId",c.getUserId()); m.put("content",c.getContent()); m.put("createdAt",c.getCreatedAt()==null?null:c.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))); m.put("authorNickname",u==null?"同学":u.getNickname()); m.put("authorAvatar",u==null?null:u.getAvatar()); m.put("likeCount",c.getLikeCount()==null?0:c.getLikeCount()); out.add(m);}
+   for(Comment c:cs){User u=users.get(c.getUserId()); Map<String,Object> m=new LinkedHashMap<>(); m.put("id",c.getId()); m.put("userId",c.getUserId()); m.put("content",c.getContent()); m.put("createdAt",c.getCreatedAt()==null?null:c.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))); m.put("authorNickname",u==null?"同学":u.getNickname()); m.put("authorAvatar",u==null?null:u.getAvatar()); m.put("likeCount",c.getLikeCount()==null?0:c.getLikeCount()); m.put("liked",likedComments.contains(c.getId())); out.add(m);}
    return out;}
 
   /**
    * 评论点赞 / 取消点赞
    *
-   * 与帖子点赞同一套交互，但评论没有独立的点赞明细表，
-   * 这里用「同一用户 30 秒内重复点击视为取消」的轻量方案：
-   * 前端自己维护 liked 状态，服务端只保证计数不越界。
+   * 与帖子点赞同一套交互与同一套存储：用 comment_like 明细表记「谁点过哪条评论」，
+   * (comment_id,user_id) 唯一键兜底，重复点击不会把计数越加越高。
+   * 客户端传的 liked 只当作「期望状态」参考，真实状态一律以明细表为准，
+   * 这样多端登录、重装小程序都不会把计数搞乱。
    */
-  @Transactional public Map<String,Object> toggleCommentLike(Long commentId,boolean liked){
+  @Transactional public Map<String,Object> toggleCommentLike(Long commentId,Long userId,boolean liked){
     if(commentId==null||commentId<1)throw new IllegalArgumentException("评论编号无效");
     Comment c=commentMapper.selectById(commentId);
     if(c==null)throw new IllegalArgumentException("评论不存在");
-    String sql=liked?"like_count = like_count + 1":"like_count = GREATEST(like_count - 1, 0)";
-    commentMapper.update(null,new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Comment>()
-        .eq(Comment::getId,commentId).setSql(sql));
+    if(userId==null||userId<1)throw new IllegalArgumentException("请先登录");
+    LambdaQueryWrapper<CommentLike> q=new LambdaQueryWrapper<CommentLike>()
+        .eq(CommentLike::getCommentId,commentId).eq(CommentLike::getUserId,userId);
+    CommentLike old=commentLikeMapper.selectOne(q);
+    boolean nowLiked;
+    if(liked){
+      if(old==null){
+        CommentLike x=new CommentLike();x.setCommentId(commentId);x.setUserId(userId);x.setCreatedAt(LocalDateTime.now());
+        commentLikeMapper.insert(x);
+        commentMapper.update(null,new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Comment>()
+            .eq(Comment::getId,commentId).setSql("like_count = like_count + 1"));
+      }
+      nowLiked=true;
+    }else{
+      if(old!=null){
+        commentLikeMapper.delete(q);
+        commentMapper.update(null,new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Comment>()
+            .eq(Comment::getId,commentId).setSql("like_count = GREATEST(like_count - 1, 0)"));
+      }
+      nowLiked=false;
+    }
     Comment fresh=commentMapper.selectById(commentId);
-    return Map.of("liked",liked,"likeCount",fresh==null||fresh.getLikeCount()==null?0:fresh.getLikeCount());
+    return Map.of("liked",nowLiked,"likeCount",fresh==null||fresh.getLikeCount()==null?0:fresh.getLikeCount());
   }
  @Transactional public void view(Long id,Long userId){postMapper.update(null,new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Post>().eq(Post::getId,id).setSql("view_count = view_count + 1"));PostView record=new PostView();record.setPostId(id);record.setUserId(userId);record.setCreatedAt(LocalDateTime.now());viewMapper.insert(record);}
  @Transactional public Map<String,Object> toggleFollow(Long followee,Long follower){LambdaQueryWrapper<Follow> q=new LambdaQueryWrapper<Follow>().eq(Follow::getFollowerId,follower).eq(Follow::getFolloweeId,followee);Follow old=followMapper.selectOne(q);if(old==null){Follow f=new Follow();f.setFollowerId(follower);f.setFolloweeId(followee);f.setCreatedAt(LocalDateTime.now());followMapper.insert(f);if(!followee.equals(follower))campusMapper.notifyUser(followee,"新的关注","有同学关注了你","follow",null);return Map.of("followed",true);}followMapper.delete(q);return Map.of("followed",false);}

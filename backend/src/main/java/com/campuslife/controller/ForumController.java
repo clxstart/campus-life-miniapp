@@ -104,8 +104,14 @@ public class ForumController {
     }
 
     @GetMapping("/posts/{id}/comments")
-    public ApiResponse<List<?>> comments(@PathVariable Long id) {
-        return ApiResponse.ok(service.comments(id));
+    public ApiResponse<List<?>> comments(@PathVariable Long id,
+                                        @RequestParam(required = false) Long userId,
+                                        HttpServletRequest request) {
+        // 带上当前用户，列表才会返回 liked，重进页面点赞状态不丢。
+        // 未登录时不能回落到默认用户，否则会把别人的点赞状态当成自己的。
+        Long viewer = CurrentUser.optional(request);
+        if (viewer == null) viewer = userId;
+        return ApiResponse.ok(service.comments(id, viewer));
     }
 
     @PostMapping("/posts/{id}/comments")
@@ -121,10 +127,14 @@ public class ForumController {
      * body: {liked: true/false}
      */
     @PostMapping("/comments/{id}/like")
-    public ApiResponse<Map<String, Object>> likeComment(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+    public ApiResponse<Map<String, Object>> likeComment(@PathVariable Long id, @RequestBody Map<String, Object> body,
+                                                        HttpServletRequest request) {
         Object raw = body == null ? null : body.get("liked");
         boolean liked = raw instanceof Boolean b ? b : !"false".equalsIgnoreCase(String.valueOf(raw));
-        return ApiResponse.ok(service.toggleCommentLike(id, liked));
+        // 点赞是写操作，必须拿到真实登录用户；不能用 resolve 的默认值兜底
+        Long uid = CurrentUser.optional(request);
+        if (uid == null) throw new IllegalStateException("请先登录后再点赞");
+        return ApiResponse.ok(service.toggleCommentLike(id, uid, liked));
     }
 
     @PostMapping("/posts/{id}/view")
