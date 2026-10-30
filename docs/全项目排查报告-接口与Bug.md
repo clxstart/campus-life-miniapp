@@ -404,24 +404,34 @@ node check-all.js --runtime
 | `check-props.js` | 传给组件的属性是否已声明 |
 | `verify-ai-popup.js` | ai-chat 的 ui-popup 是否传全 |
 
-### 运行时检查（3 项）
+### 运行时检查（4 项）
 
 | 脚本 | 检查什么 |
 |---|---|
 | `smoke-test.js` | 页面渲染 + 交互（点发布/点关注/AI弹窗） |
+| `test-flows.js` | 业务流程（二手/圈子/兼职/搜索/消息） |
 | `check-pages.js` | 40 个页面逐个 reLaunch |
 | `check-requests.js` | 首屏请求是否有重复 |
 
-运行时需要先开自动化端口：
+运行时需要先开自动化端口。**两步都要显式带 `--port 38038`**，
+否则 `auto` 启动的 IDE 和你后续命令连的 IDE 可能是两个不同的实例，
+表现为 `evaluate`/`reLaunch` 全部超时：
 
 ```bash
 cd "D:\JavaStudy\微信web开发者工具"
+# 0. 先清干净，避免多实例
+taskkill /F /IM wechatdevtools.exe
+# 1. 开 IDE 并打开项目
+cli.bat open --project "E:\goodworlk\campus-life-miniapp" --port 38038 --lang zh
+# 2. 挂自动化（等 IDE 编译完再执行，约 40s）
 cli.bat auto --project "E:\goodworlk\campus-life-miniapp" --port 38038 --auto-port 9420 --lang zh
 ```
 
 > 自动化端口闲置约一小时会自动断开，重跑前重新执行即可。
+> 注意：日志里大量 `errcode 41001 需要重新登录` **不代表**自动化不可用，
+> 对照过成功跑通的日志，同样有几千条该报错 —— 不要被它带偏。
 
-### 最近一次完整回归：8 项全通过
+### 最近一次完整回归：11 项全通过（2026-10-30）
 
 ```
 [✅] 静态完整性
@@ -429,10 +439,16 @@ cli.bat auto --project "E:\goodworlk\campus-life-miniapp" --port 38038 --auto-po
 [✅] 接口对账
 [✅] 组件属性
 [✅] 弹窗传参
+[✅] popup 方法
+[✅] API 导出
 [✅] 冒烟测试        4 项通过 0 失败
+[✅] 业务流程        5 项通过 0 失败
 [✅] 全页面渲染      40 / 40 渲染正常
 [✅] 首屏请求        4 个接口各 1 次，无重复
 ```
+
+> 跑之前先确认后端起在 8080。后端没起时「业务流程」会失败，
+> 但那不是代码问题 —— 先看 `backend=000` 还是 `200` 再判断。
 
 ### 写测试时踩过的坑（供后续参考）
 
@@ -445,6 +461,8 @@ cli.bat auto --project "E:\goodworlk\campus-life-miniapp" --port 38038 --auto-po
 | 拿 `reLaunch` 返回的 page 句柄查元素 | 后续跳转后句柄失效 | 每次重新 `mini.currentPage()` |
 | **改了 `utils/` 下的文件就立刻跑自动化** | 报 `api.xxx is not a function`，但源码里明明有 —— 开发者工具**没重新编译**，跑的是旧产物 | 改完 `utils/` 先让工具重新编译（或重开自动化连接）再测，否则所有结论都建立在幻影代码上 |
 | 只打印 `comments[0]` 判断状态 | 数组顺序不保证，看错了下标会得出「setData 无效」的错误结论 | 打印**整个数组**（id + 状态），别只信第一个 |
+| **IDE 存在多个实例时挂自动化** | `connect()` 能成功、`evaluate`/`reLaunch` 全部超时。`auto` 启动的 IDE 在一个端口，后续 `cli` 命令连的是另一个端口，自动化挂到了没有项目窗口的空实例上 | 先 `taskkill /F /IM wechatdevtools.exe` 清干净，再 `cli open --project ... --port 38038`，然后 `cli auto --project ... --port 38038 --auto-port 9420`，**所有 CLI 调用都显式带同一个 `--port`** |
+| 把 `islogin=false` 当成自动化失败的原因 | 日志里 `errcode 41001 需要重新登录` 刷了几千条，看起来像根因 —— 但对照成功那次的日志，同样有 4585 条该报错却跑得好好的 | **判断根因要拿「成功样本」对照**，不要只看失败样本里最显眼的报错 |
 
 ## 七、运行时验证（已补齐）
 
