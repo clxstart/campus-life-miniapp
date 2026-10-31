@@ -11,6 +11,19 @@
    - `backend/src/main/resources/db/module-circle-chat.sql`（圈子群聊，+2 张并给 circle 加 last_message 字段）
    - `backend/src/main/resources/db/module-auth.sql`（给 user 加 openid）
    共 30 张表。已有数据库只执行尚未跑过的脚本即可，上述脚本都必须按顺序执行。
+
+   **校园帮功能（兼职 / 配送 / 圈子火花 / 认证）新增脚本**，全部幂等，按序执行：
+
+   - `db/module-safety-gates.sql`（6 个安全闸门，**全部默认关闭**：校外岗位、有偿接单、替课、自由抢单、通用钱包、自助认证）
+   - `db/module-verification.sql`（`user_verification`：学生与实名核验**结论**，不含证件原文）
+   - `db/module-circle-streak.sql`（`circle_activity_day` + circle 活跃列）
+   - `db/module-rider-dispatch.sql`（`building` 楼栋责任区、`order_dispatch_log`、user_order 派单列）
+   - `db/module-earnings-ledger.sql`（`earnings_ledger`：履约账单，**不是钱包余额、不可提现**）
+   - `db/module-jobs-marketplace.sql`（job 扩列 + `job_application` / `job_contract` / `job_dispute`）
+
+   > 注意：`feature_flag` 有 30 秒本地缓存，改开关**必须**用管理端接口
+   > `PUT /api/admin/feature-flags/{key}`（会立即失效缓存）；直接改数据库测出来的结论不可信。
+
 2. 数据库账号密码不要写在 `application.yml` 里。配置按 profile 分开：
    - 本机开发直接用 `application-dev.yml` 的默认值（127.0.0.1 / root / 演示密码），也可以覆盖环境变量 `DB_URL`、`DB_USERNAME`、`DB_PASSWORD`。
    - 生产必须 `--spring.profiles.active=prod`，此时 `application-prod.yml` 的敏感项全部没有默认值，缺环境变量会**启动失败**（这是故意的）。
