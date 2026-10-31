@@ -513,9 +513,26 @@
 .circle-meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8rpx;
   color: #a2abb3;
   font-size: 21rpx;
+}
+
+/* 火花：已点亮=暖橙，今天还没活跃=灰态等待，断了（streakDays=0）不渲染 */
+.circle-spark {
+  padding: 2rpx 10rpx;
+  border-radius: 999rpx;
+  background: #fff3e2;
+  color: #e8892c;
+  font-size: 19rpx;
+  line-height: 1.4;
+}
+
+.circle-spark.wait,
+.circle-spark.progress-wait {
+  background: #f0f3f6;
+  color: #a0a9b2;
 }
 
 .circle-dot {

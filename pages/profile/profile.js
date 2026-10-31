@@ -28,15 +28,30 @@ Page({
       { key: 'wechat-group', icon: '群', title: '微信群聊', value: '扫码加入', tone: 'green' },
       { key: 'settings', icon: '⚙', title: '设置', value: '', tone: 'gray' }
     ],
+    // 认证状态：默认「未认证」，只有后端明确返回 verified 才展示已认证
+    verify: { label: '未认证', verified: false, realNameStatus: 'none', studentStatus: 'none', canTakePaidJob: false },
     uiPopup: null
   },
 
   onLoad() { this._alive = true;
     this.loadProfile()
+    this.loadVerification()
     this.applyScheduleMeta()
     this.loadCounts()
   },
   onUnload() { this._alive = false },
+
+  // 认证状态一律以后端为准；接口失败时保持「未认证」，绝不乐观展示已认证
+  async loadVerification() {
+    try {
+      const verify = await api.getVerification()
+      if (!this._alive || !verify) return
+      this.setData({ verify: { ...this.data.verify, ...verify }, 'menus[2].value': verify.label || '未认证' })
+    } catch (error) {
+      if (!this._alive) return
+      this.setData({ 'menus[2].value': '未认证' })
+    }
+  },
 
   // 真实资料：昵称/学校/头像/统计来自后端，学院与学号暂无对应字段沿用本地
   async loadProfile() {

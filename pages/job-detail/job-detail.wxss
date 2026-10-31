@@ -1,0 +1,76 @@
+page{background:#f7f9fb}
+.detail-page{min-height:100vh;padding-bottom:calc(200rpx + env(safe-area-inset-bottom));color:#18212b}
+.nav{box-sizing:content-box;display:flex;align-items:center;padding-left:28rpx;background:#fff;box-shadow:0 2rpx 0 #eef1f4}
+.nav-title{flex:1;font-size:34rpx;font-weight:700}
+.back{padding:0 12rpx;margin-right:16rpx;font-size:42rpx}
+.nav-link{flex:none;padding:10rpx 24rpx;margin-right:24rpx;border-radius:24rpx;background:#f2f5f8;color:#4a5560;font-size:22rpx}
+
+.card{margin:20rpx 24rpx 0;padding:24rpx 22rpx;border-radius:22rpx;background:#fff;box-shadow:0 8rpx 22rpx rgba(36,62,96,.06)}
+.card-title{display:block;margin-bottom:14rpx;color:#26323d;font-size:27rpx;font-weight:650}
+
+/* 头部 */
+.hero{padding-top:26rpx}
+.hero-head{display:flex;align-items:flex-start;gap:14rpx}
+.hero-title{flex:1;min-width:0;font-size:34rpx;line-height:46rpx;font-weight:700}
+.hero-pay{margin-top:12rpx;color:#20a66a;font-size:40rpx;font-weight:800}
+.tag-row{display:flex;flex-wrap:wrap;gap:12rpx;margin-top:14rpx}
+.tag{padding:5rpx 14rpx;border-radius:10rpx;background:#f2f5f8;color:#7c8790;font-size:19rpx}
+.stamp{flex:none;padding:5rpx 12rpx;border-radius:10rpx;font-size:19rpx;font-weight:600;background:#f0f2f4;color:#7c8790}
+
+.info-row{display:flex;align-items:flex-start;gap:16rpx;margin-top:12rpx}
+.info-key{flex:none;width:96rpx;color:#98a2ac;font-size:22rpx}
+.info-val{flex:1;min-width:0;color:#3d4852;font-size:22rpx;line-height:32rpx}
+
+.desc-text{display:block;color:#586470;font-size:23rpx;line-height:36rpx}
+
+/* 金额规则：三块金额分行列出，数字由后端按工时算 */
+.money-row{display:flex;align-items:flex-start;gap:16rpx;padding:12rpx 0;border-bottom:1rpx solid #f4f7f9}
+.money-key{flex:none;width:150rpx;color:#45515c;font-size:22rpx;font-weight:600}
+.money-val{flex:1;min-width:0;color:#6b7683;font-size:22rpx;line-height:32rpx}
+.fine-print{display:block;margin-top:14rpx;color:#98a2ac;font-size:20rpx;line-height:30rpx}
+.fine-print.strong{color:#b4762a}
+
+/* 校外闸门说明 */
+.gate{margin:20rpx 24rpx 0;padding:20rpx 22rpx;border-radius:18rpx;background:#fff7e8;border:1rpx solid #ffe3b0}
+.gate-title{display:block;color:#a8661d;font-size:24rpx;font-weight:650;line-height:34rpx}
+.gate-desc{display:block;margin-top:8rpx;color:#a8834a;font-size:21rpx;line-height:32rpx}
+
+/* 报名列表 */
+.mini-state{padding:26rpx 0;text-align:center;color:#98a2ac;font-size:22rpx}
+.mini-state.error{color:#cc4b41}
+.applicant{display:flex;align-items:flex-start;gap:16rpx;padding:18rpx 0;border-bottom:1rpx solid #f4f7f9}
+.applicant-main{flex:1;min-width:0}
+.applicant-name{color:#26323d;font-size:24rpx;font-weight:600}
+.applicant-stamp{margin-left:12rpx;color:#2a9a67;font-size:20rpx}
+.applicant-msg{display:block;margin-top:8rpx;color:#5b6672;font-size:21rpx;line-height:32rpx}
+.applicant-time{display:block;margin-top:6rpx;color:#a3acb4;font-size:19rpx}
+.applicant-acts{display:flex;flex:none;gap:12rpx;align-items:center}
+
+.btn-ghost{padding:10rpx 22rpx;border-radius:26rpx;background:#f2f5f8;color:#5b6672;font-size:21rpx}
+.btn-solid{padding:10rpx 26rpx;border-radius:26rpx;background:#3476f6;color:#fff;font-size:21rpx;font-weight:600}
+.btn-solid.wide{display:block;width:100%;padding:22rpx 0;border-radius:44rpx;text-align:center;font-size:27rpx}
+.btn-solid.busy{opacity:.6}
+
+/* 底部操作条 */
+.footer{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:16rpx;padding:18rpx 24rpx calc(18rpx + env(safe-area-inset-bottom));background:#fff;box-shadow:0 -6rpx 24rpx rgba(36,62,96,.08)}
+.footer-note{flex:1;min-width:0;color:#8e98a1;font-size:21rpx;line-height:30rpx}
+.footer .btn-solid.wide{flex:none;width:260rpx;padding:20rpx 0}
+
+/* 状态色：与状态机一一对应 */
+.st-open{background:#e5f7ed;color:#2a9a67}
+.st-recruiting{background:#e5f7ed;color:#2a9a67}
+.st-taken{background:#e8f0ff;color:#3b6fd4}
+.st-working{background:#e8f0ff;color:#3b6fd4}
+.st-created{background:#eef2f6;color:#5d6b78}
+.st-pending_confirm{background:#fff3e2;color:#b4762a}
+.st-settled{background:#eef2f6;color:#5d6b78}
+.st-disputed{background:#ffeceb;color:#cc4b41}
+.st-refunded{background:#eef2f6;color:#5d6b78}
+.st-cancelled{background:#eef2f6;color:#8a949d}
+.st-unknown{background:#f0f2f4;color:#8a949d}
+
+/* 加载 / 空 / 错误三态 */
+.state{padding:140rpx 40rpx;text-align:center;color:#9aa4ad;font-size:24rpx}
+.state-title{display:block;margin-bottom:12rpx;color:#45515c;font-size:29rpx;font-weight:600}
+.state-desc{display:block;color:#98a2ac;font-size:22rpx;line-height:34rpx}
+.state-btn{display:inline-block;margin-top:26rpx;padding:14rpx 40rpx;border-radius:32rpx;background:#3476f6;color:#fff;font-size:24rpx;font-weight:600}

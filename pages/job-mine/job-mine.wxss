@@ -1,0 +1,95 @@
+page{background:#f7f9fb}
+.mine-page{min-height:100vh;padding-bottom:calc(60rpx + env(safe-area-inset-bottom));color:#18212b}
+.nav{box-sizing:content-box;display:flex;align-items:center;padding-left:28rpx;background:#fff;box-shadow:0 2rpx 0 #eef1f4}
+.nav-title{flex:1;font-size:34rpx;font-weight:700}
+.back{padding:0 12rpx;margin-right:16rpx;font-size:42rpx}
+.nav-link{flex:none;padding:10rpx 24rpx;margin-right:24rpx;border-radius:24rpx;background:#f2f5f8;color:#4a5560;font-size:22rpx}
+
+.tabs{display:flex;align-items:center;gap:44rpx;padding:0 32rpx;height:88rpx;background:#fff;border-bottom:1rpx solid #edf1f4}
+.tab{position:relative;flex:none;padding:0 4rpx;line-height:88rpx;color:#8a949d;font-size:30rpx}
+.tab.on{color:#18212b;font-weight:700}
+
+/* 履约单面板 */
+.contract{margin:20rpx 24rpx 0;padding:22rpx;border-radius:22rpx;background:#fff;box-shadow:0 8rpx 22rpx rgba(36,62,96,.06)}
+.contract-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:14rpx;border-bottom:1rpx solid #f2f5f8}
+.contract-title{color:#26323d;font-size:26rpx;font-weight:700}
+.contract-close{padding:6rpx 16rpx;border-radius:20rpx;background:#f2f5f8;color:#6b7683;font-size:20rpx}
+.contract-title-row{display:flex;align-items:flex-start;gap:14rpx;margin-top:16rpx}
+.contract-job{flex:1;min-width:0;color:#26323d;font-size:28rpx;line-height:40rpx;font-weight:650}
+.stamp{flex:none;padding:5rpx 12rpx;border-radius:10rpx;font-size:19rpx;font-weight:600;background:#f0f2f4;color:#7c8790}
+
+.info-row{display:flex;align-items:flex-start;gap:16rpx;margin-top:10rpx}
+.info-key{flex:none;width:120rpx;color:#98a2ac;font-size:22rpx}
+.info-val{flex:1;min-width:0;color:#3d4852;font-size:22rpx;line-height:32rpx}
+
+.block-title{margin-top:22rpx;padding-top:18rpx;border-top:1rpx solid #f2f5f8;color:#26323d;font-size:25rpx;font-weight:650}
+.money{margin-top:8rpx}
+.money-row{display:flex;align-items:center;justify-content:space-between;padding:12rpx 0;border-bottom:1rpx dashed #f0f4f7}
+.money-key{color:#5b6672;font-size:22rpx}
+.money-val{color:#26323d;font-size:24rpx;font-weight:650}
+.money-row.income .money-val{color:#20a66a;font-size:28rpx;font-weight:800}
+.fine-print{display:block;margin-top:14rpx;color:#98a2ac;font-size:20rpx;line-height:30rpx}
+.fine-print.strong{color:#b4762a}
+
+.alert{margin-top:18rpx;padding:16rpx 18rpx;border-radius:16rpx;background:#ffeceb;border:1rpx solid #ffd3cf}
+.alert.neutral{background:#f4f7f9;border-color:#e8eef3}
+.alert-title{display:block;color:#cc4b41;font-size:23rpx;font-weight:650;line-height:32rpx}
+.alert.neutral .alert-title{color:#5b6672}
+.alert-desc{display:block;margin-top:6rpx;color:#8a6a67;font-size:21rpx;line-height:30rpx}
+.alert.neutral .alert-desc{color:#8e98a1}
+
+/* 履约账单 */
+.ledger{display:flex;align-items:center;gap:12rpx;padding:14rpx 0;border-bottom:1rpx solid #f4f7f9}
+.ledger-main{flex:1;min-width:0}
+.ledger-label{color:#3d4852;font-size:22rpx}
+.ledger-note{display:block;margin-top:4rpx;color:#a3acb4;font-size:19rpx;line-height:28rpx}
+.ledger-amount{flex:none;color:#26323d;font-size:23rpx;font-weight:650}
+.ledger-status{flex:none;padding:4rpx 10rpx;border-radius:8rpx;background:#f2f5f8;color:#7c8790;font-size:18rpx}
+
+/* 动作 */
+.acts{display:flex;flex-wrap:wrap;gap:14rpx;margin-top:22rpx}
+.btn-solid{flex:1;min-width:220rpx;padding:20rpx 0;border-radius:40rpx;background:#3476f6;color:#fff;text-align:center;font-size:25rpx;font-weight:600}
+.btn-ghost{flex:none;padding:20rpx 32rpx;border-radius:40rpx;background:#f2f5f8;color:#5b6672;font-size:24rpx}
+.acts-note{color:#98a2ac;font-size:21rpx;line-height:32rpx}
+
+/* 列表卡片 */
+.card-list{padding:20rpx 24rpx}
+.card{margin-bottom:18rpx;padding:22rpx;border-radius:22rpx;background:#fff;box-shadow:0 8rpx 22rpx rgba(36,62,96,.06)}
+.card-head{display:flex;align-items:flex-start;gap:14rpx}
+.card-title-text{flex:1;min-width:0;overflow:hidden;color:#26323d;font-size:28rpx;line-height:40rpx;font-weight:650;text-overflow:ellipsis;white-space:nowrap}
+.card-pay{margin-top:8rpx;color:#20a66a;font-size:31rpx;font-weight:800}
+.card-meta{display:flex;flex-wrap:wrap;gap:14rpx;margin-top:12rpx}
+.meta-item{color:#8e98a1;font-size:20rpx}
+.meta-item.warn{color:#b4762a}
+.card-foot{display:flex;align-items:center;justify-content:space-between;gap:16rpx;margin-top:16rpx;padding-top:14rpx;border-top:1rpx solid #f4f7f9}
+.card-foot-right{display:flex;align-items:center;gap:8rpx;flex:1;min-width:0;justify-content:flex-end}
+.card-link{flex:none;padding:6rpx 16rpx;border-radius:20rpx;background:#f2f5f8;color:#4a5560;font-size:20rpx}
+.card-hint{overflow:hidden;color:#a3acb4;font-size:20rpx;text-overflow:ellipsis;white-space:nowrap}
+.card-arrow{flex:none;color:#c3ccd4;font-size:30rpx}
+
+/* 履约角色：同一张卡片要能区分「我承接」和「我发布」 */
+.role-chip{flex:none;padding:4rpx 12rpx;border-radius:8rpx;font-size:19rpx;font-weight:600}
+.role-worker{background:#e8f0ff;color:#3b6fd4}
+.role-employer{background:#f3ecff;color:#7c53c9}
+
+/* 状态色 */
+.st-open{background:#e5f7ed;color:#2a9a67}
+.st-recruiting{background:#e5f7ed;color:#2a9a67}
+.st-taken{background:#e8f0ff;color:#3b6fd4}
+.st-working{background:#e8f0ff;color:#3b6fd4}
+.st-created{background:#eef2f6;color:#5d6b78}
+.st-pending_confirm{background:#fff3e2;color:#b4762a}
+.st-settled{background:#eef2f6;color:#5d6b78}
+.st-disputed{background:#ffeceb;color:#cc4b41}
+.st-refunded{background:#eef2f6;color:#5d6b78}
+.st-cancelled{background:#eef2f6;color:#8a949d}
+.st-unknown{background:#f0f2f4;color:#8a949d}
+
+/* 加载 / 空 / 错误三态 */
+.state{padding:120rpx 40rpx;text-align:center;color:#9aa4ad;font-size:24rpx}
+.state-title{display:block;margin-bottom:12rpx;color:#45515c;font-size:29rpx;font-weight:600}
+.state-desc{display:block;color:#98a2ac;font-size:22rpx;line-height:34rpx}
+.state-btn{display:inline-block;margin-top:24rpx;padding:14rpx 40rpx;border-radius:32rpx;background:#3476f6;color:#fff;font-size:24rpx;font-weight:600}
+.state-btn.small{padding:10rpx 26rpx;font-size:21rpx}
+.mini-state{padding:28rpx 0;text-align:center;color:#98a2ac;font-size:22rpx;line-height:32rpx}
+.mini-state.error{color:#cc4b41}

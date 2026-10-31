@@ -30,11 +30,19 @@
 
   <view class="chat-composer">
     <view class="voice-button">⌁</view>
-    <input class="message-input" value="{{inputValue}}" placeholder="发消息…" maxlength="1000" disabled="{{sending}}" confirm-type="send" bindinput="inputMessage" bindconfirm="sendMessage" />
-    <view class="emoji-button">☺</view>
+    <input class="message-input" value="{{inputValue}}" selection-start="{{inputCursor}}" selection-end="{{inputCursor}}" placeholder="发消息…" maxlength="1000" disabled="{{sending}}" confirm-type="send" bindinput="inputMessage" bindfocus="closeEmojiPanel" bindblur="onInputBlur" bindconfirm="sendMessage" />
+    <view hover-class="tap-btn" hover-stay-time="80" class="emoji-button {{emojiVisible ? 'on' : ''}}" bindtap="toggleEmojiPanel">☺</view>
     <view hover-class="tap-btn" hover-stay-time="80" class="send-button {{inputValue ? 'ready' : ''}}" bindtap="sendMessage">{{sending ? '保存中' : '发送'}}</view>
     <view class="composer-safe"></view>
   </view>
+
+  <!-- Unicode emoji 面板：贴在输入栏正上方，点选后由页面插入到光标处 -->
+  <emoji-panel
+    visible="{{emojiVisible}}"
+    bottom="calc(106rpx + env(safe-area-inset-bottom))"
+    bindpick="onEmojiPick"
+    bindclose="closeEmojiPanel"
+  />
 
   <ui-popup
     id="ui-popup"
@@ -59,4 +67,4 @@
 </view>
 
 <!-- 全局悬浮宠物（抬高避开输入框） -->
-<pet-float bottom="220" static />
+<pet-float bottom="220" />

@@ -132,6 +132,17 @@
   line-height: 18rpx;
 }
 
+/* 认证状态：未认证用中性灰，避免和"已认证"的蓝色徽章混淆 */
+.campus-chip.off {
+  background: rgba(120, 130, 145, 0.12);
+  color: #7c8794;
+}
+
+.campus-chip.ok {
+  background: rgba(69, 139, 229, 0.12);
+  color: #3d84dd;
+}
+
 .profile-major {
   margin-top: 5rpx;
   font-size: 16rpx;

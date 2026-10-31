@@ -43,6 +43,14 @@ function getAiWelcome() {
     return wait(null, 80)
   })
 }
+// 我的认证状态（真实状态，不做任何本地伪造：拿不到就按「未认证」展示）
+function getVerification() {
+  return request('/verification/me', 'GET')
+}
+// 钱包状态：后端固定返回 enabled=false，明确告诉页面「没有余额这个概念」
+function getWalletSummary() {
+  return request('/wallet/summary', 'GET')
+}
 // AI 陪聊（关键词匹配）：读接口，后端挂了回落本地话术，保证永远有回应
 const AI_FALLBACK_REPLY = '网络好像不太好，我先记住你的话了。等连上了再聊。'
 function aiChat(message, options = {}) {
@@ -174,11 +182,13 @@ function reportContent(targetType, targetId, reason, detail='') {
  * 不做离线兜底：拉黑要落库才有意义，离线假装成功会让人以为已经屏蔽了。
  */
 function blockUser(targetId) {
-  return request(/users//block, 'POST', {})
+  // 路径里的 id 是**被拉黑的人**，操作用 token 身份（后端 /users/{id}/block）
+  if (!targetId) return Promise.reject(new Error('缺少要拉黑的用户'))
+  return request(`/users/${targetId}/block`, 'POST', {})
 }
 /** 我拉黑的人（设置页展示与解除用）。 */
 function getMyBlocks(userId = currentUserId()) {
-  return request(/users//blocks, 'GET')
+  return request(`/users/${userId}/blocks`, 'GET')
 }
 /**
  * 咨询入口配置（公开接口，不需要登录）。
@@ -237,7 +247,7 @@ const {
   getTimetable, addCourse, removeCourse
 } = chat
 
-module.exports = { BASE_URL, DEMO_USER_ID, request, searchPosts, searchAll, getConversations, getNotifications, getProfile, publishPost, getForumPosts, getPost, likePost, addComment, likeComment, getPostComments, followUser, getHotTopics, getBanners, viewPost, getIdolActivity, getIdolContestants, voteIdol, joinIdol, getUserProfile, updateUserProfile, toggleFavorite, getFavorites, getMyViews, getCoupons, getAddresses, addAddress, updateAddress, deleteAddress, submitFeedback, deleteAccount, reportContent, blockUser, getMyBlocks, getContactConfig, getGroupConfig, getToken, setAuth, clearAuth, currentUserId, isLoggedIn, authStatus, loginWithWxCode, devLogin, ensureLogin }
+module.exports = { BASE_URL, DEMO_USER_ID, request, searchPosts, searchAll, getConversations, getNotifications, getProfile, publishPost, getForumPosts, getPost, likePost, addComment, likeComment, getPostComments, followUser, getHotTopics, getBanners, viewPost, getIdolActivity, getIdolContestants, voteIdol, joinIdol, getUserProfile, updateUserProfile, toggleFavorite, getFavorites, getMyViews, getCoupons, getAddresses, addAddress, updateAddress, deleteAddress, submitFeedback, deleteAccount, reportContent, blockUser, getMyBlocks, getContactConfig, getGroupConfig, getVerification, getWalletSummary, getToken, setAuth, clearAuth, currentUserId, isLoggedIn, authStatus, loginWithWxCode, devLogin, ensureLogin }
 
 
 // 交易域（外卖 / 二手 / 兼职 / 活动 / 发布 / 上传 / 首页推荐）已抽到 utils/api/market.js
@@ -246,7 +256,9 @@ const {
   localFoodAddresses, cacheFoodAddresses,
   getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail, payOrder, getOrderDetail, getFoodOrder,
   getGoodsList, getGoodsPage, getGoodsDetail, publishGoods, viewGoods, contactGoods, deleteGoods, favoriteGoods, isGoodsFavorite,
-  getJobs, getJobsPage, getActivities, getActivitiesPage, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
+  getJobs, getJobsPage, getJobDetail, getJobGates, getMyJobs, takeJob, applyJob, getJobApplications, decideJobApplication,
+  getJobContract, startJobContract, submitJobHours, confirmJobHours, cancelJobContract, disputeJobContract,
+  getActivities, getActivitiesPage, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
   uploadImage, uploadImages,
   getHomeRecommend
 } = market
@@ -255,7 +267,9 @@ Object.assign(module.exports, {
   localFoodAddresses, cacheFoodAddresses,
   getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail, payOrder, getOrderDetail, getFoodOrder,
   getGoodsList, getGoodsPage, getGoodsDetail, publishGoods, viewGoods, contactGoods, deleteGoods, favoriteGoods, isGoodsFavorite,
-  getJobs, getJobsPage, getActivities, getActivitiesPage, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
+  getJobs, getJobsPage, getJobDetail, getJobGates, getMyJobs, takeJob, applyJob, getJobApplications, decideJobApplication,
+  getJobContract, startJobContract, submitJobHours, confirmJobHours, cancelJobContract, disputeJobContract,
+  getActivities, getActivitiesPage, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
   uploadImage, uploadImages, getHomeRecommend
 })
 

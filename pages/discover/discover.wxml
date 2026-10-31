@@ -76,6 +76,7 @@
           <text>{{item.memberText}} 成员</text>
           <text class="circle-dot">·</text>
           <text>{{item.postText}} 帖子</text>
+          <text wx:if="{{item.spark.show}}" class="circle-spark {{item.spark.state}}">{{item.spark.label}}{{item.spark.hint ? ' · ' + item.spark.hint : ''}}</text>
         </view>
       </view>
       <view hover-class="tap-card" hover-stay-time="80"

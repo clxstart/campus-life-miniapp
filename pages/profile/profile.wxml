@@ -15,12 +15,12 @@
       <view class="profile-main">
         <view class="avatar-wrap">
           <image class="profile-avatar" src="{{profile.avatar}}" mode="aspectFill" />
-          <view class="verified-dot">✓</view>
+          <view wx:if="{{verify.verified}}" class="verified-dot">✓</view>
         </view>
         <view class="profile-copy">
           <view class="profile-name-row">
             <text class="profile-name">{{profile.name}}</text>
-            <text class="campus-chip">学生认证</text>
+            <text class="campus-chip {{verify.verified ? 'ok' : 'off'}}">{{verify.label}}</text>
           </view>
           <text class="profile-major">{{profile.major}}</text>
           <text class="profile-id">{{profile.studentId}}</text>
@@ -57,7 +57,7 @@
       <view class="campus-card-copy">
         <text class="campus-card-eyebrow">MY CAMPUS</text>
         <text class="campus-card-title">{{profile.school}}校园身份</text>
-        <text class="campus-card-desc">已完成学生认证，享受校园专属服务</text>
+        <text class="campus-card-desc">{{verify.verified ? '已完成学生与实名认证，可接取有偿校内任务' : '尚未完成认证，可浏览岗位但不能接取有偿任务'}}</text>
       </view>
       <text class="campus-card-arrow">›</text>
     </view>
@@ -96,4 +96,4 @@
   />
 </view>
 <!-- 全局悬浮宠物 -->
-<pet-float bottom="260" static />
+<pet-float bottom="260" />

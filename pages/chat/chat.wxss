@@ -160,6 +160,12 @@
   font-size: 21rpx;
 }
 
+.emoji-button.on {
+  border-color: #3476f6;
+  background: #eaf2ff;
+  color: #3476f6;
+}
+
 .message-input {
   flex: 1;
   min-width: 0;

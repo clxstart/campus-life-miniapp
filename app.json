@@ -29,6 +29,8 @@
     "pages/market-detail/market-detail",
     "pages/market-publish/market-publish",
     "pages/jobs/jobs",
+    "pages/job-detail/job-detail",
+    "pages/job-mine/job-mine",
     "pages/activities/activities",
     "pages/activity-enroll/activity-enroll",
     "pages/agreement/agreement",

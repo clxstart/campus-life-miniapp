@@ -1,0 +1,128 @@
+<view class="detail-page">
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px"><view hover-class="tap" hover-stay-time="80" class="back" catchtap="goBack">‹</view><view class="nav-title">岗位详情</view><view hover-class="tap" hover-stay-time="80" class="nav-link" catchtap="openMine">我的兼职</view></view>
+  <offline-banner />
+
+  <!-- 错误态：岗位不存在 / 未审核 / 网络失败，都要明确说清楚 -->
+  <view class="state" wx:if="{{loadError}}">
+    <text class="state-title">岗位没打开</text>
+    <text class="state-desc">{{loadError}}</text>
+    <view hover-class="tap-btn" hover-stay-time="80" class="state-btn" catchtap="retry">重新加载</view>
+  </view>
+
+  <skeleton-list wx:elif="{{loading && !view}}" rows="{{5}}" />
+
+  <block wx:elif="{{view}}">
+    <!-- 头部：标题 + 状态 + 报酬 -->
+    <view class="card hero">
+      <view class="hero-head">
+        <text class="hero-title">{{view.title}}</text>
+        <text class="stamp {{view.statusClass}}">{{view.statusText}}</text>
+      </view>
+      <view class="hero-pay">{{view.payText}}</view>
+      <view class="tag-row">
+        <text class="tag">{{view.scopeText}}</text>
+        <text class="tag">{{view.takeModeText}}</text>
+        <text class="tag">{{view.categoryText}}</text>
+        <text class="tag" wx:if="{{view.settle}}">{{view.settle}}</text>
+      </view>
+      <view class="info-row"><text class="info-key">地点</text><text class="info-val">{{view.location || '未填写'}}</text></view>
+      <view class="info-row"><text class="info-key">时间</text><text class="info-val">{{view.timeDesc || '未填写'}}</text></view>
+      <view class="info-row" wx:if="{{headcountText}}"><text class="info-key">名额</text><text class="info-val">{{headcountText}}</text></view>
+      <view class="info-row" wx:if="{{view.publisherName}}"><text class="info-key">发布者</text><text class="info-val">{{view.publisherName}}</text></view>
+      <view class="info-row" wx:if="{{view.createdAtText}}"><text class="info-key">发布</text><text class="info-val">{{view.createdAtText}}</text></view>
+    </view>
+
+    <!-- 岗位说明 -->
+    <view class="card">
+      <text class="card-title">岗位说明</text>
+      <text class="desc-text">{{view.description || '发布者没有补充说明。有疑问可以在报名留言里问。'}}</text>
+    </view>
+
+    <!-- 金额规则：三个金额必须分别出现（方案 §5.2），但数字由后端按工时算 -->
+    <view class="card">
+      <text class="card-title">金额怎么算</text>
+      <view class="money-row"><text class="money-key">雇主支付额</text><text class="money-val">报酬 {{view.payText}} × 双方确认的工时</text></view>
+      <view class="money-row"><text class="money-key">平台服务费</text><text class="money-val">{{feeRuleText}}</text></view>
+      <view class="money-row"><text class="money-key">兼职者净收入</text><text class="money-val">雇主支付额 − 平台服务费</text></view>
+      <text class="fine-print">服务费按接单那一刻的费率快照计算，之后平台调价不影响本单。具体金额在双方确认工时后由平台生成履约账单，本页只展示规则，不在这里替你估算。</text>
+      <text class="fine-print strong">履约账单不是钱包余额，也不是已付款项，不能提现。</text>
+    </view>
+
+    <!-- 校外开关：以 GET /jobs/gates 的 offsiteOpen 为准，关闭时显示后端给的原因 -->
+    <view class="gate" wx:if="{{view.scope==='offsite' && gates.loaded && !gates.offsiteOpen}}">
+      <text class="gate-title">{{gates.offsiteReason || '校外岗位暂未开放'}}</text>
+      <text class="gate-desc">资质核验通过后才会开放报名。可以先看岗位信息，报名入口在开放前不可用。</text>
+    </view>
+    <view class="gate" wx:if="{{view.scope==='offsite' && !gates.loaded && gates.error}}">
+      <text class="gate-title">岗位开放状态没取到</text>
+      <text class="gate-desc">{{gates.error}}。不影响浏览，报名时如果被拒绝会说明原因。</text>
+    </view>
+
+    <!-- 发布者视角：报名列表 -->
+    <view class="card" wx:if="{{isOwner}}">
+      <text class="card-title">报名者（{{applications.length}}）</text>
+      <view wx:if="{{applicationsLoading}}" class="mini-state">正在加载报名…</view>
+      <view wx:elif="{{applicationsError}}" class="mini-state error">{{applicationsError}}</view>
+      <view wx:elif="{{!applications.length}}" class="mini-state">还没有人报名，先把岗位分享给同学吧</view>
+      <view wx:else>
+        <view class="applicant" wx:for="{{applications}}" wx:key="id">
+          <view class="applicant-main">
+            <text class="applicant-name">同学 #{{item.applicantId}}</text>
+            <text class="applicant-stamp">{{item.statusText}}</text>
+            <text class="applicant-msg" wx:if="{{item.message}}">{{item.message}}</text>
+            <text class="applicant-time" wx:if="{{item.appliedAtText}}">报名于 {{item.appliedAtText}}</text>
+          </view>
+          <view class="applicant-acts" wx:if="{{item.pending}}">
+            <view hover-class="tap-btn" hover-stay-time="80" class="btn-ghost" data-id="{{item.id}}" data-approve="{{false}}" catchtap="decide">拒绝</view>
+            <view hover-class="tap-btn" hover-stay-time="80" class="btn-solid" data-id="{{item.id}}" data-approve="{{true}}" catchtap="decide">录用</view>
+          </view>
+        </view>
+      </view>
+      <!-- 录用后：发布方的履约单在「我的兼职 → 我参与履约的」里，这里给个入口 -->
+      <view class="mini-state">
+        <text>录用后的履约单（开工 / 确认工时）在「我的兼职 → 我参与履约的」里</text>
+        <view hover-class="tap-btn" hover-stay-time="80" class="btn-solid wide" catchtap="openMine">去我的兼职</view>
+      </view>
+    </view>
+
+    <!-- 承接方视角：我的报名 / 我的履约单 -->
+    <view class="card" wx:if="{{!isOwner && myApplicationText}}">
+      <text class="card-title">我的报名</text>
+      <view class="info-row"><text class="info-key">状态</text><text class="info-val">{{myApplicationText}}</text></view>
+      <text class="fine-print">报名由发布者筛选。被录用后会出现履约单，回到「我的兼职」就能开工。</text>
+    </view>
+
+    <view class="card" wx:if="{{!isOwner && myContract}}">
+      <text class="card-title">我的履约单</text>
+      <view class="info-row"><text class="info-key">状态</text><text class="info-val">{{myContractStatusText}}</text></view>
+      <view class="info-row"><text class="info-key">工时</text><text class="info-val">{{myContractHoursText}}</text></view>
+      <view hover-class="tap-btn" hover-stay-time="80" class="btn-solid wide" catchtap="openContract">查看履约详情</view>
+    </view>
+  </block>
+
+  <!-- 底部操作条：只在「真的能操作」的时候出现 -->
+  <view class="footer" wx:if="{{view && !loadError}}">
+    <block wx:if="{{isOwner}}">
+      <view class="footer-note">录用后的履约单在「我的兼职 → 我参与履约的」</view>
+      <view hover-class="tap-btn" hover-stay-time="80" class="btn-solid wide" catchtap="openMine">去我的兼职</view>
+    </block>
+    <block wx:elif="{{myContract}}">
+      <view class="footer-note">已生成履约单，去履约页开工 / 提交工时</view>
+      <view hover-class="tap-btn" hover-stay-time="80" class="btn-solid wide" catchtap="openContract">查看履约单</view>
+    </block>
+    <block wx:elif="{{view.scope==='offsite' && gates.loaded && !gates.offsiteOpen}}">
+      <view class="footer-note">{{view.open ? (gates.offsiteReason || '校外岗位暂未开放') : '该岗位当前状态：' + view.statusText}}</view>
+    </block>
+    <block wx:elif="{{view.open}}">
+      <view class="footer-note">{{view.paid ? '有偿岗位：接单/报名前需确认认证状态' : '无偿互助：直接接单即可'}}</view>
+      <view hover-class="tap-btn" hover-stay-time="80" class="btn-solid wide {{acting ? 'busy' : ''}}" catchtap="takeOrApply">{{view.scope==='campus' && view.takeMode==='first_come' ? '立即接单' : '报名'}}</view>
+    </block>
+    <block wx:else>
+      <view class="footer-note">该岗位当前状态：{{view.statusText}}，暂不能接取或报名</view>
+    </block>
+  </view>
+
+  <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" editable="{{uiPopup.editable}}" placeholder="{{uiPopup.placeholder}}" inputValue="{{uiPopup.inputValue}}" confirmText="{{uiPopup.confirmText}}" cancelText="{{uiPopup.cancelText}}" showCancel="{{uiPopup.showCancel}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose" />
+</view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

@@ -31,10 +31,19 @@
   </scroll-view>
   <view class="circle-chat-composer">
     <view hover-class="tap" hover-stay-time="80" class="circle-chat-plus" bindtap="chooseImage">＋</view>
-    <input class="circle-chat-input" value="{{inputValue}}" maxlength="1000" placeholder="说点什么…" disabled="{{sending || uploading}}" confirm-type="send" bindinput="inputMessage" bindconfirm="sendMessage" />
+    <input class="circle-chat-input" value="{{inputValue}}" selection-start="{{inputCursor}}" selection-end="{{inputCursor}}" maxlength="1000" placeholder="说点什么…" disabled="{{sending || uploading}}" confirm-type="send" bindinput="inputMessage" bindfocus="closeEmojiPanel" bindblur="onInputBlur" bindconfirm="sendMessage" />
+    <view hover-class="tap" hover-stay-time="80" class="circle-chat-emoji {{emojiVisible ? 'on' : ''}}" bindtap="toggleEmojiPanel">☺</view>
     <view hover-class="tap" hover-stay-time="80" class="circle-chat-send {{inputValue ? 'ready' : ''}}" bindtap="sendMessage">{{uploading ? '上传中' : (sending ? '发送中' : '发送')}}</view>
   </view>
+
+  <!-- Unicode emoji 面板：贴在输入栏正上方，点选后由页面插入到光标处 -->
+  <emoji-panel
+    visible="{{emojiVisible}}"
+    bottom="calc(108rpx + env(safe-area-inset-bottom))"
+    bindpick="onEmojiPick"
+    bindclose="closeEmojiPanel"
+  />
 </view>
 
 <!-- 全局悬浮宠物（抬高避开输入框） -->
-<pet-float bottom="200" static />
+<pet-float bottom="200" />

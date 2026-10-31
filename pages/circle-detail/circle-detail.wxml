@@ -29,6 +29,11 @@
           <text class="cd-dot">·</text>
           <text>{{circle.postCount}} 帖子</text>
         </view>
+        <!-- 火花：已点亮显示连续天数，未满 3 天显示进度，今天没活跃转灰态，断了整块不渲染 -->
+        <view wx:if="{{circle.spark.show}}" class="cd-spark cd-spark-{{circle.spark.state}}">
+          <text class="cd-spark-label">{{circle.spark.label}}</text>
+          <text wx:if="{{circle.spark.hint}}" class="cd-spark-hint">{{circle.spark.hint}}</text>
+        </view>
       </view>
       <view hover-class="tap" hover-stay-time="80" class="cd-join {{circle.joined ? 'joined' : ''}}" catchtap="toggleJoin">
         {{circle.joined ? '已加入' : '＋ 加入圈子'}}
@@ -104,4 +109,4 @@
   />
 </view>
 <!-- 全局悬浮宠物 -->
-<pet-float bottom="200" static />
+<pet-float bottom="200" />

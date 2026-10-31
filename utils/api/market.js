@@ -152,16 +152,22 @@ function getActivities(userId = currentUserId(), schoolScope = 'local', schoolId
 }
 /**
  * 分页版兼职列表（触底加载用）。返回 { list, total, page, size }。
+ *
+ * scope：campus（校内互助）/ offsite（校外兼职），对应页面顶部的分区切换。
+ * 只做展示用，不加任何离线兜底：列表是用户判断「能不能接」的依据，
+ * 拿不到真实数据就必须让页面显示错误态，而不是拿假岗位凑数。
  */
 function getJobsPage(params = {}) {
   const settle = params.settle || ''
   const kw = String(params.keyword || '').trim()
   const schoolScope = params.schoolScope || 'local'
   const schoolId = params.schoolId || null
+  const scope = params.scope === 'offsite' ? 'offsite' : 'campus'
   const page = Math.max(1, Math.floor(Number(params.page) || 1))
   const size = Math.min(50, Math.max(1, Math.floor(Number(params.size) || 20)))
   const school = schoolId ? `&schoolId=${encodeURIComponent(schoolId)}` : ''
   const qs = `/jobs?settle=${encodeURIComponent(settle)}&keyword=${encodeURIComponent(kw)}`
+    + `&scope=${scope}`
     + `&schoolScope=${encodeURIComponent(schoolScope)}&userId=${currentUserId()}`
     + `&page=${page}&size=${size}${school}`
   return request(qs, 'GET').then(result => ({
@@ -170,6 +176,77 @@ function getJobsPage(params = {}) {
     page: Number(result && result.page) || page,
     size: Number(result && result.size) || size
   }))
+}
+
+// ---- 兼职：详情 / 我的 / 接单 / 报名 / 筛选 / 履约 ----
+// 全部是「真实状态」接口，一律不做离线兜底：
+// 接单、报名、录用、结算都会落库，离线假装成功会让用户以为事情办好了。
+
+function getJobDetail(id) {
+  return request(`/jobs/${id}`, 'GET')
+}
+
+/**
+ * 岗位公开开关（只读）：校外 / 有偿 / 替课。
+ *
+ * 有这个接口之前，前端只能靠 403 文案去猜「是不是闸门关着」，猜不出来就只能写含糊的
+ * "未探明"文案。现在直接读开关状态：关闭时如实展示后端给的 reason，
+ * 不给用户「也许能报名」的错觉。
+ */
+function getJobGates() {
+  return request('/jobs/gates', 'GET')
+}
+
+/** 我发布的 + 我承接的 + 我作为发布方的履约单。后端返回 { published, working, employer }。 */
+function getMyJobs() {
+  return request('/jobs/mine', 'GET').then(result => ({
+    published: (result && result.published) || [],
+    working: (result && result.working) || [],
+    // 发布方视角：录用后要能回来确认工时，否则结算流程走不完
+    employer: (result && result.employer) || []
+  }))
+}
+
+/** 校内先到先接。已被别人接走时抛 409「该岗位已被接取」。 */
+function takeJob(id) {
+  return request(`/jobs/${id}/take`, 'POST', {})
+}
+
+/** 校外报名（重复报名幂等，返回 alreadyApplied=true）。 */
+function applyJob(id, message = '') {
+  return request(`/jobs/${id}/apply`, 'POST', { message: String(message || '') })
+}
+
+/** 发布者看报名列表（非发布者会被 403）。 */
+function getJobApplications(id) {
+  return request(`/jobs/${id}/applications`, 'GET')
+}
+
+/** 发布者录用 / 拒绝一条报名。名额满或重复处理都会 409。 */
+function decideJobApplication(id, applicationId, approve, reason = '') {
+  return request(`/jobs/${id}/applications/${applicationId}/decide`, 'POST', {
+    approve: Boolean(approve),
+    reason: String(reason || '')
+  })
+}
+
+function getJobContract(id) {
+  return request(`/jobs/contracts/${id}`, 'GET')
+}
+function startJobContract(id) {
+  return request(`/jobs/contracts/${id}/start`, 'POST', {})
+}
+function submitJobHours(id, hours) {
+  return request(`/jobs/contracts/${id}/submit-hours`, 'POST', { hours })
+}
+function confirmJobHours(id, hours) {
+  return request(`/jobs/contracts/${id}/confirm-hours`, 'POST', { hours })
+}
+function cancelJobContract(id, reason) {
+  return request(`/jobs/contracts/${id}/cancel`, 'POST', { reason: String(reason || '') })
+}
+function disputeJobContract(id, reason) {
+  return request(`/jobs/contracts/${id}/dispute`, 'POST', { reason: String(reason || '') })
 }
 
 /**
@@ -336,7 +413,9 @@ module.exports = {
   localFoodAddresses, cacheFoodAddresses,
   getFoodShops, getFoodMenu, createFoodOrder, getFoodOrders, getFoodOrderDetail, payOrder, getOrderDetail, getFoodOrder,
   getGoodsList, getGoodsPage, getGoodsDetail, publishGoods, viewGoods, contactGoods, deleteGoods, favoriteGoods, isGoodsFavorite, markGoodsFavorite,
-  getJobs, getJobsPage, getActivities, getActivitiesPage, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
+  getJobs, getJobsPage, getJobDetail, getJobGates, getMyJobs, takeJob, applyJob, getJobApplications, decideJobApplication,
+  getJobContract, startJobContract, submitJobHours, confirmJobHours, cancelJobContract, disputeJobContract,
+  getActivities, getActivitiesPage, enrollActivity, enrollActivityWithForm, publishJob, publishActivity, getMyPublishCount,
   uploadImage, uploadImages,
   getHomeRecommend, localRecommend
 }

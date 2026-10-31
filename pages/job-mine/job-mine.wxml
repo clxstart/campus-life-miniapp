@@ -1,0 +1,149 @@
+<view class="mine-page">
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px"><view hover-class="tap" hover-stay-time="80" class="back" catchtap="goBack">‹</view><view class="nav-title">我的兼职</view><view hover-class="tap" hover-stay-time="80" class="nav-link" catchtap="openPublish">去发布</view></view>
+  <offline-banner />
+
+  <view class="tabs"><view hover-class="tap-card" hover-stay-time="80" wx:for="{{tabs}}" wx:key="key" class="tab {{tab===item.key?'on':''}}" data-tab="{{item.key}}" bindtap="switchTab">{{item.label}}</view></view>
+
+  <!-- 履约单详情：从列表点开，或用 ?contractId= 直接进来 -->
+  <view class="contract" wx:if="{{contractId}}">
+    <view class="contract-head">
+      <text class="contract-title">履约单 #{{contractId}}</text>
+      <view hover-class="tap" hover-stay-time="80" class="contract-close" catchtap="closeContract">收起</view>
+    </view>
+
+    <view class="mini-state" wx:if="{{contractLoading}}">正在加载履约单…</view>
+    <view class="mini-state error" wx:elif="{{contractError}}">
+      <text>{{contractError}}</text>
+      <view hover-class="tap-btn" hover-stay-time="80" class="state-btn small" catchtap="retryContract">重新加载</view>
+    </view>
+
+    <block wx:elif="{{contract}}">
+      <view class="contract-title-row">
+        <text class="contract-job">{{contract.jobTitle}}</text>
+        <text class="stamp {{contract.statusClass}}">{{contract.statusText}}</text>
+      </view>
+      <view class="info-row"><text class="info-key">我的角色</text><text class="info-val">{{contract.roleText}}</text></view>
+      <view class="info-row"><text class="info-key">报酬</text><text class="info-val">{{contract.payText}}</text></view>
+      <view class="info-row" wx:if="{{contract.startedText}}"><text class="info-key">开工</text><text class="info-val">{{contract.startedText}}</text></view>
+      <view class="info-row" wx:if="{{contract.settledText}}"><text class="info-key">结算</text><text class="info-val">{{contract.settledText}}</text></view>
+
+      <!-- 金额三块：方案 §5.2 要求分别展示，数值全部来自后端 settlement -->
+      <view class="block-title">{{contract.settlement.hasHours ? '结算金额（按 ' + contract.settlement.hoursText + ' 小时）' : '结算金额（还没提交工时）'}}</view>
+      <view class="money">
+        <view class="money-row"><text class="money-key">雇主支付额</text><text class="money-val">{{contract.settlement.payableText}}</text></view>
+        <view class="money-row"><text class="money-key">平台服务费</text><text class="money-val">{{contract.settlement.feeText}}</text></view>
+        <view class="money-row income"><text class="money-key">兼职者净收入</text><text class="money-val">{{contract.settlement.incomeText}}</text></view>
+      </view>
+      <text class="fine-print">费率说明：{{contract.settlement.feeRuleText}}。金额按接单时的报酬与费率快照计算，平台后续调价不影响这一单。</text>
+
+      <!-- 工时：双方各填一份，不一致会自动进争议 -->
+      <view class="block-title">工时</view>
+      <view class="info-row"><text class="info-key">接单方</text><text class="info-val">{{contract.workerHoursText}}</text></view>
+      <view class="info-row"><text class="info-key">发布方</text><text class="info-val">{{contract.employerHoursText}}</text></view>
+      <view class="info-row"><text class="info-key">已约定</text><text class="info-val">{{contract.agreedHoursText}}</text></view>
+
+      <!-- 争议 / 取消 的真实原因 -->
+      <view class="alert" wx:if="{{contract.frozen}}">
+        <text class="alert-title">已进入争议，金额冻结等待平台处理</text>
+        <text class="alert-desc">{{contract.disputeReason || '平台会核对双方的工时记录后再裁定。'}}</text>
+      </view>
+      <view class="alert neutral" wx:if="{{contract.cancelReason}}">
+        <text class="alert-title">取消原因</text>
+        <text class="alert-desc">{{contract.cancelReason}}</text>
+      </view>
+
+      <!-- 履约账单：只是记账，不是钱包 -->
+      <view class="block-title">履约账单</view>
+      <view class="mini-state" wx:if="{{!contract.entries.length}}">还没有生成账单：双方确认工时后才会写账单</view>
+      <view wx:else>
+        <view class="ledger" wx:for="{{contract.entries}}" wx:key="key">
+          <view class="ledger-main">
+            <text class="ledger-label">{{item.label}}</text>
+            <text class="ledger-note" wx:if="{{item.note}}">{{item.note}}</text>
+          </view>
+          <text class="ledger-amount">{{item.amountText}}</text>
+          <text class="ledger-status">{{item.statusText}}</text>
+        </view>
+      </view>
+      <text class="fine-print strong">履约账单不是钱包余额，不是已付款项，不可提现。本页没有任何充值、提现或余额支付入口。</text>
+
+      <!-- 可执行动作：按状态白名单出现，不给注定失败的按钮 -->
+      <view class="acts">
+        <view hover-class="tap-btn" hover-stay-time="80" class="btn-solid" wx:if="{{contract.canStart}}" catchtap="startContract">开工</view>
+        <view hover-class="tap-btn" hover-stay-time="80" class="btn-solid" wx:if="{{contract.canSubmitHours}}" catchtap="inputHours">{{contract.isWorker ? '提交我的工时' : '确认工时'}}</view>
+        <view hover-class="tap-btn" hover-stay-time="80" class="btn-ghost" wx:if="{{contract.canDispute}}" catchtap="disputeContract">发起争议</view>
+        <view hover-class="tap-btn" hover-stay-time="80" class="btn-ghost" wx:if="{{contract.canCancel}}" catchtap="cancelContract">取消</view>
+        <text class="acts-note" wx:if="{{contract.finished}}">这一单已经结束，只能查看，不能再改状态。</text>
+      </view>
+    </block>
+  </view>
+
+  <!-- 列表 -->
+  <view class="state" wx:if="{{loadError}}">
+    <text class="state-title">没加载成功</text>
+    <text class="state-desc">{{loadError}}</text>
+    <view hover-class="tap-btn" hover-stay-time="80" class="state-btn" catchtap="retry">重新加载</view>
+  </view>
+
+  <skeleton-list wx:elif="{{loading && !published.length && !contracts.length}}" rows="{{4}}" />
+
+  <block wx:elif="{{tab==='published'}}">
+    <view class="state" wx:if="{{!published.length}}">
+      <text class="state-title">你还没有发布过岗位</text>
+      <text class="state-desc">在发布页选「兼职信息」，填好报酬和地点就能发出来</text>
+      <view hover-class="tap-btn" hover-stay-time="80" class="state-btn" catchtap="openPublish">去发布兼职</view>
+    </view>
+    <view class="card-list" wx:else>
+      <view hover-class="tap-card" hover-stay-time="80" wx:for="{{published}}" wx:key="id" class="card" data-id="{{item.id}}" bindtap="openJob">
+        <view class="card-head">
+          <text class="card-title-text">{{item.title}}</text>
+          <text class="stamp {{item.statusClass}}">{{item.statusText}}</text>
+        </view>
+        <view class="card-pay">{{item.payText}}</view>
+        <view class="card-meta">
+          <text class="meta-item">{{item.scopeText}}</text>
+          <text class="meta-item" wx:if="{{item.headcountText}}">{{item.headcountText}}</text>
+          <text class="meta-item warn" wx:if="{{item.auditText}}">{{item.auditText}}</text>
+        </view>
+        <view class="card-foot">
+          <text class="card-hint">点开看报名者，可录用 / 拒绝</text>
+          <text class="card-arrow">›</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="state" wx:if="{{!contracts.length}}">
+      <text class="state-title">你还没有履约中的兼职</text>
+      <text class="state-desc">接一单校内互助、报名校外岗位，或录用了报名的同学，都会出现在这里</text>
+      <view hover-class="tap-btn" hover-stay-time="80" class="state-btn" catchtap="goBack">去看看岗位</view>
+    </view>
+    <view class="card-list" wx:else>
+      <view hover-class="tap-card" hover-stay-time="80" wx:for="{{contracts}}" wx:key="id" class="card" data-id="{{item.id}}" bindtap="openContract">
+        <view class="card-head">
+          <text class="card-title-text">{{item.title}}</text>
+          <text class="stamp {{item.contractStatusClass}}">{{item.contractStatusText}}</text>
+        </view>
+        <view class="card-pay">{{item.payText}}</view>
+        <view class="card-meta">
+          <text class="role-chip {{item.roleClass}}">{{item.roleText}}</text>
+          <text class="meta-item" wx:if="{{item.otherPartyText}}">承接人 {{item.otherPartyText}}</text>
+          <text class="meta-item">我的工时 {{item.myHoursText}}</text>
+          <text class="meta-item" wx:if="{{item.otherHoursText !== '—'}}">对方 {{item.otherHoursText}}</text>
+        </view>
+        <view class="card-foot">
+          <view hover-class="tap" hover-stay-time="80" class="card-link" data-id="{{item.jobId}}" catchtap="openJob">看岗位</view>
+          <view class="card-foot-right">
+            <text class="card-hint">点开履约单：{{item.role === 'employer' ? '确认工时 / 开工' : '开工 / 提交工时 / 争议'}}</text>
+            <text class="card-arrow">›</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" editable="{{uiPopup.editable}}" placeholder="{{uiPopup.placeholder}}" inputValue="{{uiPopup.inputValue}}" confirmText="{{uiPopup.confirmText}}" cancelText="{{uiPopup.cancelText}}" showCancel="{{uiPopup.showCancel}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose" />
+</view>
+<!-- 全局悬浮宠物 -->
+<pet-float bottom="200" />

@@ -128,6 +128,32 @@
   color: rgba(255, 255, 255, 0.4);
 }
 
+/* 火花状态：点亮=暖橙；今天还没活跃=半透明灰白等待态；断了不渲染 */
+.cd-spark {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 178, 74, 0.24);
+  color: #ffd59b;
+  font-size: 21rpx;
+  line-height: 1.5;
+}
+
+.cd-spark-wait,
+.cd-spark-progress-wait {
+  background: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.cd-spark-hint {
+  color: inherit;
+  font-size: 19rpx;
+  opacity: 0.85;
+}
+
 .cd-join {
   position: absolute;
   right: 28rpx;

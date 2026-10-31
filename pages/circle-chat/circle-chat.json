@@ -1,6 +1,7 @@
 {
   "navigationStyle": "custom",
   "usingComponents": {
+    "emoji-panel": "/components/emoji-panel/index",
     "pet-float": "/components/pet-float/index"
   }
 }

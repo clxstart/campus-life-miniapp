@@ -23,6 +23,23 @@ function postCard(post) {
   }
 }
 
+// 火花状态（与 discover 列表同一套语义）：
+//   已点亮 + 今天活跃 → 🔥 5天；已点亮 + 今天没活跃 → 灰态 + 今日待续上；
+//   未满 3 天 → 连续 2/3；未满且今天没活跃 → 灰态 + 今日待续上；断了 → 不显示。
+// 后端字段有扁平版（streakDays/sparkOn/activeToday）和 streak 对象两种，优先扁平版。
+function sparkView(circle) {
+  const streak = circle && circle.streak ? circle.streak : {}
+  const read = (flat, nested) => (circle && circle[flat] != null ? circle[flat] : streak[nested])
+  const activeToday = !!read('activeToday', 'activeToday')
+  const sparkOn = !!read('sparkOn', 'sparkOn')
+  const days = Math.max(0, Number(read('streakDays', 'streakDays')) || 0)
+  if (!days) return { show: false, state: 'off', days: 0, label: '', hint: '' }
+  if (sparkOn) {
+    return { show: true, state: activeToday ? 'on' : 'wait', days, label: `🔥 已连续 ${days} 天`, hint: activeToday ? '' : '今日待续上' }
+  }
+  return { show: true, state: activeToday ? 'progress' : 'progress-wait', days, label: `连续 ${days}/3`, hint: activeToday ? `再 ${3 - days} 天点亮火花` : '今日待续上' }
+}
+
 Page({
   data: {
     ...getNavigationMetrics(),
@@ -66,7 +83,7 @@ Page({
     try {
       const circle = await api.getCircle(this.circleId)
       if (!this._alive) return
-      this.setData({ circle, offline: !!circle.offline })
+      this.setData({ circle: { ...circle, spark: sparkView(circle) }, offline: !!circle.offline })
     } catch (error) {
       if (this._alive) this.setData({ loading: false, error: error.message || '圈子加载失败' })
     }

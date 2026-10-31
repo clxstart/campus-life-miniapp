@@ -26,5 +26,7 @@
 .circle-chat-composer{position:fixed;z-index:10;left:0;right:0;bottom:0;min-height:84rpx;padding:12rpx 22rpx calc(12rpx + env(safe-area-inset-bottom));display:flex;align-items:center;gap:12rpx;background:rgba(255,255,255,.98);border-top:1rpx solid #e9edf1}
 .circle-chat-plus{width:48rpx;height:48rpx;border:2rpx solid #66727d;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#5f6a75;font-size:30rpx}
 .circle-chat-input{flex:1;min-width:0;height:54rpx;padding:0 18rpx;border-radius:20rpx;background:#f2f5f8;color:#26313a;font-size:25rpx}
+.circle-chat-emoji{flex:none;width:44rpx;height:44rpx;border:2rpx solid #66727d;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#5f6a75;font-size:26rpx}
+.circle-chat-emoji.on{border-color:#3476f6;background:#eaf2ff;color:#3476f6}
 .circle-chat-send{flex:none;padding:11rpx 18rpx;border-radius:16rpx;background:#dce4ec;color:#fff;font-size:23rpx}
 .circle-chat-send.ready{background:#3476f6}

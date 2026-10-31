@@ -1,17 +1,72 @@
-page{background:#f7f9fb}.jobs-page{min-height:100vh;color:#18212b}.nav{box-sizing:content-box;display:flex;align-items:center;padding-left:28rpx;background:#fff
-  box-shadow: 0 2rpx 0 #eef1f4; /* 白导航压在浅底上，加分隔线否则边界看不清 */
-}.nav-title{font-size:34rpx;font-weight:700}.back{padding:0 12rpx;margin-right:16rpx;font-size:42rpx}/* 搜索：白色底条与下方 chips 连成一片 */
-.search-bar{padding:12rpx 28rpx 16rpx;background:#fff}.search-box{display:flex;align-items:center;height:76rpx;padding:0 22rpx;border-radius:38rpx;background:#f2f5f8}.search-mark{margin-right:14rpx;color:#2a9a67;font-size:38rpx}.search-input{flex:1;min-width:0;height:60rpx;font-size:25rpx}.search-placeholder{color:#98a2ac}.search-clear{padding:8rpx 12rpx;color:#98a2ac;font-size:34rpx}.result-hint{padding:18rpx 28rpx 0;color:#8e98a1;font-size:21rpx}.chips{height:86rpx;background:#fff}.chip-row{display:flex;gap:16rpx;padding:20rpx 28rpx}.chip{flex:none;padding:10rpx 24rpx;border-radius:28rpx;background:#f2f5f8;color:#737e88;font-size:22rpx}.chip.active{background:#e5f7ed;color:#2a9a67;font-weight:600}.job-list{padding:22rpx 24rpx}.job-card{display:flex;align-items:flex-start;margin-bottom:18rpx;padding:25rpx 22rpx;border-radius:22rpx;background:#fff;box-shadow:0 8rpx 22rpx rgba(36,62,96,.06)}.job-main{flex:1;min-width:0}.job-title{font-size:29rpx;line-height:40rpx;font-weight:650}.job-salary{margin-top:8rpx;color:#20a66a;font-size:34rpx;font-weight:800}.job-meta{display:flex;align-items:center;gap:12rpx;margin-top:15rpx}.settle-tag{padding:5rpx 10rpx;border-radius:8rpx;background:#f0f2f4;color:#8a949d;font-size:19rpx}.location{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#7c8790;font-size:21rpx}.job-time{margin-top:10rpx;color:#8e98a1;font-size:20rpx}.job-status{display:flex;align-items:center;gap:8rpx;flex:none;margin-left:14rpx;color:#2a9a67;font-size:20rpx}.status-dot{width:14rpx;height:14rpx;border-radius:50%;background:#38c17d}.state{padding:180rpx 0;text-align:center;color:#9aa4ad;font-size:24rpx}.state-title{display:block;margin-bottom:10rpx;color:#45515c;font-size:29rpx;font-weight:600}
+page{background:#f7f9fb}
+.jobs-page{min-height:100vh;color:#18212b}
+.nav{box-sizing:content-box;display:flex;align-items:center;padding-left:28rpx;background:#fff;box-shadow:0 2rpx 0 #eef1f4}
+.nav-title{flex:1;font-size:34rpx;font-weight:700}
+.back{padding:0 12rpx;margin-right:16rpx;font-size:42rpx}
+.nav-link{flex:none;padding:10rpx 24rpx;margin-right:24rpx;border-radius:24rpx;background:#f2f5f8;color:#4a5560;font-size:22rpx}
 
-/* 本校/全部切换：分段控件 */
-.scope-switch{display:flex;margin-left:auto;margin-right:16rpx;padding:4rpx;border-radius:22rpx;background:#f0f2f4}
-.scope-opt{padding:8rpx 20rpx;border-radius:18rpx;color:#737e88;font-size:21rpx}
+/* 分区切换：校内互助 / 校外兼职 */
+.scope-tabs{display:flex;align-items:center;gap:44rpx;padding:0 32rpx;height:88rpx;background:#fff;border-bottom:1rpx solid #edf1f4}
+.scope-tab{position:relative;flex:none;padding:0 4rpx;line-height:88rpx;color:#8a949d;font-size:30rpx}
+.scope-tab.on{color:#18212b;font-weight:700}
+
+/* 校外闸门说明条：不是错误，也不能留空白 */
+.gate{margin:20rpx 24rpx 0;padding:20rpx 22rpx;border-radius:18rpx;background:#fff7e8;border:1rpx solid #ffe3b0}
+.gate-title{display:block;color:#a8661d;font-size:24rpx;font-weight:650;line-height:34rpx}
+.gate-desc{display:block;margin-top:8rpx;color:#a8834a;font-size:21rpx;line-height:32rpx}
+
+/* 搜索：白色底条与下方筛选连成一片 */
+.search-bar{padding:16rpx 24rpx 12rpx;background:#fff}
+.search-box{display:flex;align-items:center;height:72rpx;padding:0 22rpx;border-radius:36rpx;background:#f2f5f8}
+.search-mark{margin-right:14rpx;color:#2a9a67;font-size:36rpx}
+.search-input{flex:1;min-width:0;height:56rpx;font-size:25rpx}
+.search-placeholder{color:#98a2ac}
+.search-clear{padding:8rpx 12rpx;color:#98a2ac;font-size:34rpx}
+
+.filter-row{display:flex;align-items:center;padding:0 24rpx 16rpx;background:#fff}
+.chips{flex:1;min-width:0;height:64rpx}
+.chip-row{display:flex;gap:14rpx}
+.chip{flex:none;padding:8rpx 22rpx;border-radius:26rpx;background:#f2f5f8;color:#737e88;font-size:22rpx}
+.chip.active{background:#e5f7ed;color:#2a9a67;font-weight:600}
+.scope-switch{display:flex;flex:none;margin-left:12rpx;padding:4rpx;border-radius:22rpx;background:#f0f2f4}
+.scope-opt{padding:8rpx 18rpx;border-radius:18rpx;color:#737e88;font-size:21rpx}
 .scope-opt.on{background:#fff;color:#3476f6;font-weight:600;box-shadow:0 2rpx 6rpx rgba(36,62,96,.08)}
 
+.result-hint{padding:18rpx 28rpx 0;color:#8e98a1;font-size:21rpx}
+
+/* 岗位卡片 */
+.job-list{padding:18rpx 24rpx}
+.job-card{margin-bottom:18rpx;padding:24rpx 22rpx;border-radius:22rpx;background:#fff;box-shadow:0 8rpx 22rpx rgba(36,62,96,.06)}
+.job-head{display:flex;align-items:flex-start;gap:14rpx}
+.job-title{flex:1;min-width:0;overflow:hidden;font-size:30rpx;line-height:40rpx;font-weight:650;text-overflow:ellipsis;white-space:nowrap}
+.stamp{flex:none;padding:5rpx 12rpx;border-radius:10rpx;font-size:19rpx;font-weight:600;background:#f0f2f4;color:#7c8790}
+.job-pay-row{display:flex;align-items:baseline;gap:12rpx;margin-top:10rpx}
+.job-pay{color:#20a66a;font-size:34rpx;font-weight:800}
+.pay-note{color:#98a2ac;font-size:20rpx}
+.job-meta{display:flex;flex-wrap:wrap;gap:16rpx;margin-top:12rpx}
+.meta-item{color:#7c8790;font-size:21rpx}
+.job-foot{display:flex;align-items:center;justify-content:space-between;margin-top:18rpx;padding-top:16rpx;border-top:1rpx solid #f2f5f8}
+.job-count{color:#98a2ac;font-size:20rpx}
+.job-action{flex:none;padding:12rpx 30rpx;border-radius:30rpx;background:#3476f6;color:#fff;font-size:23rpx;font-weight:600}
+
+/* 状态色：状态名直接来自后端 workflowStatus / 履约单 status */
+.st-open{background:#e5f7ed;color:#2a9a67}
+.st-recruiting{background:#e5f7ed;color:#2a9a67}
+.st-taken{background:#e8f0ff;color:#3b6fd4}
+.st-working{background:#e8f0ff;color:#3b6fd4}
+.st-created{background:#eef2f6;color:#5d6b78}
+.st-pending_confirm{background:#fff3e2;color:#b4762a}
+.st-settled{background:#eef2f6;color:#5d6b78}
+.st-disputed{background:#ffeceb;color:#cc4b41}
+.st-refunded{background:#eef2f6;color:#5d6b78}
+.st-cancelled{background:#eef2f6;color:#8a949d}
+.st-unknown{background:#f0f2f4;color:#8a949d}
+
+/* 加载 / 空 / 错误三态 */
+.state{padding:140rpx 40rpx;text-align:center;color:#9aa4ad;font-size:24rpx}
+.state-title{display:block;margin-bottom:12rpx;color:#45515c;font-size:29rpx;font-weight:600}
+.state-desc{display:block;color:#98a2ac;font-size:22rpx;line-height:34rpx}
+.state-btn{display:inline-block;margin-top:26rpx;padding:14rpx 40rpx;border-radius:32rpx;background:#3476f6;color:#fff;font-size:24rpx;font-weight:600}
+
 /* 触底加载提示：列表底部一行小字，不抢内容注意力 */
-.list-more {
-  padding: 32rpx 0 48rpx;
-  text-align: center;
-  font-size: 24rpx;
-  color: #8A9992;
-}
+.list-more{padding:32rpx 0 48rpx;text-align:center;font-size:24rpx;color:#8A9992}

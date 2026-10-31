@@ -1,0 +1,27 @@
+<view wx:if="{{visible}}" class="emoji-panel" style="bottom:{{bottom}};">
+  <view class="emoji-head">
+    <view class="emoji-tabs">
+      <view
+        wx:for="{{groups}}"
+        wx:key="name"
+        class="emoji-tab {{activeIndex === index ? 'active' : ''}}"
+        data-index="{{index}}"
+        catchtap="switchGroup"
+      >{{item.name}}</view>
+    </view>
+    <view hover-class="emoji-close-hover" hover-stay-time="80" class="emoji-close" catchtap="closePanel">收起</view>
+  </view>
+  <scroll-view class="emoji-scroll" scroll-y enhanced>
+    <view class="emoji-grid">
+      <view
+        wx:for="{{groups[activeIndex].items}}"
+        wx:key="*this"
+        hover-class="emoji-cell-hover"
+        hover-stay-time="60"
+        class="emoji-cell"
+        data-emoji="{{item}}"
+        catchtap="pickEmoji"
+      >{{item}}</view>
+    </view>
+  </scroll-view>
+</view>

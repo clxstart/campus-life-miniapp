@@ -1,38 +1,77 @@
 <view class="jobs-page">
-  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px"><view hover-class="tap" hover-stay-time="80" class="back" catchtap="goBack">‹</view><view class="nav-title">校园兼职</view><!-- 本校/全部：兼职按校隔离 --><view class="scope-switch"><view hover-class="tap" hover-stay-time="80" class="scope-opt {{schoolScope==='local'?'on':''}}" data-scope="local" catchtap="switchSchoolScope">本校</view><view hover-class="tap" hover-stay-time="80" class="scope-opt {{schoolScope==='all'?'on':''}}" data-scope="all" catchtap="switchSchoolScope">全部</view></view></view>
+  <view class="nav" style="padding-top:{{statusBarHeight}}px;height:{{navBarHeight}}px;padding-right:{{capsuleReservedRight}}px"><view hover-class="tap" hover-stay-time="80" class="back" catchtap="goBack">‹</view><view class="nav-title">校园兼职</view><view hover-class="tap" hover-stay-time="80" class="nav-link" catchtap="openMine">我的兼职</view></view>
   <offline-banner />
+
+  <!-- 分区切换：校内互助（先到先接）/ 校外兼职（报名筛选） -->
+  <view class="scope-tabs"><view hover-class="tap-card" hover-stay-time="80" wx:for="{{scopes}}" wx:key="key" class="scope-tab {{scope===item.key?'on':''}}" data-scope="{{item.key}}" bindtap="switchScope">{{item.label}}</view></view>
+
+  <!-- 校外分区：开关状态直接读 GET /jobs/gates，关闭时显示后端给的原因 -->
+  <view class="gate" wx:if="{{scope==='offsite' && gates.loaded && !gates.offsiteOpen}}">
+    <text class="gate-title">{{gates.offsiteReason || '校外岗位暂未开放'}}</text>
+    <text class="gate-desc">资质核验通过后才会开放报名。现在可以先浏览岗位信息，报名入口在开放前不可用。</text>
+  </view>
+  <view class="gate" wx:if="{{scope==='offsite' && !gates.loaded && gates.error}}">
+    <text class="gate-title">岗位开放状态没取到</text>
+    <text class="gate-desc">{{gates.error}}。不影响浏览，报名时如果被拒绝会说明原因。</text>
+  </view>
 
   <!-- 搜索：按岗位名称 / 地点 / 描述查找 -->
   <view class="search-bar">
     <view class="search-box">
       <text class="search-mark">⌕</text>
-      <input
-        class="search-input"
-        value="{{keyword}}"
-        placeholder="搜岗位、地点，如「奶茶」「图书馆」"
-        placeholder-class="search-placeholder"
-        confirm-type="search"
-        maxlength="64"
-        bindinput="search"
-        bindconfirm="submitSearch"
-      />
+      <input class="search-input" value="{{keyword}}" placeholder="搜岗位、地点，如「奶茶」「图书馆」" placeholder-class="search-placeholder" confirm-type="search" maxlength="64" bindinput="search" bindconfirm="submitSearch" />
       <view hover-class="tap" hover-stay-time="80" wx:if="{{keyword}}" class="search-clear" catchtap="clearSearch">×</view>
     </view>
   </view>
 
-  <scroll-view class="chips" scroll-x enhanced show-scrollbar="{{false}}"><view class="chip-row"><view hover-class="tap-card" hover-stay-time="80" wx:for="{{settles}}" wx:key="value" class="chip {{settle===item.value?'active':''}}" data-settle="{{item.value}}" bindtap="chooseSettle">{{item.label}}</view></view></scroll-view>
+  <view class="filter-row">
+    <scroll-view class="chips" scroll-x enhanced show-scrollbar="{{false}}"><view class="chip-row"><view hover-class="tap-card" hover-stay-time="80" wx:for="{{settles}}" wx:key="value" class="chip {{settle===item.value?'active':''}}" data-settle="{{item.value}}" bindtap="chooseSettle">{{item.label}}</view></view></scroll-view>
+    <view class="scope-switch"><view hover-class="tap" hover-stay-time="80" class="scope-opt {{schoolScope==='local'?'on':''}}" data-scope="local" catchtap="switchSchoolScope">本校</view><view hover-class="tap" hover-stay-time="80" class="scope-opt {{schoolScope==='all'?'on':''}}" data-scope="all" catchtap="switchSchoolScope">全部</view></view>
+  </view>
 
-  <view class="result-hint" wx:if="{{!loading && total}}">共 {{total}} 个岗位</view>
-  <view wx:if="{{loading}}" class="state">正在找合适的兼职</view>
-  <view wx:elif="{{!jobs.length}}" class="state"><text class="state-title">{{keyword ? '没有匹配「' + keyword + '」的岗位' : '暂时没有符合条件的岗位'}}</text>{{keyword ? '换个关键词试试' : '稍后再来看看'}}</view>
-  <view wx:else class="job-list"><view wx:for="{{jobs}}" wx:key="id" class="job-card"><view class="job-main"><view class="job-title">{{item.title}}</view><view class="job-salary">{{item.salaryText}}</view><view class="job-meta"><text class="settle-tag">{{item.settle}}</text><text class="location">⌖ {{item.location}}</text></view><view class="job-time">◷ {{item.timeDesc}}</view></view><view class="job-status"><view class="status-dot"></view><text>{{item.status || '招聘中'}}</text></view></view></view>
+  <view class="result-hint" wx:if="{{!loading && !loadError && total}}">{{scope==='offsite' ? '校外' : '校内'}} · 共 {{total}} 个岗位</view>
+
+  <!-- 错误态：首屏失败时如实说明，并给一个重试入口 -->
+  <view class="state" wx:if="{{loadError && !jobs.length}}">
+    <text class="state-title">岗位没加载成功</text>
+    <text class="state-desc">{{loadError}}</text>
+    <view hover-class="tap-btn" hover-stay-time="80" class="state-btn" catchtap="retry">重新加载</view>
+  </view>
+
+  <skeleton-list wx:elif="{{loading && !jobs.length}}" rows="{{4}}" />
+
+  <!-- 空态：按分区给出不同原因，不用一句「暂无数据」糊过去 -->
+  <view class="state" wx:elif="{{!jobs.length}}">
+    <text class="state-title">{{keyword ? '没有匹配「' + keyword + '」的岗位' : (scope==='offsite' ? '校外暂时没有岗位' : '校内暂时没有互助岗位')}}</text>
+    <text class="state-desc">{{keyword ? '换个关键词试试' : (scope==='offsite' ? '校外岗位要等平台资质核验通过后才会开放报名' : '同学有需要帮忙的小事，发出来就会出现在这里')}}</text>
+  </view>
+
+  <view class="job-list" wx:else>
+    <view hover-class="tap-card" hover-stay-time="80" wx:for="{{jobs}}" wx:key="id" class="job-card" data-id="{{item.id}}" bindtap="openDetail">
+      <view class="job-head">
+        <text class="job-title">{{item.title}}</text>
+        <text class="stamp {{item.statusClass}}">{{item.statusText}}</text>
+      </view>
+      <view class="job-pay-row">
+        <text class="job-pay">{{item.payText}}</text>
+        <text class="pay-note">{{item.scopeText}} · {{item.takeModeText}}</text>
+      </view>
+      <view class="job-meta">
+        <text class="meta-item">⌖ {{item.location || '地点待定'}}</text>
+        <text class="meta-item" wx:if="{{item.timeDesc}}">◷ {{item.timeDesc}}</text>
+      </view>
+      <view class="job-foot">
+        <text class="job-count">{{item.headcountText}}</text>
+        <view hover-class="tap-btn" hover-stay-time="80" class="job-action" data-id="{{item.id}}" catchtap="takeOrApply">{{item.actionLabel}}</view>
+      </view>
+    </view>
+  </view>
 
   <!-- 触底加载状态：还有数据时提示加载中，到底了提示没有更多 -->
   <view wx:if="{{loadingMore}}" class="list-more">加载中…</view>
   <view wx:elif="{{jobs.length && jobs.length >= total}}" class="list-more">没有更多了</view>
 
-  <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose"/>
+  <ui-popup id="ui-popup" visible="{{uiPopup.visible}}" mode="{{uiPopup.mode}}" tone="{{uiPopup.tone}}" title="{{uiPopup.title}}" message="{{uiPopup.message}}" editable="{{uiPopup.editable}}" placeholder="{{uiPopup.placeholder}}" inputValue="{{uiPopup.inputValue}}" confirmText="{{uiPopup.confirmText}}" cancelText="{{uiPopup.cancelText}}" showCancel="{{uiPopup.showCancel}}" bindconfirm="onPopupConfirm" bindcancel="onPopupCancel" bindaction="onPopupAction" bindinput="onPopupInput" bindclose="onPopupClose" />
 </view>
 <!-- 全局悬浮宠物 -->
-<pet-float bottom="200" static />
-
+<pet-float bottom="200" />

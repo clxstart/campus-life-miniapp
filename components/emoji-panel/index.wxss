@@ -1,0 +1,85 @@
+/* 表情面板：悬浮在输入栏上方，左右贴边，圆角只在上方。
+   禁止标签选择器（小程序组件样式里 view/text 之类的标签选择器不可用）。 */
+.emoji-panel {
+  position: fixed;
+  /* 高于悬浮宠物（z-index 90），避免宠物挡住右侧几个表情格子的点击 */
+  z-index: 95;
+  left: 0;
+  right: 0;
+  /* 兜底：内联的 bottom（含 env()）在不支持 env 的旧内核里会整条失效，退回固定值 */
+  bottom: 106rpx;
+  /* 底部安全区不在这里补：面板贴在输入栏正上方，安全区由页面的 bottom 偏移统一算
+     （页面传 calc(输入栏高度 + env(safe-area-inset-bottom))），否则 iPhone 上会多出一段空白。 */
+  padding: 12rpx 14rpx 14rpx;
+  border-radius: 24rpx 24rpx 0 0;
+  background: #ffffff;
+  box-shadow: 0 -6rpx 24rpx rgba(48, 74, 104, 0.1);
+  box-sizing: border-box;
+}
+
+.emoji-head {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.emoji-tabs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  overflow: hidden;
+}
+
+.emoji-tab {
+  flex: none;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  color: #6c7885;
+  font-size: 22rpx;
+  line-height: 1.2;
+}
+
+.emoji-tab.active {
+  background: #eaf2ff;
+  color: #3476f6;
+  font-weight: 600;
+}
+
+.emoji-close {
+  flex: none;
+  padding: 8rpx 12rpx;
+  color: #9aa5af;
+  font-size: 21rpx;
+}
+
+.emoji-close-hover {
+  opacity: 0.6;
+}
+
+.emoji-scroll {
+  max-height: calc(46vh - env(safe-area-inset-bottom));
+  margin-top: 6rpx;
+}
+
+.emoji-grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 2rpx 0;
+}
+
+.emoji-cell {
+  width: 14.285%;
+  height: 86rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  line-height: 1;
+  border-radius: 16rpx;
+}
+
+.emoji-cell-hover {
+  background: #eef4fb;
+}

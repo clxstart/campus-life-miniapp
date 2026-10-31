@@ -16,7 +16,7 @@ function safeDecode(value, fallback) {
 }
 
 Page({
-  data: { ...getNavigationMetrics(), name: '同学', avatar: '同', color: '#7EB6F6', inputValue: '', scrollTo: 'message-end', messages: [], loading: false, sending: false, hasMore: false, muted: false, offline: false, error: '', uiPopup: null },
+  data: { ...getNavigationMetrics(), name: '同学', avatar: '同', color: '#7EB6F6', inputValue: '', inputCursor: 0, emojiVisible: false, scrollTo: 'message-end', messages: [], loading: false, sending: false, hasMore: false, muted: false, offline: false, error: '', uiPopup: null },
   onLoad(options) {
     this._alive = true
     this.peerId = Number(options.id)
@@ -62,7 +62,43 @@ Page({
   },
   loadOlder() { return this.loadMessages(true) },
   retry() { return this.loadMessages() },
-  inputMessage(event) { this.setData({ inputValue: event.detail.value }) },
+  // 输入框与光标：value 走 bindinput，光标位置存内存 + inputCursor（selection-start/end）。
+  // 只在插入 emoji 时写 inputCursor，避免中文输入法组词时 setData 抢光标。
+  inputMessage(event) {
+    const detail = event.detail || {}
+    const value = typeof detail.value === 'string' ? detail.value : ''
+    const cursor = Number.isSafeInteger(detail.cursor) && detail.cursor >= 0 ? detail.cursor : value.length
+    this._cursor = cursor
+    this.setData({ inputValue: value })
+  },
+  // 失焦（点 ☺ 或点面板）时尽量同步一次光标：部分基础库的 blur 事件会带 cursor，
+  // 没带就保留 bindinput 记录的位置，不要把用户刚点的位置覆盖成结尾。
+  onInputBlur(event) {
+    const detail = event.detail || {}
+    if (Number.isSafeInteger(detail.cursor) && detail.cursor >= 0) this._cursor = detail.cursor
+  },
+  toggleEmojiPanel() {
+    if (this.data.sending) return
+    const emojiVisible = !this.data.emojiVisible
+    this.setData({ emojiVisible })
+    // 打开面板时收起键盘，两者不要同时占着屏幕下半部分
+    if (emojiVisible && typeof wx.hideKeyboard === 'function') wx.hideKeyboard({ fail() {} })
+  },
+  closeEmojiPanel() {
+    if (this.data.emojiVisible) this.setData({ emojiVisible: false })
+  },
+  onEmojiPick(event) {
+    const emoji = event && event.detail ? event.detail.emoji : ''
+    if (!emoji || this.data.sending) return
+    const value = String(this.data.inputValue || '')
+    const tracked = Number(this._cursor)
+    const cursor = Number.isSafeInteger(tracked) ? Math.min(Math.max(tracked, 0), value.length) : value.length
+    // input 的 maxlength=1000：放不下就整条不插，避免把 emoji 的代理对截成半个字符
+    if (value.length + emoji.length > 1000) return
+    const next = value.slice(0, cursor) + emoji + value.slice(cursor)
+    this._cursor = cursor + emoji.length
+    this.setData({ inputValue: next, inputCursor: this._cursor })
+  },
   async sendMessage() {
     const content = this.data.inputValue.trim()
     if (!content || this.data.sending || this._mutating) return
@@ -75,7 +111,8 @@ Page({
       if (!this._alive) return
       const sourceChanged = this.data.offline !== !!message.offline
       const messages = (sourceChanged ? [] : this.data.messages).filter(old => String(old.id) !== String(message.id)).concat({ ...message, time: formatTime(message.createdAt) })
-      this.setData({ messages, inputValue: '', offline: !!message.offline, error: '', scrollTo: 'message-' + message.id })
+      this._cursor = 0
+      this.setData({ messages, inputValue: '', inputCursor: 0, emojiVisible: false, offline: !!message.offline, error: '', scrollTo: 'message-' + message.id })
       if (message.offline) popup.toast(this, '已保存到本机演示记录，未发送给对方', { tone: 'warn' })
     } catch (error) {
       if (this._alive) popup.toast(this, error.message || '发送失败，请重试', { tone: 'error' })

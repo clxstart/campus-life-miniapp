@@ -25,6 +25,26 @@ function heroCard(circle) {
   }
 }
 
+// 火花状态：后端已经算好 streakDays / sparkOn / activeToday（也包在 streak 对象里），
+// 前端只翻成界面文案。四种状态互斥：
+//   已点亮 + 今天活跃      → 🔥 5天
+//   已点亮 + 今天还没活跃  → 灰态 🔥 5天 · 今日待续上
+//   未满 3 天 + 今天活跃   → 连续 2/3
+//   未满 3 天 + 今天没活跃 → 灰态 连续 2/3 · 今日待续上
+//   streakDays=0（断了）   → 不显示
+function sparkView(circle) {
+  const streak = circle && circle.streak ? circle.streak : {}
+  const read = (flat, nested) => (circle && circle[flat] != null ? circle[flat] : streak[nested])
+  const activeToday = !!read('activeToday', 'activeToday')
+  const sparkOn = !!read('sparkOn', 'sparkOn')
+  const days = Math.max(0, Number(read('streakDays', 'streakDays')) || 0)
+  if (!days) return { show: false, state: 'off', days: 0, label: '', hint: '' }
+  if (sparkOn) {
+    return { show: true, state: activeToday ? 'on' : 'wait', days, label: `🔥 ${days}天`, hint: activeToday ? '' : '今日待续上' }
+  }
+  return { show: true, state: activeToday ? 'progress' : 'progress-wait', days, label: `连续 ${days}/3`, hint: activeToday ? '' : '今日待续上' }
+}
+
 // 后端圈子行 → 圈子卡片
 function circleCard(circle) {
   return {
@@ -37,7 +57,8 @@ function circleCard(circle) {
     postText: formatCount(circle.postCount),
     joined: !!circle.joined,
     unreadCount: Number(circle.unreadCount) || 0,
-    lastMessage: circle.lastMessage || ''
+    lastMessage: circle.lastMessage || '',
+    spark: sparkView(circle)
   }
 }
 
