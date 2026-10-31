@@ -307,21 +307,8 @@ public class AdminModuleController {
 
 
     // ================= 业务：兼职 / 活动 / 二手 =================
-    @GetMapping("/jobs")
-    public ApiResponse<Map<String, Object>> jobs(@RequestParam(defaultValue = "") String keyword,
-                                               @RequestParam(required = false) Long schoolId,
-                                                 @RequestParam(defaultValue = "1") int page,
-                                                 @RequestParam(defaultValue = "20") int size,
-                                                 HttpServletRequest req) {
-        return ApiResponse.ok(service.jobs(effectiveSchool(req, schoolId), keyword, page, size));
-    }
-
-    @DeleteMapping("/jobs/{id}")
-    public ApiResponse<Object> deleteJob(@PathVariable Long id, HttpServletRequest req) {
-        service.deleteJob(id);
-        log(req, "delete", "job", String.valueOf(id), "删除兼职");
-        return ApiResponse.ok(null);
-    }
+    // 兼职的列表/审核/费率/争议已迁到 AdminJobController（/api/admin/jobs）：
+    // 岗位域现在有状态机与履约账单，和「活动/二手」不是同一套规则，放一起会越搅越乱。
 
     @GetMapping("/activities")
     public ApiResponse<Map<String, Object>> activities(@RequestParam(defaultValue = "") String keyword,

@@ -125,29 +125,8 @@ public class BizController {
         return ApiResponse.ok(null);
     }
 
-    /** 兼职列表：传 page 返回分页对象，不传返回原扁平数组（兼容老调用）。 */
-    @GetMapping("/jobs")
-    public ApiResponse<Object> jobs(@RequestParam(defaultValue = "") String settle,
-                                    @RequestParam(defaultValue = "") String keyword,
-                                    @RequestParam(defaultValue = "local") String schoolScope,
-                                    @RequestParam(required = false) Long schoolId,
-                                    @RequestParam(defaultValue = "1") Long userId,
-                                    @RequestParam(required = false) Integer page,
-                                    @RequestParam(defaultValue = "20") int size,
-                                    HttpServletRequest request) {
-        Long self = CurrentUser.resolve(request, userId);
-        if (page != null) {
-            return ApiResponse.ok(service.jobsPaged(settle, keyword, schoolScope, schoolId, self, page, size));
-        }
-        return ApiResponse.ok(service.jobs(settle, keyword, schoolScope, schoolId, self));
-    }
-
-    // 发布兼职：对应「发布」页的「兼职信息」选项
-    @PostMapping("/jobs")
-    public ApiResponse<Map<String, Object>> publishJob(@RequestBody Map<String, Object> body, HttpServletRequest request) {
-        body.put("userId", requireUser(request));
-        return ApiResponse.ok(service.publishJob(body));
-    }
+    // 兼职列表/发布已迁到 JobController（/api/jobs）：岗位域需要状态机、闸门与履约，
+    // 放在这里会和 JobController 的路径映射冲突。旧调用方（settle/keyword/page/size）保持不变。
 
     // 我发布的内容计数（帖子/闲置/兼职/活动）
     @GetMapping("/users/{id}/publish-count")
