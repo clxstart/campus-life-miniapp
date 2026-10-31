@@ -25,6 +25,7 @@ public class CircleChatService {
 
     private final CircleChatMapper mapper;
     private final UserMapper users;
+    private final CircleStreakService streakService;
 
     @Value("${campus.wx.appid:}") private String appid;
     @Value("${campus.wx.secret:}") private String secret;
@@ -96,7 +97,13 @@ public class CircleChatService {
         normalize(message);
         // 并发提交同一个 clientId 时，只有真正插入成功的那次广播，避免重复推送。
         boolean created = previousId == null && affected > 0;
-        if (created) mapper.updateCircleSummary(circleId);
+        if (created) {
+            mapper.updateCircleSummary(circleId);
+            // 圈子连续活跃（火花）：只有真正落库且通过审核的消息才计一天。
+            // 审核拒绝在上面的 moderateWithWechat 就已经抛异常返回了，走不到这里。
+            // emoji 与图片消息同样算有效（方案 §8.1）。
+            streakService.markActive(circleId, id, userId);
+        }
         return new SendResult(message, created);
     }
 

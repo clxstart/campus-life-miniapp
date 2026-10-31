@@ -10,8 +10,22 @@ import java.util.*;
 
 @Service @RequiredArgsConstructor
 public class CircleService {
- private final CircleMapper mapper; private final UserMapper users;
+ private final CircleMapper mapper; private final UserMapper users; private final CircleStreakService streaks;
  private static long number(Object x){return x instanceof Boolean b?(b?1:0):x instanceof Number n?n.longValue():0;}
+ /**
+  * 圈子火花展示字段。
+  * 库里的 streak_days 只是"最后一次活跃时的连续天数"：漏了一天必须展示成 0，
+  * 否则用户会看到一个已经断掉的假连续记录。时间判断统一由 CircleStreakService 按北京时间做。
+  */
+ private void decorateStreak(Map<String,Object> row){
+  if(row==null)return;
+  Map<String,Object> streak=streaks.view(null,row.get("streakDays"),row.get("lastActiveDate"),row.get("sparkOn"));
+  row.put("streak",streak);
+  row.put("streakDays",streak.get("streakDays"));
+  row.put("sparkOn",streak.get("sparkOn"));
+  row.put("activeToday",streak.get("activeToday"));
+  row.put("nextSparkIn",streak.get("nextSparkIn"));
+ }
  private User user(Long id){if(id==null||id<1)throw new IllegalArgumentException("用户参数无效");User u=users.selectById(id);if(u==null)throw new IllegalArgumentException("用户不存在");return u;}
  private Map<String,Object> circle(Long id,Long userId){Map<String,Object> row=mapper.circle(id,userId);if(row==null)throw new IllegalArgumentException("圈子不存在或已解散");return row;}
 
@@ -21,7 +35,7 @@ public class CircleService {
    User u=user(userId);String cat=category==null?"":category.trim();
    Long schoolId=resolveSchoolId(schoolScope,explicitSchoolId,u);
    List<Map<String,Object>> rows=mapper.circles(userId,cat,hotOnly,size,(page-1)*size,schoolId);
-   for(Map<String,Object> row:rows)row.put("joined",number(row.get("joined"))>0);
+   for(Map<String,Object> row:rows){row.put("joined",number(row.get("joined"))>0);decorateStreak(row);}
    return Map.of("list",rows,"total",mapper.countCircles(cat,hotOnly,schoolId),"page",page,"size",size);
  }
 
@@ -30,7 +44,7 @@ public class CircleService {
    User u=user(userId);int capped=Math.max(1,Math.min(limit,10));
    Long schoolId=resolveSchoolId(schoolScope,explicitSchoolId,u);
    List<Map<String,Object>> rows=mapper.circles(userId,"",true,capped,0,schoolId);
-   for(Map<String,Object> row:rows)row.put("joined",number(row.get("joined"))>0);
+   for(Map<String,Object> row:rows){row.put("joined",number(row.get("joined"))>0);decorateStreak(row);}
    return rows;
  }
 
@@ -44,7 +58,7 @@ public class CircleService {
  public Map<String,Object> detail(Long id,Long userId){
    user(userId);Map<String,Object> row=circle(id,userId);
    row.put("joined",number(row.get("joined"))>0);
-   row.put("hot",number(row.get("hot"))>0);
+   row.put("hot",number(row.get("hot"))>0);decorateStreak(row);
    return row;
  }
 

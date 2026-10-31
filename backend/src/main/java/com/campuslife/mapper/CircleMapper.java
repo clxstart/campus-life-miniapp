@@ -47,6 +47,7 @@ public interface CircleMapper {
         SELECT c.id, c.name, c.slug, c.category, c.description, c.cover, c.theme,
                c.member_count AS memberCount, c.post_count AS postCount, c.hot, c.sort,
                c.last_message_at AS lastMessageAt, c.last_message AS lastMessage,
+               c.streak_days AS streakDays, c.last_active_date AS lastActiveDate, c.spark_on AS sparkOn,
                (SELECT COUNT(*) FROM circle_member m WHERE m.circle_id=c.id AND m.user_id=#{userId})>0 AS joined,
                (SELECT COUNT(*) FROM circle_message cm
                 WHERE cm.circle_id=c.id AND cm.id > COALESCE(
