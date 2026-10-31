@@ -5,6 +5,7 @@ import com.campuslife.mapper.MerchantMapper;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.*;
 import java.util.regex.Pattern;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MerchantService {
@@ -21,6 +23,7 @@ public class MerchantService {
     private static final Pattern TIME = Pattern.compile("^([01]\\d|2[0-3]):[0-5]\\d$");
     private final MerchantMapper mapper;
     private final MerchantRefundService refunds;
+    private final DispatchService dispatch;
     private final ObjectMapper json;
 
     public Map<String,Object> submit(Map<String,Object> body) {
@@ -197,6 +200,13 @@ public class MerchantService {
         OrderStatus.requireTransition(String.valueOf(order.get("status")), OrderStatus.ACCEPTED.value());
         if (mapper.acceptOrder(id, shopId, OrderStatus.ACCEPTED.value()) != 1) {
             throw new IllegalStateException("订单状态不允许接单（可能已被处理，请刷新）");
+        }
+        // 商家接单后按楼栋责任区自动派单。
+        // 派单失败只进异常队列，绝不能让"接单成功"因为派单问题而回滚或报错。
+        try {
+            dispatch.autoDispatch(id);
+        } catch (Exception e) {
+            log.warn("[campus] 订单 {} 自动派单异常（不影响接单）: {}", id, e.getMessage());
         }
     }
 

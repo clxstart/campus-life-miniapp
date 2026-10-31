@@ -15,6 +15,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class RiderService {
     private final RiderMapper mapper;
+    private final DispatchService dispatch;
+    private final FeatureFlags flags;
 
     public Map<String,Object> stats(Long schoolId, Long riderId) {
         return mapper.stats(schoolId, riderId);
@@ -34,6 +36,11 @@ public class RiderService {
 
     @Transactional
     public void grab(Long orderId, Long riderId, String riderName) {
+        // 方案 §7.1：不开放全校自由抢单，默认走楼栋责任区自动派单。
+        // 抢单接口保留但默认关闭，需要运营显式开启才可用（fail-closed）。
+        if (!flags.enabledStrict("rider.grab.enabled")) {
+            throw new com.campuslife.config.ForbiddenException("当前采用楼栋责任区派单，暂不开放自由抢单，请等待系统派单或联系负责人");
+        }
         // MySQL's multi-table UPDATE reports both the order and rider rows when both changed.
         if (mapper.grab(orderId, riderId, riderName == null ? "" : riderName) == 0) {
             throw new IllegalStateException("手慢了，这单已被抢走或不在本校配送范围");
@@ -67,6 +74,14 @@ public class RiderService {
             throw new IllegalStateException("订单状态已变化，无法标记送达");
         }
         mapper.refreshRiderStatus(riderId);
+        // 送达才记配送报酬，且只记一次（delivery_pay_recorded + ledger.biz_no 双保险）。
+        try {
+            dispatch.recordDeliveryIncome(orderId, riderId);
+        } catch (Exception e) {
+            // 记账失败不能把"已送达"这个事实回滚掉，留给对账处理
+            org.slf4j.LoggerFactory.getLogger(RiderService.class)
+                .warn("[campus] 订单 {} 配送报酬记账失败: {}", orderId, e.getMessage());
+        }
     }
 
     public Map<String,Object> history(Long riderId, String startDate, String endDate, int page, int size) {
