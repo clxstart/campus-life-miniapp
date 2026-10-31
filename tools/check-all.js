@@ -30,7 +30,8 @@ const STATIC = [
   { file: 'check-props.js', name: '组件属性' },
   { file: 'verify-ai-popup.js', name: '弹窗传参' },
   { file: 'check-popup-api.js', name: 'popup 方法' },
-  { file: 'check-api-exports.js', name: 'API 导出' }
+  { file: 'check-api-exports.js', name: 'API 导出' },
+  { file: 'check-funding-guard.js', name: '资金红线' }
 ]
 
 const RUNTIME_CHECKS = [

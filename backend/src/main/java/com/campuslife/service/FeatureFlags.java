@@ -40,6 +40,21 @@ public class FeatureFlags {
         return value == null || value;
     }
 
+    /**
+     * 安全闸门专用：**默认关闭**。
+     *
+     * 与 {@link #isEnabled} 的取舍刚好相反：isEnabled 面向"功能可用性"，
+     * 查不到就当开启，避免一次查询失败把全站功能关掉；
+     * 而校外招聘、有偿接单、替课、自由抢单、通用钱包这类涉及资质与资金的能力，
+     * 查不到必须当**关闭**处理——多关一次只是少卖一次，多开一次可能违规。
+     *
+     * 所以：key 不存在 / 从未成功读到过 → false；读库失败 → 沿用上一次成功的值。
+     */
+    public boolean enabledStrict(String key) {
+        refreshIfStale();
+        return Boolean.TRUE.equals(cache.get(key));
+    }
+
     /** 关闭时给学生看的提示文案（来自 remark），取不到给一句通用的。 */
     public String disabledMessage(String key, String fallback) {
         refreshIfStale();
