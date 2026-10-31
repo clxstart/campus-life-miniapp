@@ -33,6 +33,8 @@ const routes = [
       { path: 'payments', name: 'Payments', component: () => import('../views/Payments.vue'), meta: { title: '支付流水', icon: '¥', superOnly: false } },
       { path: 'merchant-audit', name: 'merchant-audit', component: () => import('../views/MerchantAudit.vue'), meta: { title: '商家入驻审核', icon: '⊞' } },
       { path: 'riders', name: 'riders', component: () => import('../views/Riders.vue'), meta: { title: '骑手管理', icon: '♧' } },
+      { path: 'dispatch', name: 'dispatch', component: () => import('../views/Dispatch.vue'), meta: { title: '配送调度', icon: '⇢' } },
+      { path: 'verification', name: 'verification', component: () => import('../views/Verification.vue'), meta: { title: '认证审核', icon: '☑' } },
       { path: 'idol', name: 'idol', component: () => import('../views/Idol.vue'), meta: { title: '校园评选', icon: '★', superOnly: true } },
       { path: 'academics', name: 'academics', component: () => import('../views/Academics.vue'), meta: { title: '教务管理', icon: '▤' } },
       { path: 'business', name: 'business', component: () => import('../views/Business.vue'), meta: { title: '业务管理', icon: '▦' } },
@@ -50,11 +52,19 @@ const routes = [
       { path: 'system', name: 'system', component: () => import('../views/System.vue'), meta: { title: '系统状态', icon: '◉' } }
     ]
   },
-  // 骑手端 4 个页面（工作台/待抢订单/我的配送/配送记录）已移除：
-  // 骑手配送这条链路在小程序端没有对应入口，管理端也没有派单闭环，
-  // 留着只是一个点进去看不到数据、也没法操作的空壳。
-  // 管理端的「骑手管理」(#/riders) 保留，用于维护骑手账号。
-  { path: '/rider/:pathMatch(.*)*', redirect: '/dashboard' },
+  // 骑手端：骑手自己的工作台，走 /api/rider/**（RiderInterceptor 只认 role=rider）。
+  // 与管理端的「骑手管理」(#/riders) 是两回事：那边是管理员维护骑手账号，这边是骑手干活。
+  {
+    path: '/rider',
+    component: () => import('../layouts/RiderLayout.vue'),
+    meta: { riderOnly: true },
+    children: [
+      { path: '', name: 'rider-home', component: () => import('../views/rider/Home.vue'), meta: { title: '工作台' } },
+      { path: 'pool', name: 'rider-pool', component: () => import('../views/rider/Pool.vue'), meta: { title: '待抢订单' } },
+      { path: 'mine', name: 'rider-mine', component: () => import('../views/rider/Mine.vue'), meta: { title: '我的配送' } },
+      { path: 'history', name: 'rider-history', component: () => import('../views/rider/History.vue'), meta: { title: '配送记录' } }
+    ]
+  },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' }
 ]
 
@@ -62,16 +72,18 @@ const router = createRouter({ history: createWebHashHistory(), routes })
 router.beforeEach((to) => {
   const authed = !!getToken()
   const role = getProfile()?.role
-  // 商家和骑手各有自己的入口：商家进 /merchant；骑手端已移除，骑手账号登录后同样进 /merchant 无权限，
-  // 所以直接回到 dashboard（管理端会按角色隐藏无权菜单）。
-  const home = role === 'merchant' ? '/merchant' : '/dashboard'
+  // 每种角色只有一个「家」：骑手 /rider、商家 /merchant、管理员 /dashboard。
+  // 骑手以前被放进 dashboard，结果菜单错位、每个接口都 403，所以这里必须分开。
+  const home = role === 'rider' ? '/rider' : role === 'merchant' ? '/merchant' : '/dashboard'
   if (to.meta.public) {
     return authed ? { path: home } : true
   }
   if (!authed) return { path: '/login', query: { redirect: to.fullPath } }
-  // 商家只能进 /merchant，管理员不能进商家端
-  if (role === 'merchant' && !to.path.startsWith('/merchant')) return '/merchant'
+  // 商家只能进展商家端，骑手只能进骑手端，管理员两端都不能进
+  if (role === 'merchant' && !to.path.startsWith('/merchant')) return home
+  if (role === 'rider' && !to.path.startsWith('/rider')) return home
   if (role !== 'merchant' && to.path.startsWith('/merchant')) return home
+  if (role !== 'rider' && to.path.startsWith('/rider')) return home
   return true
 })
 export default router

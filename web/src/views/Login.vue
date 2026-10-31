@@ -69,8 +69,9 @@ async function submit() {
   loading.value = true
   try {
     await auth.login(form.username, form.password)
-    // 骑手端页面已移除，骑手账号登录后统一进 dashboard（菜单按角色隐藏）
-    const destination = auth.profile?.role === 'merchant' ? '/merchant' : '/dashboard'
+    // 三种角色三个入口：商家 → /merchant，骑手 → /rider，管理员 → /dashboard
+    const role = auth.profile?.role
+    const destination = role === 'merchant' ? '/merchant' : role === 'rider' ? '/rider' : '/dashboard'
     router.replace(route.query.redirect && destination === '/dashboard' ? route.query.redirect : destination)
   } catch (e) {
     error.value = e.message || '登录失败'

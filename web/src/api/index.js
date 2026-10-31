@@ -95,11 +95,39 @@ export const merchantApi = {
   completeOrder: (id) => http.post(`/merchant/orders/${id}/complete`)
 }
 
-// 骑手端（工作台/待抢订单/我的配送/配送记录）已移除，相关的 /rider/* 调用随页面一起删掉。
-// 这里只保留管理端维护骑手账号用的接口。
+// 骑手端接口分两套，鉴权不同，不要混用：
+//   上半部分 —— 骑手自己用，走 /api/rider/**，由 RiderInterceptor 只放行 role=rider 的 token
+//   下半部分 —— 管理端维护骑手账号用，走 /api/admin/riders，只放行 super/school
+// 骑手 token 去调 /admin/** 会被 AdminInterceptor 直接 403。
 export const riderApi = {
+  stats: () => http.get('/rider/stats'),
+  pool: () => http.get('/rider/pool'),
+  mine: () => http.get('/rider/orders/mine'),
+  grab: (id) => http.post(`/rider/orders/${id}/grab`),
+  pick: (id) => http.post(`/rider/orders/${id}/pick`),
+  deliver: (id) => http.post(`/rider/orders/${id}/deliver`),
+  history: (params) => http.get('/rider/orders/history', { params }),
+
   riders: () => http.get('/admin/riders'),
   createRider: (payload) => http.post('/admin/riders', payload),
   setRiderStatus: (id, status) => http.post(`/admin/riders/${id}/status`, { status }),
   resetRiderPassword: (id, password) => http.post(`/admin/riders/${id}/reset-password`, { password })
+}
+
+// 配送调度（管理端）：楼栋责任区、异常队列、改派/接管
+export const dispatchApi = {
+  queue: () => http.get('/admin/dispatch/queue'),
+  assign: (orderId, payload) => http.post(`/admin/dispatch/orders/${orderId}/assign`, payload),
+  orderLog: (orderId) => http.get(`/admin/dispatch/orders/${orderId}/log`),
+  redispatch: () => http.post('/admin/dispatch/redispatch'),
+  buildings: () => http.get('/admin/dispatch/buildings'),
+  createBuilding: (payload) => http.post('/admin/dispatch/buildings', payload),
+  updateBuilding: (id, payload) => http.put(`/admin/dispatch/buildings/${id}`, payload),
+  deleteBuilding: (id) => http.delete(`/admin/dispatch/buildings/${id}`)
+}
+
+// 认证审核：只认管理员人工核验结论，没有"自动通过"
+export const verifyApi = {
+  list: (params) => http.get('/admin/verifications', { params }),
+  review: (userId, payload) => http.post(`/admin/verifications/${userId}/review`, payload)
 }
