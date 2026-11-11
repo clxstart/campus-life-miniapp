@@ -2,7 +2,6 @@
   "pages": [
     "pages/index/index",
     "pages/campus-home/campus-home",
-    "pages/appearance/appearance",
     "pages/discover/discover",
     "pages/circle-detail/circle-detail",
     "pages/circle-chat/circle-chat",
@@ -39,10 +38,6 @@
     "pages/maintenance/maintenance",
     "pages/search/search",
     "pages/campus-offer/campus-offer",
-    "pages/adopt/adopt",
-    "pages/wardrobe/wardrobe",
-    "pages/dispatch/dispatch",
-    "pages/companion/companion",
     "pages/points/points",
     "pages/points-redeem/points-redeem",
     "pages/verify/verify",
@@ -63,4 +58,3 @@
   },
   "sitemapLocation": "sitemap.json"
 }
-

@@ -1,9 +1,0 @@
-{
-  "navigationStyle": "custom",
-  "usingComponents": {
-    "nav-bar": "/components/nav-bar/index",
-    "pet-stage": "/components/pet-stage/index",
-    "pet-float": "/components/pet-float/index"
-  }
-}
-

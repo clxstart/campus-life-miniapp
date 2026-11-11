@@ -3,7 +3,6 @@
   "backgroundColor": "#fcfcfc",
   "usingComponents": {
     "offline-banner": "/components/offline-banner/index",
-    "ui-popup": "/components/ui-popup/index",
-    "pet-float": "/components/pet-float/index"
+    "ui-popup": "/components/ui-popup/index"
   }
 }

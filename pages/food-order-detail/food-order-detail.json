@@ -1,7 +1,6 @@
 {
   "navigationBarTitleText": "订单详情",
   "usingComponents": {
-    "offline-banner": "/components/offline-banner/index",
-    "pet-float": "/components/pet-float/index"
+    "offline-banner": "/components/offline-banner/index"
   }
 }

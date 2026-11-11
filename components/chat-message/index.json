@@ -2,7 +2,6 @@
   "component": true,
   "styleIsolation": "apply-shared",
   "usingComponents": {
-    "pet-avatar": "../pet-avatar/index",
     "campus-result-card": "../campus-result-card/index"
   }
 }

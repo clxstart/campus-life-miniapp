@@ -1,6 +1,4 @@
 {
   "navigationStyle": "custom",
-  "usingComponents": {
-    "pet-float": "/components/pet-float/index"
-  }
+  "usingComponents": {}
 }

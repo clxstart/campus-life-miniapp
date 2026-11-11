@@ -25,9 +25,9 @@
         />
       </view>
 
-      <!-- 我的宠物入口 -->
-      <view hover-class="tap-card" hover-stay-time="80" class="ai-entry" bindtap="openPet">
-        <text class="ai-entry-icon">🐾</text>
+      <!-- 校园首页入口 -->
+      <view hover-class="tap-card" hover-stay-time="80" class="ai-entry" bindtap="openCampusHome">
+        <text class="ai-entry-icon">🏫</text>
       </view>
 
       <!-- AI 校园助手入口 -->
@@ -218,4 +218,3 @@
   />
 </view>
 <!-- 全局悬浮宠物 -->
-<pet-float bottom="260" />

@@ -1,4 +1,0 @@
-<view class="bubble {{leaving ? 'bubble--out' : ''}}" wx:if="{{visible && text}}">
-  <text class="bubble-text">{{text}}</text>
-  <view class="bubble-tail"></view>
-</view>

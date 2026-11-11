@@ -1,9 +1,5 @@
 <!-- chat-message：一条消息。宠物消息=卡片底色，用户消息=浅绿，正文自然换行 -->
 <view class="msg msg--{{role}}">
-  <!-- 宠物头像 -->
-  <view class="msg-avatar" wx:if="{{role === 'pet'}}">
-    <pet-avatar size="{{48}}" />
-  </view>
 
   <view class="msg-main">
     <!-- 发送者标识 -->

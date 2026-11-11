@@ -39,6 +39,30 @@
         "type": "folder"
       },
       {
+        "value": "outputs",
+        "type": "folder"
+      },
+      {
+        "value": ".codestable",
+        "type": "folder"
+      },
+      {
+        "value": "node_modules",
+        "type": "folder"
+      },
+      {
+        "value": ".tmp-lottie-demo",
+        "type": "folder"
+      },
+      {
+        "value": ".tmp-beian",
+        "type": "folder"
+      },
+      {
+        "value": ".tmp-recover",
+        "type": "folder"
+      },
+      {
         "value": ".md",
         "type": "suffix"
       },

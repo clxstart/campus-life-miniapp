@@ -1,9 +1,0 @@
-<view
-  class="pet-wrap"
-  aria-label="{{label}}"
-  style="{{size > 0 ? 'width:' + size + 'px;height:' + size + 'px;flex-shrink:0;' : ''}}"
->
-  <canvas hover-class="tap" hover-stay-time="80" id="petCanvas" type="2d" class="pet-canvas" bindtap="onTap" />
-  <view wx:if="{{!ready && !error}}" class="pet-loading">小橘正在赶来…</view>
-  <view wx:if="{{error}}" class="pet-loading"><text>{{error}}</text><button hover-class="tap" hover-stay-time="80" bindtap="retry" size="mini">重新加载</button></view>
-</view>

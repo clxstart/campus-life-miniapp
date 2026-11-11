@@ -152,8 +152,8 @@ Page({
     wx.navigateTo({ url: '/pages/learn/learn?category=daike' })
   },
 
-  // 我的宠物（进入校园搭子首页）
-  openPet() {
+  // 校园首页（学校问候 / 快捷入口 / 校园新鲜事）
+  openCampusHome() {
     wx.navigateTo({ url: '/pages/campus-home/campus-home' })
   },
 

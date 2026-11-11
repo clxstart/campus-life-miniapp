@@ -68,4 +68,3 @@
   <view hover-class="tap" hover-stay-time="80" class="idol-join-fab" bindtap="goJoin">＋ 我要报名</view>
 </view>
 <!-- 全局悬浮宠物 -->
-<pet-float bottom="200" static />

@@ -2,7 +2,5 @@
   "navigationBarTitleText": "帖子详情",
   "navigationBarBackgroundColor": "#ffffff",
   "navigationBarTextStyle": "black",
-  "usingComponents": {
-    "pet-float": "/components/pet-float/index"
-  }
+  "usingComponents": {}
 }

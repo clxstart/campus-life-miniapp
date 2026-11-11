@@ -3,7 +3,6 @@
   "backgroundColor": "#F3F6FA",
   "usingComponents": {
     "ui-popup": "/components/ui-popup/index",
-    "emoji-panel": "/components/emoji-panel/index",
-    "pet-float": "/components/pet-float/index"
+    "emoji-panel": "/components/emoji-panel/index"
   }
 }
