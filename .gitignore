@@ -31,6 +31,11 @@ desktop.ini
 *~
 test-goods*.json
 
+# ===== 会话/工具临时目录（不得进仓库）=====
+.tmp-*/
+.codestable/
+outputs/
+
 # ===== 密钥与敏感配置 =====
 *.pem
 *.p12
