@@ -6,8 +6,9 @@
       <input v-model="filters.startDate" type="date" class="no-input !py-2.5" /><input v-model="filters.endDate" type="date" class="no-input !py-2.5" />
       <select v-model="filters.payStatus" class="no-input !py-2.5 w-32"><option value="">全部支付状态</option><option value="paid">已支付</option><option value="refunded">已退款</option><option value="closed">已关闭</option></select>
       <select v-model="filters.shopId" class="no-input !py-2.5 w-36"><option value="">全部店铺</option><option v-for="shop in shopOptions" :key="shop.id" :value="shop.id">{{ shop.name || ('店铺 ' + shop.id) }}</option></select><input v-model.trim="filters.keyword" @keyup.enter="load(1)" class="no-input !py-2.5 min-w-[14rem]" placeholder="订单号 / 微信交易号 / 用户" />
-      <button class="no-btn-primary !py-2.5" @click="reload">筛选</button><button class="no-btn-ghost !py-2.5" @click="reset">重置</button><button class="no-btn-ghost !py-2.5 ml-auto" @click="exportCsv">导出 CSV</button>
+      <button class="no-btn-primary !py-2.5" @click="reload">筛选</button><button class="no-btn-ghost !py-2.5" @click="reset">重置</button><button class="no-btn-ghost !py-2.5 ml-auto disabled:opacity-50" :disabled="exporting" @click="exportCsv">{{ exporting ? '正在导出…' : '导出 CSV' }}</button>
     </div>
+    <p v-if="exportMessage.text" role="status" :class="['rounded-xl px-4 py-3 text-sm', exportMessage.error ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700']">{{ exportMessage.text }}</p>
     <div class="no-card-plain !p-0 overflow-x-auto">
       <table class="w-full text-sm min-w-[1100px]">
         <thead><tr class="bg-[#f3ece4] text-stone-600"><th v-for="col in columns" :key="col" class="text-left font-medium px-5 py-4">{{ col }}</th></tr></thead>
@@ -55,7 +56,57 @@ function reset() { Object.assign(filters, { payStatus: '', shopId: '', keyword: 
 async function openDetail(row) { try { const data = await http.get('/admin/payments/' + encodeURIComponent(row.outTradeNo)); detail.row = data; detail.records = data.paymentRecords || []; detail.refunds = data.refundRecords || []; detail.unverified = detail.records.some(r => Number(r.verified) === 0); detail.open = true } catch (e) {} }
 function openRefund(row) { refund.row = row; refund.reason = ''; refund.error = ''; refund.open = true }
 async function submitRefund() { if (!refund.reason) { refund.error = '请填写退款原因'; return }; refund.error = ''; refund.submitting = true; try { await http.post('/admin/orders/' + refund.row.id + '/refund', { reason: refund.reason }); refund.open = false; reload() } catch (e) { refund.error = e.message || '退款失败' } finally { refund.submitting = false } }
-async function exportCsv() { const qs = new URLSearchParams({ ...filters, shopId: filters.shopId || '' }); const response = await fetch('/api/admin/payments/export?' + qs.toString(), { headers: { Authorization: 'Bearer ' + getToken() } }); const blob = await response.blob(); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = '支付流水_' + filters.startDate + '_' + filters.endDate + '.csv'; a.click(); URL.revokeObjectURL(url) }
+const exporting = ref(false)
+const exportMessage = reactive({ text: '', error: false })
+
+// finding-09：只有 HTTP 成功且确实是 CSV 时才下载；401/403/413/5xx 读出错误信息显示在页面上，不再把错误页存成 .csv
+async function exportFailure(response) {
+  let msg = ''
+  try {
+    const text = await response.text()
+    try { const body = JSON.parse(text); msg = body.msg || body.message || '' } catch { /* 非 JSON 错误页 */ }
+  } catch { /* 读取失败时用默认文案 */ }
+  if (response.status === 401) return '登录已过期，请重新登录'
+  if (response.status === 403) return msg || '无权导出支付流水'
+  if (response.status >= 500) return '服务异常，导出失败（HTTP ' + response.status + '）'
+  return msg || '导出失败（HTTP ' + response.status + '）'
+}
+
+async function exportCsv() {
+  if (exporting.value) return
+  exporting.value = true
+  exportMessage.text = ''
+  let url = ''
+  let anchor = null
+  try {
+    const qs = new URLSearchParams({ ...filters, shopId: filters.shopId || '' })
+    const response = await fetch('/api/admin/payments/export?' + qs.toString(), { headers: { Authorization: 'Bearer ' + getToken() } })
+    const type = response.headers.get('Content-Type') || ''
+    if (!response.ok || !type.includes('text/csv')) {
+      exportMessage.text = response.ok ? '导出失败：服务端返回的不是 CSV 文件' : await exportFailure(response)
+      exportMessage.error = true
+      return
+    }
+    const blob = await response.blob()
+    url = URL.createObjectURL(blob)
+    anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = '支付流水_' + filters.startDate + '_' + filters.endDate + '.csv'
+    document.body.appendChild(anchor)
+    anchor.click()
+    const count = response.headers.get('X-Export-Row-Count')
+    exportMessage.text = count != null ? '已导出 ' + count + ' 条流水' : '导出完成'
+    exportMessage.error = false
+  } catch (e) {
+    exportMessage.text = '网络异常，导出失败，请稍后重试'
+    exportMessage.error = true
+  } finally {
+    if (anchor) anchor.remove()
+    // 延后释放，确保浏览器已开始读取下载内容
+    if (url) setTimeout(() => URL.revokeObjectURL(url), 0)
+    exporting.value = false
+  }
+}
 onMounted(reload)
 </script>
 

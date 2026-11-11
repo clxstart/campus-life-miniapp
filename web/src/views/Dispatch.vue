@@ -17,7 +17,7 @@
         <h3 class="text-sm font-semibold text-stone-800">异常待处理队列（{{ queue.length }}）</h3>
         <div class="flex gap-2">
           <button class="no-btn-ghost no-btn-sm" @click="load">刷新</button>
-          <button class="no-btn-primary no-btn-sm" :disabled="busy" @click="redispatch">补派一次</button>
+          <button v-if="isSuper" class="no-btn-primary no-btn-sm" :disabled="busy" @click="redispatch">补派一次</button>
         </div>
       </div>
       <div class="no-card-plain !p-0 overflow-x-auto">

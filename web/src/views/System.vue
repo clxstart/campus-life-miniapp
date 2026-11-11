@@ -119,9 +119,10 @@
               <span class="text-xs" :class="Number(f.enabled) ? 'text-[#4d6b3c]' : 'text-[#a4553f]'">
                 {{ Number(f.enabled) ? '已开启' : '已关闭' }}
               </span>
-              <button class="no-btn-ghost no-btn-sm" :disabled="flagBusy === f.flagKey" @click="toggleFlag(f)">
+              <button v-if="auth.isSuper" class="no-btn-ghost no-btn-sm" :disabled="flagBusy === f.flagKey" @click="toggleFlag(f)">
                 {{ Number(f.enabled) ? '关闭' : '开启' }}
               </button>
+              <span v-else class="text-xs text-stone-400">仅超级管理员可改</span>
             </div>
           </div>
           <p v-if="!flags.length" class="text-sm text-stone-500">
@@ -176,6 +177,9 @@
 import { computed, onMounted, ref } from 'vue'
 import http from '../api'
 import { useAutoRefresh } from '../utils/auto-refresh'
+import { useAuthStore } from '../stores/auth'
+
+const auth = useAuthStore()
 
 const data = ref(null)
 const loading = ref(false)
@@ -228,6 +232,7 @@ async function loadFlags() {
 }
 
 async function toggleFlag(row) {
+  if (!auth.isSuper) { alert('仅超级管理员可以修改全平台功能开关'); return }
   const next = Number(row.enabled) ? 0 : 1
   const action = next ? '开启' : '关闭'
   if (!confirm(`确定${action}「${flagLabel(row.flagKey)}」？\n\n关闭后：用户在该功能处会看到维护提示，其他功能不受影响，随时可以再打开。`)) return

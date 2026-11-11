@@ -11,7 +11,7 @@
         </div>
         <div class="grid gap-x-8 gap-y-4 py-4 sm:grid-cols-2">
           <div><p class="text-xs text-[#76837f]">收货地址</p><p class="mt-1 text-sm">{{ order.address }}</p></div>
-          <div><p class="text-xs text-[#76837f]">学生电话</p><div class="mt-1 flex items-center gap-2 text-sm"><span>{{ revealed.has(order.id) ? order.contactPhoneFull : order.contactPhone }}</span><button class="text-[#176b5b] underline" @click="togglePhone(order.id)">{{ revealed.has(order.id) ? '隐藏' : '查看完整号码' }}</button></div></div>
+          <div><p class="text-xs text-[#76837f]">学生电话</p><div class="mt-1 flex items-center gap-2 text-sm"><span>{{ revealed.get(order.id) || order.contactPhone }}</span><button class="text-[#176b5b] underline disabled:opacity-50" :disabled="revealing === order.id" @click="togglePhone(order.id)">{{ revealed.has(order.id) ? '隐藏' : (revealing === order.id ? '查询中…' : '查看完整号码') }}</button></div></div>
           <div class="sm:col-span-2"><p class="text-xs text-[#76837f]">菜品</p><p class="mt-1 text-sm">{{ order.itemSummary }}</p></div>
           <p class="text-xs text-[#76837f]">下单时间：{{ formatDate(order.createdAt) }}</p>
           <p v-if="order.pickedAt" class="text-xs text-[#76837f]">取货时间：{{ formatDate(order.pickedAt) }}</p>
@@ -31,7 +31,9 @@ import { riderApi } from '../../api'
 const orders = ref([])
 const error = ref('')
 const working = ref(null)
-const revealed = ref(new Set())
+// 完整号码不随列表下发，点击时按单向后端查询（仅本人配送中订单可查），只缓存在当前页面内存
+const revealed = ref(new Map())
+const revealing = ref(null)
 const confirm = reactive({ open: false, title: '', hint: '', id: null, action: null })
 const groups = [
   { status: 'delivering', title: '待取货', action: 'pick', actionLabel: '已取货' },
@@ -44,9 +46,25 @@ function normalize(row) {
   return { ...row, itemSummary: items.map(item => `${item.name}×${item.count}`).join('、') || '菜品信息暂不可用' }
 }
 function formatDate(value) { return value ? String(value).replace('T', ' ').slice(0, 16) : '—' }
-function togglePhone(id) { const next = new Set(revealed.value); next.has(id) ? next.delete(id) : next.add(id); revealed.value = next }
+async function togglePhone(id) {
+  const next = new Map(revealed.value)
+  if (next.has(id)) { next.delete(id); revealed.value = next; return }
+  revealing.value = id
+  try {
+    const data = await riderApi.contactPhone(id)
+    next.set(id, data.contactPhone)
+    revealed.value = next
+  } catch (e) { error.value = e.message || '联系电话查询失败' }
+  finally { revealing.value = null }
+}
 async function load() {
-  try { orders.value = (await riderApi.mine()).map(normalize); error.value = '' }
+  try {
+    orders.value = (await riderApi.mine()).map(normalize); error.value = ''
+    // 订单离开配送中后，丢弃已缓存的完整号码
+    const active = new Set(orders.value.map(order => order.id))
+    const kept = new Map([...revealed.value].filter(([id]) => active.has(id)))
+    if (kept.size !== revealed.value.size) revealed.value = kept
+  }
   catch (e) { error.value = e.message || '配送订单加载失败' }
 }
 function requestAction(order, action) {

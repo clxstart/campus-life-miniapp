@@ -14,7 +14,7 @@
       </div>
       <div class="grid gap-x-8 gap-y-4 py-4 sm:grid-cols-2">
         <div><p class="text-xs text-[#76837f]">收货地址</p><p class="mt-1 text-sm">{{ order.address }}</p></div>
-        <div><p class="text-xs text-[#76837f]">学生电话</p><div class="mt-1 flex items-center gap-2 text-sm"><span>{{ revealed.has(order.id) ? order.contactPhoneFull : order.contactPhone }}</span><button class="text-[#176b5b] underline" @click="togglePhone(order.id)">{{ revealed.has(order.id) ? '隐藏' : '查看完整号码' }}</button></div></div>
+        <div><p class="text-xs text-[#76837f]">学生电话</p><p class="mt-1 text-sm">{{ order.contactPhone }}<span class="ml-2 text-xs text-[#76837f]">接单后可查看完整号码</span></p></div>
         <div class="sm:col-span-2"><p class="text-xs text-[#76837f]">菜品</p><p class="mt-1 text-sm">{{ order.itemSummary }}</p></div>
         <p class="text-xs text-[#76837f]">下单时间：{{ formatDate(order.createdAt) }}</p>
       </div>
@@ -28,7 +28,6 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { riderApi } from '../../api'
 
 const orders = ref([])
-const revealed = ref(new Set())
 const loading = ref(true)
 const error = ref('')
 const working = ref(null)
@@ -40,11 +39,6 @@ function normalize(row) {
 }
 function money(value) { return Number(value || 0).toFixed(2) }
 function formatDate(value) { return value ? String(value).replace('T', ' ').slice(0, 16) : '—' }
-function togglePhone(id) {
-  const next = new Set(revealed.value)
-  next.has(id) ? next.delete(id) : next.add(id)
-  revealed.value = next
-}
 async function load() {
   try { orders.value = (await riderApi.pool()).map(normalize); error.value = '' }
   catch (e) { error.value = e.message || '订单加载失败' }

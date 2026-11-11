@@ -35,6 +35,15 @@ const routes = [
       { path: 'riders', name: 'riders', component: () => import('../views/Riders.vue'), meta: { title: '骑手管理', icon: '♧' } },
       { path: 'dispatch', name: 'dispatch', component: () => import('../views/Dispatch.vue'), meta: { title: '配送调度', icon: '⇢' } },
       { path: 'verification', name: 'verification', component: () => import('../views/Verification.vue'), meta: { title: '认证审核', icon: '☑' } },
+      // 宿舍域：按学校隔离，校管管理本校；解散只改状态、历史签到记录保留
+      { path: 'dorms', name: 'dorms', component: () => import('../views/Dorms.vue'), meta: { title: '宿舍管理', icon: '▥' } },
+      // 积分体系：任务目录与段位配置是平台一套，改一个 P 值影响所有学校 → 仅超管
+      { path: 'points-tasks', name: 'points-tasks', component: () => import('../views/PointsTasks.vue'), meta: { title: '积分任务', icon: '❖', superOnly: true } },
+      // 兑换商品池：价格/库存/限购全平台生效 → 仅超管
+      { path: 'points-rewards', name: 'points-rewards', component: () => import('../views/PointsRewards.vue'), meta: { title: '兑换商品', icon: '▣', superOnly: true } },
+      // 论坛榜单只算本校，校管可查看与补跑结算（后端仍按 school 范围限制）
+      { path: 'points-rank', name: 'points-rank', component: () => import('../views/PointsRank.vue'), meta: { title: '论坛榜单', icon: '⇅' } },
+      { path: 'jobs', name: 'jobs', component: () => import('../views/Jobs.vue'), meta: { title: '兼职管理', icon: '⚒' } },
       { path: 'idol', name: 'idol', component: () => import('../views/Idol.vue'), meta: { title: '校园评选', icon: '★', superOnly: true } },
       { path: 'academics', name: 'academics', component: () => import('../views/Academics.vue'), meta: { title: '教务管理', icon: '▤' } },
       { path: 'business', name: 'business', component: () => import('../views/Business.vue'), meta: { title: '业务管理', icon: '▦' } },

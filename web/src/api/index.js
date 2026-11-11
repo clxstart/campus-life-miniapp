@@ -103,6 +103,8 @@ export const riderApi = {
   stats: () => http.get('/rider/stats'),
   pool: () => http.get('/rider/pool'),
   mine: () => http.get('/rider/orders/mine'),
+  // 完整号码只对本人配送中的订单按需返回，列表接口只给遮掩号
+  contactPhone: (id) => http.get(`/rider/orders/${id}/contact-phone`),
   grab: (id) => http.post(`/rider/orders/${id}/grab`),
   pick: (id) => http.post(`/rider/orders/${id}/pick`),
   deliver: (id) => http.post(`/rider/orders/${id}/deliver`),
@@ -130,4 +132,15 @@ export const dispatchApi = {
 export const verifyApi = {
   list: (params) => http.get('/admin/verifications', { params }),
   review: (userId, payload) => http.post(`/admin/verifications/${userId}/review`, payload)
+}
+
+// 兼职管理：岗位审核/下架、逐岗位费率、履约单与争议裁定
+export const jobAdminApi = {
+  list: (params) => http.get('/admin/jobs', { params }),
+  review: (id, payload) => http.post(`/admin/jobs/${id}/review`, payload),
+  setFee: (id, payload) => http.post(`/admin/jobs/${id}/fee`, payload),
+  remove: (id) => http.delete(`/admin/jobs/${id}`),
+  contracts: (params) => http.get('/admin/jobs/contracts', { params }),
+  contract: (id) => http.get(`/admin/jobs/contracts/${id}`),
+  arbitrate: (id, payload) => http.post(`/admin/jobs/contracts/${id}/arbitrate`, payload)
 }
