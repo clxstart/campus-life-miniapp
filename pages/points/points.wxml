@@ -1,0 +1,146 @@
+<view class="cp-page points-page">
+  <nav-bar title="我的积分" back="/pages/profile/profile" />
+  <offline-banner local="{{offline}}" />
+
+  <view class="points-body">
+    <!-- 余额卡：大号余额 + 折合金额 + 去兑换 -->
+    <view class="cp-card balance-card">
+      <view class="balance-head">
+        <text class="cp-card-title">我的积分</text>
+        <text class="cp-hint">累计获得 {{totalEarned}}</text>
+      </view>
+      <skeleton-list wx:if="{{loadingMe}}" rows="{{2}}" />
+      <view wx:elif="{{meError}}" class="card-state">
+        <text class="state-text">{{meError}}</text>
+        <view hover-class="tap" hover-stay-time="80" class="state-retry" catchtap="retryMe">重试</view>
+      </view>
+      <block wx:else>
+        <view class="balance-row">
+          <text class="balance-number">{{balance}}</text>
+          <text class="balance-yuan">{{valueYuan}}</text>
+        </view>
+        <view class="balance-actions">
+          <view hover-class="tap-btn" hover-stay-time="80" class="cp-btn-primary balance-btn" catchtap="openRedeem">去兑换</view>
+        </view>
+      </block>
+    </view>
+
+    <!-- 签到卡：签到按钮 + 连签进度 + 六档里程碑只露下一个 -->
+    <view class="cp-card sign-card">
+      <view class="sign-head">
+        <view class="sign-copy">
+          <text class="cp-card-title">今日签到</text>
+          <text class="cp-hint">已连续签到 {{streakDays}} 天</text>
+        </view>
+        <view wx:if="{{signedToday}}"
+          class="cp-btn-primary cp-btn-primary--disabled sign-btn">今天已签到</view>
+        <!-- 签到关闭（后台 task_catalog.daily_sign.enabled=0）：按钮灰显且不可点，
+             下方小字说明原因，而不是让用户点了才弹一句 toast。 -->
+        <view wx:elif="{{signDisabled}}"
+          class="cp-btn-primary cp-btn-primary--disabled sign-btn">签到 +1 积分</view>
+        <view wx:else
+          hover-class="tap-btn"
+          hover-stay-time="80"
+          class="cp-btn-primary sign-btn {{signBusy ? 'cp-btn-primary--disabled' : ''}}"
+          catchtap="sign">签到 +1 积分</view>
+      </view>
+      <text wx:if="{{signDisabled && !signedToday}}" class="cp-hint sign-closed">签到暂未开放</text>
+      <view wx:if="{{nextMilestone}}" class="sign-next">
+        <view class="dot-row">
+          <view wx:for="{{dots}}" wx:key="day" class="dot {{item.on ? 'dot-on' : ''}}">
+            <text class="dot-text">{{item.day}}</text>
+          </view>
+        </view>
+        <text class="cp-hint">下一档：连签 {{nextMilestone.days}} 天，额外 +{{nextMilestone.p}} 积分</text>
+      </view>
+      <text wx:else class="cp-hint sign-all">连签里程碑已全部达成</text>
+    </view>
+
+    <!-- 段位卡：铭牌 + 成长值进度，点开八段说明 -->
+    <view hover-class="tap-card" hover-stay-time="80" class="cp-card tier-card" catchtap="openTierSheet">
+      <view class="tier-head">
+        <view class="tier-copy">
+          <text class="cp-card-title">{{tier ? tier.name : '段位'}}</text>
+          <text class="cp-hint">{{tierProgressText}}</text>
+        </view>
+        <text class="tier-arrow">›</text>
+      </view>
+      <view class="tier-bar">
+        <view class="tier-bar-fill" style="width: {{tier ? tier.percent : 0}}%"></view>
+      </view>
+      <view class="tier-foot">
+        <text class="cp-hint">{{tierGapText || (tier && tier.maxOpen ? '更高段位敬请期待' : '')}}</text>
+      </view>
+    </view>
+
+    <!-- 今日任务 -->
+    <view class="cp-card">
+      <text class="cp-card-title">今日任务</text>
+      <skeleton-list wx:if="{{tasksLoading && !tasks.length}}" rows="{{3}}" />
+      <view wx:elif="{{tasksError}}" class="card-state">
+        <text class="state-text">{{tasksError}}</text>
+        <view hover-class="tap" hover-stay-time="80" class="state-retry" catchtap="retryTasks">重试</view>
+      </view>
+      <empty-state wx:elif="{{!tasks.length}}" title="今天没有可做的任务" desc="明天再来看看，任务会按活动更新" />
+      <view wx:else class="task-list">
+        <view wx:for="{{tasks}}" wx:key="taskKey" class="task-row {{item.done ? 'task-done' : ''}}">
+          <view class="task-main">
+            <text class="task-name">{{item.name}}</text>
+            <text class="cp-hint">{{item.progressText}}</text>
+          </view>
+          <text class="task-reward">+{{item.p}}</text>
+          <text wx:if="{{item.done}}" class="task-check">✓</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 明细分页 -->
+    <view class="cp-card">
+      <view class="logs-head">
+        <text class="cp-card-title">积分明细</text>
+        <view hover-class="tap" hover-stay-time="80" class="logs-publish" catchtap="openPublish">去赚积分 ›</view>
+      </view>
+      <skeleton-list wx:if="{{logsLoading && !logs.length}}" rows="{{4}}" />
+      <view wx:elif="{{logsError && !logs.length}}" class="card-state">
+        <text class="state-text">{{logsError}}</text>
+        <view hover-class="tap" hover-stay-time="80" class="state-retry" catchtap="retryLogs">重试</view>
+      </view>
+      <empty-state wx:elif="{{!logs.length}}" title="还没有积分记录，先去签到吧" desc="签到、发帖、点外卖都能拿到积分" action-text="去签到" bind:action="sign" />
+      <view wx:else class="log-list">
+        <view wx:for="{{logs}}" wx:key="id" class="log-row">
+          <view class="log-main">
+            <text class="log-remark">{{item.remark || item.type}}</text>
+            <text class="cp-hint">{{item.timeText}}</text>
+          </view>
+          <view class="log-right">
+            <text class="log-amount {{item.positive ? 'log-plus' : 'log-minus'}}">{{item.amountText}}</text>
+            <text class="cp-hint" wx:if="{{item.balanceAfter !== undefined && item.balanceAfter !== null}}">余额 {{item.balanceAfter}}</text>
+          </view>
+        </view>
+        <view wx:if="{{logsLoading}}" class="log-more">加载中…</view>
+        <view wx:elif="{{!logsHasMore}}" class="log-more">没有更多了</view>
+      </view>
+    </view>
+
+    <text class="cp-hint compliance">100 积分 = 1 元，仅作价值参考，不可提现</text>
+  </view>
+
+  <ui-popup id="ui-popup"
+    visible="{{uiPopup.visible}}"
+    mode="{{uiPopup.mode}}"
+    tone="{{uiPopup.tone}}"
+    title="{{uiPopup.title}}"
+    message="{{uiPopup.message}}"
+    editable="{{uiPopup.editable}}"
+    placeholder="{{uiPopup.placeholder}}"
+    input-value="{{uiPopup.inputValue}}"
+    actions="{{uiPopup.actions}}"
+    show-cancel="{{uiPopup.showCancel}}"
+    confirm-text="{{uiPopup.confirmText}}"
+    cancel-text="{{uiPopup.cancelText}}"
+    bind:confirm="onPopupConfirm"
+    bind:cancel="onPopupCancel"
+    bind:action="onPopupAction"
+    bind:input="onPopupInput"
+    bind:close="onPopupClose" />
+</view>

@@ -1,0 +1,253 @@
+@import "../../styles/theme.wxss";
+@import "../../styles/common.wxss";
+
+.rank-page {
+  min-height: 100vh;
+  background: var(--c-bg);
+}
+
+.rank-body {
+  padding: var(--sp-gap) var(--sp-page) calc(160rpx + var(--safe-bottom));
+}
+
+/* ===== 顶部切换 ===== */
+.rank-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.type-capsules {
+  display: flex;
+  gap: 8rpx;
+  padding: 6rpx;
+  border-radius: var(--radius-pill);
+  background: var(--c-soft);
+}
+
+.type-capsule {
+  padding: 12rpx 34rpx;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-body);
+  color: var(--c-text-sub);
+}
+
+.type-on {
+  background: var(--c-card);
+  color: var(--c-primary);
+  font-weight: 600;
+}
+
+.period-text {
+  font-size: var(--fs-hint);
+  color: var(--c-text-sub);
+}
+
+.settled-hint {
+  display: block;
+  margin: 14rpx 0 var(--sp-gap);
+}
+
+/* ===== 前三名 ===== */
+.podium {
+  display: flex;
+  align-items: flex-end;
+  gap: 14rpx;
+}
+
+.podium-card {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  padding: 26rpx 12rpx 22rpx;
+  border-radius: var(--radius-card);
+  background: var(--c-card);
+  border: var(--bw) solid var(--c-line);
+}
+
+.place-1 {
+  padding-top: 34rpx;
+  padding-bottom: 32rpx;
+  border-color: var(--c-primary);
+  background: var(--c-soft);
+}
+
+.podium-avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-soft);
+  color: var(--c-primary);
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.place-1 .podium-avatar {
+  width: 104rpx;
+  height: 104rpx;
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+.podium-avatar-img,
+.rank-avatar-img {
+  width: 100%;
+  height: 100%;
+}
+
+.podium-rank {
+  font-size: var(--fs-hint);
+  color: var(--c-text-sub);
+  font-weight: 600;
+}
+
+.podium-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-body);
+  color: var(--c-text);
+  font-weight: 600;
+}
+
+.podium-score {
+  font-size: var(--fs-hint);
+  color: var(--c-text-sub);
+}
+
+.podium-reward {
+  font-size: var(--fs-hint);
+  color: var(--c-accent);
+  font-weight: 600;
+}
+
+/* ===== 4 名起列表 ===== */
+.rank-list {
+  margin-top: var(--sp-gap);
+  border-radius: var(--radius-card);
+  background: var(--c-card);
+  border: var(--bw) solid var(--c-line);
+  overflow: hidden;
+}
+
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding: 22rpx var(--sp-card);
+  border-bottom: var(--bw) solid var(--c-line);
+}
+
+.rank-row:last-child {
+  border-bottom: none;
+}
+
+.rank-no {
+  flex: none;
+  width: 44rpx;
+  text-align: center;
+  font-size: var(--fs-body);
+  color: var(--c-text-sub);
+  font-weight: 600;
+}
+
+.rank-avatar {
+  flex: none;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-soft);
+  color: var(--c-primary);
+  font-size: 26rpx;
+}
+
+.rank-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.rank-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-body);
+  color: var(--c-text);
+}
+
+.rank-reward {
+  flex: none;
+  font-size: var(--fs-hint);
+  color: var(--c-text-sub);
+}
+
+.reward-on {
+  color: var(--c-accent);
+  font-weight: 600;
+}
+
+/* ===== 底部吸底条 ===== */
+.bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 18rpx var(--sp-page) calc(18rpx + var(--safe-bottom));
+  background: var(--c-card);
+  border-top: var(--bw) solid var(--c-line);
+}
+
+.my-rank {
+  flex: 1;
+  min-width: 0;
+}
+
+.bottom-btn {
+  flex: none;
+  height: 68rpx;
+  line-height: 68rpx;
+  padding: 0 32rpx;
+  font-size: var(--fs-hint);
+}
+
+/* ===== 状态 ===== */
+.state {
+  padding: 120rpx 20rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.state-title {
+  font-size: var(--fs-card-title);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.state-btn {
+  height: 72rpx;
+  line-height: 72rpx;
+  padding: 0 44rpx;
+  margin-top: 8rpx;
+  font-size: var(--fs-hint);
+}

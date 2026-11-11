@@ -1,0 +1,210 @@
+<!-- 学生认证（V3.1 新页）
+     一页四态：未提交（表单）/ 审核中 / 已认证 / 已驳回，外加「开关关闭」说明态。
+     表单字段按 GET /api/verification/config 的 require 动态渲染，不写死四项必填。 -->
+<view class="cp-page verify-page">
+  <nav-bar title="学生认证" back="/pages/profile/profile" />
+  <offline-banner local="{{offline}}" />
+
+  <view class="verify-body">
+    <view class="verify-head">
+      <text class="cp-page-title">学生认证</text>
+      <text class="cp-hint verify-sub">认证用于身份标识，不采集证件照片</text>
+    </view>
+
+    <!-- 加载中：首屏不闪白 -->
+    <skeleton-list wx:if="{{loading}}" rows="{{4}}" />
+
+    <!-- 页面级失败：给重试，不静默 -->
+    <view wx:elif="{{error}}" class="state">
+      <text class="state-title">认证状态没加载出来</text>
+      <text class="cp-hint">{{error}}</text>
+      <view hover-class="tap-btn" hover-stay-time="80" class="cp-btn-primary state-btn" catchtap="retry">重新加载</view>
+    </view>
+
+    <!-- 开关关闭：verification.student.enabled=0 -->
+    <view wx:elif="{{closed}}" class="cp-card notice-card">
+      <text class="cp-card-title">认证申请暂未开放</text>
+      <text class="cp-body">平台暂未接入可信核验源，开放后会通过站内消息通知你。</text>
+      <text class="cp-hint">已认证的同学不受影响，认证信息仍然有效。</text>
+    </view>
+
+    <block wx:else>
+      <!-- 态 3：已认证 -->
+      <view wx:if="{{state === 'verified'}}" class="cp-card status-card status-card--ok">
+        <view class="status-head">
+          <text class="status-badge status-badge--ok">✓</text>
+          <view class="status-copy">
+            <text class="cp-card-title">已认证</text>
+            <text class="cp-hint">{{verifiedAtText ? '通过时间 ' + verifiedAtText : '认证已通过'}}</text>
+          </view>
+        </view>
+        <view class="field-list">
+          <view class="field-row">
+            <text class="field-label">学校</text>
+            <text class="field-value">{{schoolText || '—'}}</text>
+          </view>
+          <view class="field-row">
+            <text class="field-label">学院</text>
+            <text class="field-value">{{me.college || '—'}}</text>
+          </view>
+          <view class="field-row">
+            <text class="field-label">真实姓名</text>
+            <text class="field-value">{{me.realName || '—'}}</text>
+          </view>
+          <view class="field-row">
+            <text class="field-label">学号</text>
+            <text class="field-value">{{me.studentNo || '—'}}</text>
+          </view>
+          <view wx:if="{{me.phone}}" class="field-row">
+            <text class="field-label">手机号</text>
+            <text class="field-value">{{me.phone}}</text>
+          </view>
+        </view>
+        <text class="cp-hint">认证用于身份标识；有偿接单开放时间另行通知</text>
+      </view>
+
+      <!-- 态 2：审核中 -->
+      <view wx:elif="{{state === 'pending'}}" class="cp-card status-card status-card--wait">
+        <view class="status-head">
+          <text class="status-badge status-badge--wait">…</text>
+          <view class="status-copy">
+            <text class="cp-card-title">认证审核中</text>
+            <text class="cp-hint">{{submittedAtText ? '提交时间 ' + submittedAtText : '已提交，等待人工核对'}}</text>
+          </view>
+        </view>
+        <view class="field-list">
+          <view class="field-row">
+            <text class="field-label">学校</text>
+            <text class="field-value">{{schoolText || '—'}}</text>
+          </view>
+          <view class="field-row">
+            <text class="field-label">学院</text>
+            <text class="field-value">{{me.college || '—'}}</text>
+          </view>
+          <view class="field-row">
+            <text class="field-label">真实姓名</text>
+            <text class="field-value">{{me.realName || '—'}}</text>
+          </view>
+          <view class="field-row">
+            <text class="field-label">学号</text>
+            <text class="field-value">{{me.studentNo || '—'}}</text>
+          </view>
+          <view wx:if="{{me.phone}}" class="field-row">
+            <text class="field-label">手机号</text>
+            <text class="field-value">{{me.phone}}</text>
+          </view>
+        </view>
+        <text class="cp-hint">1–2 个工作日内人工核对，结果会通过站内消息通知你</text>
+      </view>
+
+      <!-- 态 4：已驳回 -->
+      <view wx:elif="{{state === 'rejected'}}" class="cp-card status-card status-card--bad">
+        <view class="status-head">
+          <text class="status-badge status-badge--bad">!</text>
+          <view class="status-copy">
+            <text class="cp-card-title">认证未通过</text>
+            <text class="cp-hint">{{rejectReason || '材料没有通过人工核对，请检查后重新提交'}}</text>
+          </view>
+        </view>
+        <view class="field-list">
+          <view class="field-row">
+            <text class="field-label">学校</text>
+            <text class="field-value">{{schoolText || '—'}}</text>
+          </view>
+          <view class="field-row">
+            <text class="field-label">学院</text>
+            <text class="field-value">{{me.college || '—'}}</text>
+          </view>
+          <view class="field-row">
+            <text class="field-label">真实姓名</text>
+            <text class="field-value">{{me.realName || '—'}}</text>
+          </view>
+          <view class="field-row">
+            <text class="field-label">学号</text>
+            <text class="field-value">{{me.studentNo || '—'}}</text>
+          </view>
+          <view wx:if="{{me.phone}}" class="field-row">
+            <text class="field-label">手机号</text>
+            <text class="field-value">{{me.phone}}</text>
+          </view>
+        </view>
+        <view hover-class="tap-btn" hover-stay-time="80" class="cp-btn-primary status-action" catchtap="reapply">修改并重新提交</view>
+      </view>
+
+      <!-- 态 1：未提交（表单） -->
+      <block wx:else>
+        <view class="cp-card form-card">
+          <text class="cp-card-title">填写认证信息</text>
+
+          <view class="field-block">
+            <text class="field-label">学校</text>
+            <picker mode="selector" range="{{schoolNames}}" value="{{schoolIndex}}" bindchange="chooseSchool">
+              <view class="field-picker">
+                <text class="field-picker-text {{schoolText ? '' : 'field-picker-text--empty'}}">{{schoolText || '请选择学校'}}</text>
+                <text class="field-picker-arrow">›</text>
+              </view>
+            </picker>
+            <text wx:if="{{errors.school}}" class="field-error">{{errors.school}}</text>
+            <text wx:if="{{!schoolNames.length}}" class="cp-hint">学校列表没加载出来，下拉重试后再选</text>
+          </view>
+
+          <view wx:if="{{config.require.realName}}" class="field-block">
+            <text class="field-label">真实姓名</text>
+            <input class="field-input" value="{{form.realName}}" maxlength="20" placeholder="与学籍一致的姓名"
+              data-field="realName" bindinput="inputField" />
+            <text wx:if="{{errors.realName}}" class="field-error">{{errors.realName}}</text>
+          </view>
+
+          <view wx:if="{{config.require.college}}" class="field-block">
+            <text class="field-label">学院</text>
+            <input class="field-input" value="{{form.college}}" maxlength="32" placeholder="如：计算机学院"
+              data-field="college" bindinput="inputField" />
+            <text wx:if="{{errors.college}}" class="field-error">{{errors.college}}</text>
+          </view>
+
+          <view wx:if="{{config.require.studentNo}}" class="field-block">
+            <text class="field-label">学号</text>
+            <input class="field-input" value="{{form.studentNo}}" maxlength="20" placeholder="4–20 位数字或字母"
+              data-field="studentNo" bindinput="inputField" />
+            <text wx:if="{{errors.studentNo}}" class="field-error">{{errors.studentNo}}</text>
+          </view>
+
+          <view wx:if="{{config.require.phone}}" class="field-block">
+            <text class="field-label">手机号</text>
+            <input class="field-input" value="{{form.phone}}" type="number" maxlength="11" placeholder="用于核对时联系你"
+              data-field="phone" bindinput="inputField" />
+            <text wx:if="{{errors.phone}}" class="field-error">{{errors.phone}}</text>
+          </view>
+
+          <view hover-class="tap-btn" hover-stay-time="80"
+            class="cp-btn-primary submit-btn {{submitting || !canSubmit ? 'cp-btn-primary--disabled' : ''}}"
+            catchtap="submit">{{submitting ? '提交中…' : '提交认证'}}</view>
+        </view>
+
+        <view class="cp-card privacy-card">
+          <text class="cp-body">我们只保存姓名、学号、学院、手机号，用于人工核对，<text class="privacy-strong">不采集证件照片</text>。</text>
+          <text class="cp-hint">每人每天最多提交 {{config.dailyLimit}} 次</text>
+        </view>
+      </block>
+    </block>
+  </view>
+
+  <ui-popup id="ui-popup"
+    visible="{{uiPopup.visible}}"
+    mode="{{uiPopup.mode}}"
+    tone="{{uiPopup.tone}}"
+    title="{{uiPopup.title}}"
+    message="{{uiPopup.message}}"
+    editable="{{uiPopup.editable}}"
+    placeholder="{{uiPopup.placeholder}}"
+    input-value="{{uiPopup.inputValue}}"
+    actions="{{uiPopup.actions}}"
+    show-cancel="{{uiPopup.showCancel}}"
+    confirm-text="{{uiPopup.confirmText}}"
+    cancel-text="{{uiPopup.cancelText}}"
+    bind:confirm="onPopupConfirm"
+    bind:cancel="onPopupCancel"
+    bind:action="onPopupAction"
+    bind:input="onPopupInput"
+    bind:close="onPopupClose" />
+</view>

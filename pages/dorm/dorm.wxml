@@ -1,0 +1,149 @@
+<!-- 我的宿舍（V3.1 新页）
+     两态：未加入（说明 + 创建 + 邀请码加入）/ 已加入（宿舍卡 + 今日签到格子 + 本周榜 + 退出）
+     签到入口复用积分页，本页不单独放签到按钮；从积分页签完返回时 onShow 重新拉取。 -->
+<view class="cp-page dorm-page">
+  <nav-bar title="我的宿舍" back="/pages/profile/profile" />
+  <offline-banner local="{{offline}}" />
+
+  <view class="dorm-body">
+    <view class="dorm-head">
+      <text class="cp-page-title">我的宿舍</text>
+      <text class="cp-hint">和舍友一起签到，全员到齐每人 +5 积分</text>
+    </view>
+
+    <skeleton-list wx:if="{{loading}}" rows="{{3}}" />
+
+    <view wx:elif="{{error}}" class="state">
+      <text class="state-title">宿舍信息没加载出来</text>
+      <text class="cp-hint">{{error}}</text>
+      <view hover-class="tap-btn" hover-stay-time="80" class="cp-btn-primary state-btn" catchtap="retry">重新加载</view>
+    </view>
+
+    <block wx:else>
+      <!-- 宿舍被解散：降级为态 A，顶部说明 -->
+      <view wx:if="{{dissolved}}" class="dissolved-hint">
+        <text class="dissolved-text">该宿舍已解散</text>
+        <text class="cp-hint">成员关系已解除，历史签到记录保留</text>
+      </view>
+
+      <!-- ==================== 态 A：未加入 ==================== -->
+      <block wx:if="{{!joined}}">
+        <view class="cp-card intro-card">
+          <text class="cp-card-title">和舍友一起签到</text>
+          <text class="cp-body">和舍友一起签到，全员到齐每人 +5 积分</text>
+          <text class="cp-hint">一人只能加入一个宿舍，最多 8 人；建宿舍需要先完成学生认证。</text>
+        </view>
+
+        <view class="cp-card action-card">
+          <view hover-class="tap-btn" hover-stay-time="80"
+            class="cp-btn-primary action-btn {{offline ? 'cp-btn-primary--disabled' : ''}}"
+            catchtap="openCreate">创建宿舍</view>
+          <view hover-class="tap-btn" hover-stay-time="80"
+            class="cp-btn-ghost action-btn {{offline ? 'cp-btn-primary--disabled' : ''}}"
+            catchtap="openJoin">{{joinBusy ? '加入中…' : '用邀请码加入'}}</view>
+          <text wx:if="{{joinError}}" class="join-error">{{joinError}}</text>
+          <text wx:if="{{offline}}" class="cp-hint">当前离线：按钮暂不可用，连上网络后下拉刷新</text>
+        </view>
+
+        <!-- 创建表单：ui-popup 只支持单输入框，三项用页内表单（不改组件） -->
+        <view wx:if="{{createVisible}}" class="cp-card form-card">
+          <text class="cp-card-title">创建宿舍</text>
+          <view class="field-block">
+            <text class="field-label">宿舍名</text>
+            <input class="field-input" value="{{createForm.name}}" maxlength="32" placeholder="如 6号楼312"
+              data-field="name" bindinput="inputCreate" />
+          </view>
+          <view class="field-block">
+            <text class="field-label">楼栋（选填）</text>
+            <input class="field-input" value="{{createForm.building}}" maxlength="32" placeholder="如 6号楼"
+              data-field="building" bindinput="inputCreate" />
+          </view>
+          <view class="field-block">
+            <text class="field-label">房间号（选填）</text>
+            <input class="field-input" value="{{createForm.room}}" maxlength="16" placeholder="如 312"
+              data-field="room" bindinput="inputCreate" />
+          </view>
+          <view class="form-actions">
+            <view hover-class="tap" hover-stay-time="80" class="cp-btn-ghost form-btn" catchtap="cancelCreate">取消</view>
+            <view hover-class="tap-btn" hover-stay-time="80"
+              class="cp-btn-primary form-btn {{creating ? 'cp-btn-primary--disabled' : ''}}"
+              catchtap="submitCreate">{{creating ? '创建中…' : '创建'}}</view>
+          </view>
+        </view>
+      </block>
+
+      <!-- ==================== 态 B：已加入 ==================== -->
+      <block wx:else>
+        <view class="cp-card dorm-card">
+          <view class="dorm-title-row">
+            <text class="dorm-name">{{dorm.name}}</text>
+            <text class="cp-tag">{{memberText}}</text>
+          </view>
+          <text class="cp-hint">{{placeText}}</text>
+          <view class="code-row">
+            <text class="code-label">邀请码</text>
+            <text class="code-value">{{inviteCode}}</text>
+            <view hover-class="tap" hover-stay-time="80" class="code-copy" catchtap="copyInvite">复制</view>
+          </view>
+        </view>
+
+        <view class="cp-card sign-card">
+          <text class="cp-card-title">今日 {{today.signedCount}} / {{today.memberCount}} 已签到</text>
+          <view class="member-grid">
+            <view wx:for="{{members}}" wx:key="userId" class="member-cell">
+              <view class="member-avatar {{item.signedToday ? 'member-avatar--on' : 'member-avatar--off'}}">
+                <image wx:if="{{item.avatar}}" class="member-avatar-img" src="{{item.avatar}}" mode="aspectFill" />
+                <text wx:else class="member-initial">{{item.initial}}</text>
+                <text wx:if="{{item.signedToday}}" class="member-check">✓</text>
+              </view>
+              <text class="member-name">{{item.nickname}}</text>
+              <text class="member-role">{{item.roleText}}</text>
+            </view>
+          </view>
+
+          <view wx:if="{{today.allDone}}" class="all-done">
+            <text class="all-done-text">{{dorm.name}} 全员到齐，每人 +5 积分</text>
+          </view>
+          <view wx:elif="{{today.memberCount}}" class="gap-hint">
+            <text class="cp-body">还差 {{today.gap}} 人签到，全员到齐每人 +5 积分</text>
+          </view>
+
+          <view hover-class="tap" hover-stay-time="80" class="sign-link" catchtap="goPoints">去积分页签到 ›</view>
+        </view>
+
+        <view class="cp-card week-card">
+          <text class="cp-card-title">本周榜</text>
+          <block wx:if="{{week}}">
+            <text class="week-main {{champion ? 'week-main--champion' : ''}}">{{weekText}}</text>
+            <text wx:if="{{weekGapText}}" class="cp-hint">{{weekGapText}}</text>
+            <text class="cp-hint">本周共 {{week.dormCount}} 个宿舍参与，周一 00:20 结算</text>
+          </block>
+          <text wx:else class="cp-hint">本周榜还没结算，下周一 00:20 见分晓</text>
+        </view>
+
+        <view hover-class="tap" hover-stay-time="80" class="leave-link" catchtap="confirmLeave">
+          {{leaving ? '退出中…' : '退出宿舍'}}
+        </view>
+      </block>
+    </block>
+  </view>
+
+  <ui-popup id="ui-popup"
+    visible="{{uiPopup.visible}}"
+    mode="{{uiPopup.mode}}"
+    tone="{{uiPopup.tone}}"
+    title="{{uiPopup.title}}"
+    message="{{uiPopup.message}}"
+    editable="{{uiPopup.editable}}"
+    placeholder="{{uiPopup.placeholder}}"
+    input-value="{{uiPopup.inputValue}}"
+    actions="{{uiPopup.actions}}"
+    show-cancel="{{uiPopup.showCancel}}"
+    confirm-text="{{uiPopup.confirmText}}"
+    cancel-text="{{uiPopup.cancelText}}"
+    bind:confirm="onPopupConfirm"
+    bind:cancel="onPopupCancel"
+    bind:action="onPopupAction"
+    bind:input="onPopupInput"
+    bind:close="onPopupClose" />
+</view>

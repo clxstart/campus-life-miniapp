@@ -1,0 +1,300 @@
+@import "../../styles/theme.wxss";
+@import "../../styles/common.wxss";
+
+.dorm-page {
+  padding-bottom: calc(48rpx + var(--safe-bottom));
+}
+
+.dorm-body {
+  padding-bottom: 24rpx;
+}
+
+.dorm-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  padding: 20rpx 0 24rpx;
+}
+
+/* ===== 页面级失败 ===== */
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  padding: 80rpx 24rpx;
+  text-align: center;
+}
+
+.state-title {
+  font-size: var(--fs-card-title);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.state-btn {
+  min-width: 280rpx;
+  margin-top: 8rpx;
+}
+
+.dissolved-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  padding: 20rpx 24rpx;
+  margin-bottom: var(--sp-gap);
+  border: 1rpx solid var(--c-accent);
+  border-radius: var(--radius-card);
+  background: var(--c-card);
+}
+
+.dissolved-text {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-accent);
+}
+
+/* ==================== 态 A ==================== */
+.intro-card,
+.action-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.action-btn {
+  margin-top: 4rpx;
+}
+
+.join-error {
+  font-size: var(--fs-hint);
+  color: var(--c-accent);
+  line-height: 1.5;
+}
+
+/* 创建表单 */
+.form-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.field-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.field-label {
+  font-size: var(--fs-hint);
+  color: var(--c-text-sub);
+  line-height: 1.6;
+}
+
+.field-input {
+  height: 84rpx;
+  line-height: 84rpx;
+  padding: 0 24rpx;
+  background: var(--c-card);
+  border: 1rpx solid var(--c-line);
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-body);
+  color: var(--c-text);
+  box-sizing: border-box;
+}
+
+.form-actions {
+  display: flex;
+  gap: var(--sp-col);
+  margin-top: 8rpx;
+}
+
+.form-btn {
+  flex: 1;
+}
+
+/* ==================== 态 B ==================== */
+.dorm-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.dorm-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.dorm-name {
+  font-size: var(--fs-card-title);
+  font-weight: 600;
+  color: var(--c-text);
+  /* 宿舍名最长 32 字，允许两行不撑破卡片 */
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.code-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding-top: 14rpx;
+  border-top: 1rpx solid var(--c-line);
+}
+
+.code-label {
+  font-size: var(--fs-hint);
+  color: var(--c-text-sub);
+}
+
+.code-value {
+  flex: 1;
+  font-size: var(--fs-card-title);
+  font-weight: 600;
+  letter-spacing: 4rpx;
+  color: var(--c-primary);
+}
+
+.code-copy {
+  padding: 8rpx 24rpx;
+  border: 1rpx solid var(--c-primary);
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-hint);
+  color: var(--c-primary);
+  flex-shrink: 0;
+}
+
+.sign-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.member-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx 0;
+}
+
+.member-cell {
+  width: 25%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.member-avatar {
+  position: relative;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.member-avatar--on {
+  background: var(--c-primary);
+  border: 2rpx solid var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+.member-avatar--off {
+  background: transparent;
+  border: 2rpx solid var(--c-line);
+  color: var(--c-text-sub);
+}
+
+.member-avatar-img {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: var(--radius-pill);
+}
+
+.member-initial {
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.member-check {
+  position: absolute;
+  right: -6rpx;
+  bottom: -6rpx;
+  width: 32rpx;
+  height: 32rpx;
+  line-height: 32rpx;
+  text-align: center;
+  border-radius: var(--radius-pill);
+  background: var(--c-card);
+  border: 2rpx solid var(--c-primary);
+  color: var(--c-primary);
+  font-size: 20rpx;
+}
+
+.member-name {
+  max-width: 100%;
+  font-size: var(--fs-hint);
+  color: var(--c-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member-role {
+  font-size: 20rpx;
+  color: var(--c-text-sub);
+}
+
+.all-done {
+  padding: 18rpx 24rpx;
+  border: 1rpx solid var(--c-primary);
+  border-radius: var(--radius-card);
+  background: var(--c-soft);
+}
+
+.all-done-text {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-primary);
+}
+
+.gap-hint {
+  padding: 16rpx 24rpx;
+  border: 1rpx solid var(--c-line);
+  border-radius: var(--radius-card);
+  background: var(--c-card);
+}
+
+.sign-link {
+  font-size: var(--fs-hint);
+  color: var(--c-primary);
+}
+
+.week-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.week-main {
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.week-main--champion {
+  color: var(--c-accent);
+}
+
+.leave-link {
+  margin-top: var(--sp-gap);
+  text-align: center;
+  font-size: var(--fs-hint);
+  color: var(--c-text-sub);
+  padding: 20rpx 0;
+}

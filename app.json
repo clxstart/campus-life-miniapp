@@ -7,6 +7,7 @@
     "pages/circle-detail/circle-detail",
     "pages/circle-chat/circle-chat",
     "pages/circle-publish/circle-publish",
+    "pages/circle-create/circle-create",
     "pages/community/community",
     "pages/learn/learn",
     "pages/learn-publish/learn-publish",
@@ -41,7 +42,12 @@
     "pages/adopt/adopt",
     "pages/wardrobe/wardrobe",
     "pages/dispatch/dispatch",
-    "pages/companion/companion"
+    "pages/companion/companion",
+    "pages/points/points",
+    "pages/points-redeem/points-redeem",
+    "pages/verify/verify",
+    "pages/forum-rank/forum-rank",
+    "pages/dorm/dorm"
   ],
   "window": {
     "navigationStyle": "custom",

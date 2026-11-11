@@ -1,0 +1,106 @@
+<view class="cp-page rank-page">
+  <nav-bar title="论坛榜单" back="/pages/community/community" />
+  <offline-banner local="{{offline}}" />
+
+  <view class="rank-body">
+    <!-- 日榜 / 周榜切换 + 周期标注 -->
+    <view class="rank-switch">
+      <view class="type-capsules">
+        <view hover-class="tap" hover-stay-time="80"
+          wx:for="{{types}}"
+          wx:key="key"
+          class="type-capsule {{type === item.key ? 'type-on' : ''}}"
+          data-type="{{item.key}}"
+          bindtap="switchType">{{item.label}}</view>
+      </view>
+      <text class="period-text">{{periodText}}</text>
+    </view>
+
+    <text class="cp-hint settled-hint">{{settledText}}</text>
+
+    <skeleton-list wx:if="{{loading}}" rows="{{5}}" avatar="{{true}}" />
+
+    <view wx:elif="{{error}}" class="state">
+      <text class="state-title">榜单没加载出来</text>
+      <text class="cp-hint">{{error}}</text>
+      <view hover-class="tap-btn" hover-stay-time="80" class="cp-btn-primary state-btn" catchtap="retry">重新加载</view>
+    </view>
+
+    <empty-state wx:elif="{{!podium.length && !rest.length}}"
+      title="{{type === 'weekly' ? '这周还没有人上榜' : '今天还没有人上榜'}}"
+      desc="发帖、评论、被赞都算分，前 10 名有积分奖励"
+      action-text="去发帖"
+      bind:action="goPublish" />
+
+    <block wx:else>
+      <!-- 前三名：2-1-3 视觉顺序，冠军居中最高 -->
+      <view class="podium">
+        <view hover-class="tap-card" hover-stay-time="80"
+          wx:for="{{podium}}"
+          wx:key="userId"
+          class="podium-card {{item.placeClass}}"
+          data-user-id="{{item.userId}}"
+          bindtap="openUser">
+          <view class="podium-avatar">
+            <image wx:if="{{item.avatar}}" class="podium-avatar-img" src="{{item.avatar}}" mode="aspectFill" />
+            <text wx:else>{{item.initial}}</text>
+          </view>
+          <text class="podium-rank">{{item.rankNo}}</text>
+          <text class="podium-name">{{item.nickname}}</text>
+          <text class="podium-score">{{item.score}} 分</text>
+          <text class="podium-reward">{{item.rewardText}}</text>
+        </view>
+      </view>
+
+      <!-- 第 4 名起 -->
+      <view class="rank-list">
+        <view hover-class="tap-card" hover-stay-time="80"
+          wx:for="{{rest}}"
+          wx:key="userId"
+          class="rank-row"
+          data-user-id="{{item.userId}}"
+          bindtap="openUser">
+          <text class="rank-no">{{item.rankNo}}</text>
+          <view class="rank-avatar">
+            <image wx:if="{{item.avatar}}" class="rank-avatar-img" src="{{item.avatar}}" mode="aspectFill" />
+            <text wx:else>{{item.initial}}</text>
+          </view>
+          <view class="rank-main">
+            <text class="rank-name">{{item.nickname}}</text>
+            <text class="cp-hint">得分 {{item.score}}</text>
+          </view>
+          <text class="rank-reward {{item.awarded > 0 ? 'reward-on' : ''}}">{{item.rewardText}}</text>
+        </view>
+      </view>
+    </block>
+
+    <!-- 底部吸底条：我的排名 / 未上榜引导 -->
+    <view class="bottom-bar">
+      <text class="cp-body my-rank">{{meText}}</text>
+      <view wx:if="{{!(me && me.rankNo)}}"
+        hover-class="tap-btn"
+        hover-stay-time="80"
+        class="cp-btn-primary bottom-btn"
+        catchtap="goPublish">发个帖子试试</view>
+    </view>
+  </view>
+
+  <ui-popup id="ui-popup"
+    visible="{{uiPopup.visible}}"
+    mode="{{uiPopup.mode}}"
+    tone="{{uiPopup.tone}}"
+    title="{{uiPopup.title}}"
+    message="{{uiPopup.message}}"
+    editable="{{uiPopup.editable}}"
+    placeholder="{{uiPopup.placeholder}}"
+    input-value="{{uiPopup.inputValue}}"
+    actions="{{uiPopup.actions}}"
+    show-cancel="{{uiPopup.showCancel}}"
+    confirm-text="{{uiPopup.confirmText}}"
+    cancel-text="{{uiPopup.cancelText}}"
+    bind:confirm="onPopupConfirm"
+    bind:cancel="onPopupCancel"
+    bind:action="onPopupAction"
+    bind:input="onPopupInput"
+    bind:close="onPopupClose" />
+</view>

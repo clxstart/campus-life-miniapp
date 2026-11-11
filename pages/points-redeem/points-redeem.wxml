@@ -1,0 +1,78 @@
+<view class="cp-page redeem-page">
+  <nav-bar title="积分兑换" back="/pages/points/points" />
+  <offline-banner local="{{offline}}" />
+
+  <view class="redeem-body">
+    <!-- 顶部：当前余额 + 合规口径 -->
+    <view class="cp-card balance-card">
+      <view class="balance-row">
+        <text class="cp-card-title">当前余额</text>
+        <view class="balance-right">
+          <text class="balance-number">{{balance}}</text>
+          <text class="cp-hint">积分 · {{valueYuan}}</text>
+        </view>
+      </view>
+      <text class="cp-hint compliance">100 积分 = 1 元，仅作价值参考，不可提现</text>
+    </view>
+
+    <view class="cp-card guide-card" wx:if="{{guideVisible}}">
+      <text class="cp-body">已放入「我的优惠券」</text>
+      <view hover-class="tap" hover-stay-time="80" class="guide-link" catchtap="openCoupons">查看我的优惠券 ›</view>
+    </view>
+
+    <view class="section-head">
+      <text class="cp-page-title redeem-title">可兑换</text>
+      <view hover-class="tap" hover-stay-time="80" class="points-link" catchtap="openPoints">去赚积分 ›</view>
+    </view>
+
+    <skeleton-list wx:if="{{loading}}" rows="{{4}}" />
+    <view wx:elif="{{error}}" class="state">
+      <text class="state-title">商品没加载出来</text>
+      <text class="cp-hint">{{error}}</text>
+      <view hover-class="tap-btn" hover-stay-time="80" class="cp-btn-primary state-btn" catchtap="retry">重新加载</view>
+    </view>
+    <empty-state wx:elif="{{!items.length}}" title="兑换池还没有上架商品" desc="等运营上架后，这里会出现能兑换的外卖券" />
+
+    <view wx:else class="cp-grid-2 item-grid">
+      <view hover-class="tap-card" hover-stay-time="80"
+        wx:for="{{items}}"
+        wx:key="itemKey"
+        class="cp-card item-card {{item.disabled ? 'item-disabled' : ''}}"
+        data-key="{{item.itemKey}}"
+        bindtap="tapItem">
+        <text class="item-name">{{item.name}}</text>
+        <text class="item-price">{{item.priceText}}</text>
+        <text class="cp-hint">{{item.yuanText}}</text>
+        <view class="item-meta">
+          <text class="cp-tag">{{item.stockText}}</text>
+          <text class="cp-hint">{{item.limitText}}</text>
+        </view>
+        <view wx:if="{{busyKey === item.itemKey}}" class="item-busy">提交中…</view>
+        <text wx:elif="{{item.soldOut}}" class="item-state">已兑完</text>
+        <text wx:elif="{{item.limitReached}}" class="item-state">已达上限</text>
+        <view wx:else hover-class="tap-btn" hover-stay-time="80" class="cp-btn-primary item-btn">兑换</view>
+      </view>
+    </view>
+
+    <text class="cp-hint bottom-hint">兑换后不可退；券仅限本平台外卖订单抵扣</text>
+  </view>
+
+  <ui-popup id="ui-popup"
+    visible="{{uiPopup.visible}}"
+    mode="{{uiPopup.mode}}"
+    tone="{{uiPopup.tone}}"
+    title="{{uiPopup.title}}"
+    message="{{uiPopup.message}}"
+    editable="{{uiPopup.editable}}"
+    placeholder="{{uiPopup.placeholder}}"
+    input-value="{{uiPopup.inputValue}}"
+    actions="{{uiPopup.actions}}"
+    show-cancel="{{uiPopup.showCancel}}"
+    confirm-text="{{uiPopup.confirmText}}"
+    cancel-text="{{uiPopup.cancelText}}"
+    bind:confirm="onPopupConfirm"
+    bind:cancel="onPopupCancel"
+    bind:action="onPopupAction"
+    bind:input="onPopupInput"
+    bind:close="onPopupClose" />
+</view>

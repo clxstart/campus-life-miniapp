@@ -1,0 +1,223 @@
+@import "../../styles/theme.wxss";
+@import "../../styles/common.wxss";
+
+.verify-page {
+  padding-bottom: calc(48rpx + var(--safe-bottom));
+}
+
+.verify-body {
+  padding-bottom: 24rpx;
+}
+
+.verify-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  padding: 20rpx 0 24rpx;
+}
+
+.verify-sub {
+  display: block;
+}
+
+/* ===== 页面级失败 ===== */
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  padding: 80rpx 24rpx;
+  text-align: center;
+}
+
+.state-title {
+  font-size: var(--fs-card-title);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.state-btn {
+  min-width: 280rpx;
+  margin-top: 8rpx;
+}
+
+/* ===== 开关关闭说明卡 ===== */
+.notice-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+/* ===== 状态卡（审核中 / 已认证 / 已驳回） ===== */
+.status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.status-card--ok {
+  border-color: var(--c-primary);
+}
+
+.status-card--wait {
+  background: var(--c-soft);
+  border-color: var(--c-line);
+}
+
+.status-card--bad {
+  border-color: var(--c-accent);
+}
+
+.status-head {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.status-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  min-width: 0;
+}
+
+.status-badge {
+  width: 64rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  border-radius: var(--radius-pill);
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 700;
+  flex-shrink: 0;
+  background: var(--c-card);
+  border: 2rpx solid var(--c-line);
+  color: var(--c-text-sub);
+}
+
+.status-badge--ok {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+.status-badge--wait {
+  background: var(--c-card);
+  border-color: var(--c-primary);
+  color: var(--c-primary);
+}
+
+.status-badge--bad {
+  background: var(--c-card);
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+}
+
+.status-action {
+  margin-top: 8rpx;
+}
+
+/* ===== 只读字段回显 ===== */
+.field-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  padding: 8rpx 0;
+  border-top: 1rpx solid var(--c-line);
+}
+
+.field-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24rpx;
+}
+
+.field-label {
+  font-size: var(--fs-hint);
+  color: var(--c-text-sub);
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+
+.field-value {
+  font-size: var(--fs-body);
+  color: var(--c-text);
+  text-align: right;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+/* ===== 表单 ===== */
+.form-card {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.field-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.field-input,
+.field-picker {
+  height: 84rpx;
+  line-height: 84rpx;
+  padding: 0 24rpx;
+  background: var(--c-card);
+  border: 1rpx solid var(--c-line);
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-body);
+  color: var(--c-text);
+  box-sizing: border-box;
+}
+
+.field-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.field-picker-text {
+  font-size: var(--fs-body);
+  color: var(--c-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-picker-text--empty {
+  color: var(--c-text-sub);
+}
+
+.field-picker-arrow {
+  color: var(--c-text-sub);
+  font-size: 32rpx;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.field-error {
+  font-size: var(--fs-hint);
+  color: var(--c-accent);
+  line-height: 1.5;
+}
+
+.submit-btn {
+  margin-top: 8rpx;
+}
+
+/* ===== 隐私说明 ===== */
+.privacy-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.privacy-strong {
+  font-weight: 600;
+  color: var(--c-primary);
+}

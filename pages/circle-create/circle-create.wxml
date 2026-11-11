@@ -1,0 +1,111 @@
+<!-- 创建圈子（V3.1 新页 · 黄金段位特权）
+     三段：加载中 / 无权限说明卡 / 表单。
+     表单校验以后端 POST /api/circles 为准，这里只做即时提示；
+     提交中按钮置灰并禁用（防连点），成功后回圈子列表。 -->
+<view class="cp-page circle-create-page">
+  <nav-bar title="创建圈子" back="/pages/discover/discover" />
+  <offline-banner local="{{offline}}" />
+
+  <view class="create-body">
+    <view class="create-head">
+      <text class="cp-page-title">创建圈子</text>
+      <text class="cp-hint">提交后进入人工审核，通过后才会出现在圈子列表</text>
+    </view>
+
+    <skeleton-list wx:if="{{loading}}" rows="{{4}}" />
+
+    <!-- 页面级失败：给重试，不静默 -->
+    <view wx:elif="{{error}}" class="state">
+      <text class="state-title">段位信息没加载出来</text>
+      <text class="cp-hint">{{error}}</text>
+      <view hover-class="tap-btn" hover-stay-time="80" class="cp-btn-primary state-btn" catchtap="retry">重新加载</view>
+    </view>
+
+    <!-- 无权限：段位不足 / 开关关闭。入口不隐藏，点进来给原因和下一步 -->
+    <view wx:elif="{{!allowed}}" class="cp-card notice-card">
+      <text class="cp-card-title">{{gateTitle}}</text>
+      <text class="cp-body">{{gateHint}}</text>
+      <view hover-class="tap-btn" hover-stay-time="80" class="cp-btn-primary gate-btn" catchtap="openGateAction">{{gateActionText}}</view>
+    </view>
+
+    <block wx:else>
+      <view class="cp-card form-card">
+        <view class="field-block">
+          <view class="field-label-row">
+            <text class="field-label">圈子名称</text>
+            <text class="field-count">{{form.name.length}} / {{nameMax}}</text>
+          </view>
+          <input class="field-input" value="{{form.name}}" maxlength="{{nameMax}}"
+            placeholder="如 夜跑团" placeholder-class="field-placeholder" bindinput="inputName" />
+          <text wx:if="{{errors.name}}" class="field-error">{{errors.name}}</text>
+        </view>
+
+        <view class="field-block">
+          <text class="field-label">分类</text>
+          <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="chooseCategory">
+            <view class="field-picker">
+              <text class="field-picker-text {{categoryText ? '' : 'field-picker-text--empty'}}">{{categoryText || '请选择分类'}}</text>
+              <text class="field-picker-arrow">›</text>
+            </view>
+          </picker>
+          <text wx:if="{{errors.category}}" class="field-error">{{errors.category}}</text>
+        </view>
+
+        <view class="field-block">
+          <view class="field-label-row">
+            <text class="field-label">简介</text>
+            <text class="field-count">{{form.description.length}} / {{descMax}}</text>
+          </view>
+          <textarea class="field-textarea" value="{{form.description}}" maxlength="{{descMax}}"
+            placeholder="一句话说清这个圈子聊什么、适合谁" placeholder-class="field-placeholder"
+            bindinput="inputDesc" />
+          <text wx:if="{{errors.description}}" class="field-error">{{errors.description}}</text>
+        </view>
+
+        <view class="field-block">
+          <text class="field-label">封面（可选）</text>
+          <view class="cover-row">
+            <view wx:if="{{coverTemp}}" class="cover-preview">
+              <image class="cover-img" src="{{coverTemp}}" mode="aspectFill" />
+              <view hover-class="tap" hover-stay-time="80" class="cover-remove" catchtap="removeCover">×</view>
+            </view>
+            <view wx:else hover-class="tap" hover-stay-time="80" class="cover-add" catchtap="chooseCover">
+              <text class="cover-plus">＋</text>
+              <text class="cover-add-text">上传封面</text>
+            </view>
+            <text class="cover-note">jpg / png，不超过 2MB</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="cp-card tips-card">
+        <text class="cp-hint">建圈后你是圈主，每人上限 1 个；审核期间占用名额。</text>
+        <text class="cp-hint">名称与简介会过内容审核，含违规词会被直接拒绝。</text>
+      </view>
+
+      <view hover-class="tap-btn" hover-stay-time="80"
+        class="cp-btn-primary submit-btn {{submitting || offline ? 'cp-btn-primary--disabled' : ''}}"
+        catchtap="submit">{{submitting ? '提交中…' : '提交审核'}}</view>
+      <text wx:if="{{offline}}" class="cp-hint offline-hint">当前离线：连上网络后再提交</text>
+    </block>
+  </view>
+
+  <ui-popup id="ui-popup"
+    visible="{{uiPopup.visible}}"
+    mode="{{uiPopup.mode}}"
+    tone="{{uiPopup.tone}}"
+    title="{{uiPopup.title}}"
+    message="{{uiPopup.message}}"
+    editable="{{uiPopup.editable}}"
+    placeholder="{{uiPopup.placeholder}}"
+    input-value="{{uiPopup.inputValue}}"
+    actions="{{uiPopup.actions}}"
+    show-cancel="{{uiPopup.showCancel}}"
+    confirm-text="{{uiPopup.confirmText}}"
+    cancel-text="{{uiPopup.cancelText}}"
+    bind:confirm="onPopupConfirm"
+    bind:cancel="onPopupCancel"
+    bind:action="onPopupAction"
+    bind:input="onPopupInput"
+    bind:close="onPopupClose" />
+</view>

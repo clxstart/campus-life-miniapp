@@ -1,0 +1,326 @@
+@import "../../styles/theme.wxss";
+@import "../../styles/common.wxss";
+
+/* 我的积分：卡片一律用 .cp-card 叠放，这里只补页面级布局 */
+.points-page {
+  min-height: 100vh;
+  background: var(--c-bg);
+}
+
+.points-body {
+  padding: var(--sp-gap) var(--sp-page) calc(var(--sp-page) + var(--safe-bottom));
+}
+
+/* ===== 余额卡 ===== */
+.balance-card {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+}
+
+.balance-card .cp-card-title,
+.balance-card .cp-hint {
+  color: var(--c-on-primary);
+}
+
+.balance-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.balance-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+
+.balance-number {
+  font-size: 96rpx;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--c-on-primary);
+}
+
+.balance-yuan {
+  font-size: var(--fs-body);
+  color: var(--c-on-primary);
+  opacity: 0.8;
+}
+
+.balance-actions {
+  margin-top: 20rpx;
+}
+
+.balance-btn {
+  height: 72rpx;
+  line-height: 72rpx;
+  display: inline-block;
+  padding: 0 40rpx;
+  background: var(--c-card);
+  color: var(--c-primary);
+}
+
+/* ===== 签到卡 ===== */
+.sign-card {
+  margin-top: var(--sp-gap);
+}
+
+.sign-head {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.sign-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.sign-btn {
+  flex: none;
+  height: 72rpx;
+  line-height: 72rpx;
+  padding: 0 32rpx;
+  font-size: var(--fs-hint);
+}
+
+.sign-next {
+  margin-top: 20rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+/* 签到关闭时按钮下方的说明小字：与按钮左对齐，不抢读 */
+.sign-closed {
+  display: block;
+  margin-top: 12rpx;
+  text-align: right;
+}
+
+.dot-row {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.dot {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  border: 2rpx solid var(--c-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dot-on {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+}
+
+.dot-text {
+  font-size: 18rpx;
+  color: var(--c-text-sub);
+}
+
+.dot-on .dot-text {
+  color: var(--c-on-primary);
+}
+
+.sign-all {
+  display: block;
+  margin-top: 16rpx;
+}
+
+/* ===== 段位卡 ===== */
+.tier-card {
+  margin-top: var(--sp-gap);
+}
+
+.tier-head {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.tier-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.tier-arrow {
+  flex: none;
+  color: var(--c-text-sub);
+  font-size: 40rpx;
+}
+
+.tier-bar {
+  height: 14rpx;
+  margin-top: 18rpx;
+  border-radius: var(--radius-pill);
+  background: var(--c-soft);
+  overflow: hidden;
+}
+
+.tier-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--c-primary);
+}
+
+.tier-foot {
+  margin-top: 10rpx;
+}
+
+/* ===== 任务列表 ===== */
+.task-list {
+  margin-top: 8rpx;
+}
+
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 22rpx 0;
+  border-bottom: var(--bw) solid var(--c-line);
+}
+
+.task-row:last-child {
+  border-bottom: none;
+}
+
+.task-done {
+  opacity: 0.55;
+}
+
+.task-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.task-name {
+  font-size: var(--fs-body);
+  color: var(--c-text);
+}
+
+.task-reward {
+  flex: none;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--c-accent);
+}
+
+.task-check {
+  flex: none;
+  color: var(--c-primary);
+  font-size: var(--fs-body);
+}
+
+/* ===== 明细 ===== */
+.logs-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logs-publish {
+  color: var(--c-primary);
+  font-size: var(--fs-hint);
+}
+
+.log-list {
+  margin-top: 8rpx;
+}
+
+.log-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 22rpx 0;
+  border-bottom: var(--bw) solid var(--c-line);
+}
+
+.log-row:last-child {
+  border-bottom: none;
+}
+
+.log-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.log-remark {
+  font-size: var(--fs-body);
+  color: var(--c-text);
+}
+
+.log-right {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6rpx;
+}
+
+.log-amount {
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.log-plus {
+  color: var(--c-primary);
+}
+
+.log-minus {
+  color: var(--c-accent);
+}
+
+.log-more {
+  padding: 24rpx 0 8rpx;
+  text-align: center;
+  font-size: var(--fs-hint);
+  color: var(--c-text-sub);
+}
+
+/* ===== 卡片内状态（加载失败 / 重试） ===== */
+.card-state {
+  padding: 28rpx 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+
+.state-text {
+  font-size: var(--fs-body);
+  color: var(--c-text-sub);
+  line-height: 1.6;
+}
+
+.state-retry {
+  padding: 10rpx 30rpx;
+  border-radius: var(--radius-pill);
+  border: var(--bw) solid var(--c-primary);
+  color: var(--c-primary);
+  font-size: var(--fs-hint);
+}
+
+.compliance {
+  display: block;
+  margin-top: var(--sp-gap);
+  text-align: center;
+}
