@@ -3,10 +3,21 @@ const school = require('../../utils/school')
 const { getNavigationMetrics } = require('../../utils/navigation')
 const { CIRCLE_CATEGORIES_FALLBACK } = require('../../utils/constants')
 const popup = require('../../utils/ui-popup-helper')
+const { asset } = require('../../utils/remote-assets')
 
 // 分类从后端 /circles/categories 拉取（只返回有圈子的分类）；
 // 拉不到时回落到本地兜底，保证离线也能筛。
 const CATEGORIES_FALLBACK = ['全部'].concat(CIRCLE_CATEGORIES_FALLBACK)
+
+// 「创建圈子」入口（黄金段位特权，设计稿 §2.3）：
+// 权限只认 GET /api/points/me 的 privileges.circleCreate（含开关），不写死；
+// 名额后端没有查询接口，用本机标记灰显，服务端 POST /api/circles 仍是最终裁判。
+const TIER_RANK = { bronze: 1, silver: 2, gold: 3 }
+const QUOTA_KEY = 'circle_created_v1'
+
+function quotaHit() {
+  try { return !!wx.getStorageSync(QUOTA_KEY) } catch (error) { return false }
+}
 
 function formatCount(value) {
   const count = Number(value) || 0
@@ -52,7 +63,7 @@ function circleCard(circle) {
     name: circle.name,
     category: circle.category || '兴趣',
     description: circle.description || '',
-    cover: circle.cover || '/assets/social/spring-picnic.webp',
+    cover: circle.cover || asset('/assets/social/spring-picnic.webp'),
     memberText: formatCount(circle.memberCount),
     postText: formatCount(circle.postCount),
     joined: !!circle.joined,
@@ -74,6 +85,8 @@ Page({
     joiningId: 0,
     // 圈子按校隔离：默认只看本校
     schoolScope: 'local',
+    // 创建圈子入口：只有「名额是否用满」需要驱动样式，权限在点击时校验
+    circleEntryDisabled: false,
     uiPopup: null
   },
 
@@ -82,12 +95,16 @@ Page({
     this.loadCategories()
     this.loadHot()
     this.loadCircles()
+    this.loadCirclePrivilege()
   },
 
   onUnload() { this._alive = false },
 
   onShow() {
-    if (this.data.circles.length) this.loadCircles()
+    if (!this._loaded) return
+    this.loadCircles()
+    // 从建圈页返回后名额标记可能变了，入口要跟着刷新
+    this.loadCirclePrivilege()
   },
 
   onPullDownRefresh() {
@@ -130,6 +147,7 @@ Page({
       const category = (this.data.categories || [])[this.data.activeCategory]
       const res = await api.getCircles({ category: category === '全部' ? '' : category, page: 1, size: 50, schoolScope: this.data.schoolScope, schoolId: school.getSelectedId() })
       if (!this._alive || seq !== this._seq) return
+      this._loaded = true
       this.setData({
         circles: (res.list || []).map(circleCard),
         loading: false,
@@ -191,6 +209,68 @@ Page({
     } finally {
       this.setData({ joiningId: 0 })
     }
+  },
+
+  /**
+   * 建圈权限：只由 /api/points/me 的 privileges 决定（circleCreate 已把段位与开关算在一起）。
+   * 拉不到时保持入口可点——点击时会再拉一次并给出明确提示，不静默失败。
+   */
+  async loadCirclePrivilege() {
+    try {
+      const me = await api.getPointsMe()
+      if (!this._alive) return
+      const privileges = (me && me.privileges) || {}
+      const tier = (me && me.tier) || {}
+      const effective = privileges.effectiveTierCode || tier.code || ''
+      const gold = (TIER_RANK[effective] || 0) >= TIER_RANK.gold
+      this._circleEntry = {
+        gold,
+        allowed: gold && !!privileges.circleCreate,
+        // 黄金但 circleCreate=false = 开关关闭
+        switchOff: gold && !privileges.circleCreate,
+        quota: gold && quotaHit()
+      }
+      const quota = this._circleEntry.quota
+      this.setData({ circleEntryDisabled: quota })
+    } catch (error) {
+      // 段位拿不到就保持默认入口，点击时再校验并提示
+      if (this._alive) this.setData({ circleEntryDisabled: false })
+    }
+  },
+
+  /** 创建圈子入口：段位不足给原因 + 去积分页；名额用满只提示不跳转 */
+  async openCircleCreate() {
+    if (this._creating) return
+    this._creating = true
+    let entry = this._circleEntry
+    if (!entry) {
+      await this.loadCirclePrivilege()
+      entry = this._circleEntry
+    }
+    this._creating = false
+    if (!entry) {
+      popup.toast(this, '段位信息没拿到，请稍后重试', { tone: 'error' })
+      return
+    }
+    if (entry.quota) {
+      popup.toast(this, '你已创建 1 个圈子（上限 1）', { tone: 'info' })
+      return
+    }
+    if (entry.allowed) {
+      wx.navigateTo({ url: '/pages/circle-create/circle-create' })
+      return
+    }
+    if (entry.switchOff) {
+      popup.toast(this, '圈子创建暂未开放', { tone: 'info' })
+      return
+    }
+    popup.modal(this, {
+      title: '需要黄金段位',
+      message: '创建圈子需要黄金段位（成长值 200）。做任务攒成长值就能升级。',
+      confirmText: '去积分页',
+      cancelText: '知道了',
+      confirm: () => wx.navigateTo({ url: '/pages/points/points' })
+    })
   },
 
   openSearch() {

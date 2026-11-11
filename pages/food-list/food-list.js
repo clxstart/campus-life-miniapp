@@ -3,8 +3,9 @@ const school = require('../../utils/school')
 const { getNavigationMetrics } = require('../../utils/navigation')
 const { money } = require('../../utils/food')
 const popup = require('../../utils/ui-popup-helper')
+const { asset } = require('../../utils/remote-assets')
 Page({
-  data:{...getNavigationMetrics(),categories:['全部','奶茶饮品','快餐便当','水果轻食','零食'],category:'全部',keyword:'',schoolScope:'local',shops:[],loading:true,uiPopup:null},
+  data:{...getNavigationMetrics(),heroArt:asset('/assets/home/food-fresh.webp'),categories:['全部','奶茶饮品','快餐便当','水果轻食','零食'],category:'全部',keyword:'',schoolScope:'local',shops:[],loading:true,uiPopup:null},
   onLoad(){this._alive=true;this.loadShops()},
   onUnload(){this._alive=false},
   onPullDownRefresh(){this.loadShops().finally(()=>wx.stopPullDownRefresh())},

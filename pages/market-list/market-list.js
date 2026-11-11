@@ -3,6 +3,7 @@ const { GOODS_CATEGORY_FILTERS } = require('../../utils/constants')
 const school = require('../../utils/school')
 const { getNavigationMetrics } = require('../../utils/navigation')
 const popup = require('../../utils/ui-popup-helper')
+const { asset } = require('../../utils/remote-assets')
 
 const AVATAR_COLORS = ['#7EB6F6', '#F5A7C3', '#F3B66B', '#62C894', '#9A8CF2']
 
@@ -11,6 +12,8 @@ Page({
     ...getNavigationMetrics(),
     modes: [{ value: 1, label: '出售' }, { value: 2, label: '求购' }],
     mode: 1,
+    // 无图时的兜底插画
+    defaultCover: asset('/assets/home/secondhand-box.webp'),
     // 二手按校隔离：默认只看本校（异地无法面交）
     schoolScope: 'local',
     categories: GOODS_CATEGORY_FILTERS,

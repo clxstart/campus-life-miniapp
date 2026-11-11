@@ -59,7 +59,7 @@
           <text class="discount-title">满20减8</text>
           <text class="discount-eta">预计 20–30 分钟送达</text>
         </view>
-        <image class="food-art" src="/assets/home/food-bowl.webp" mode="aspectFit" />
+        <image class="food-art" src="{{art.food}}" mode="aspectFit" />
       </view>
 
       <view class="feature-right-column">
@@ -68,7 +68,7 @@
             <text class="feature-title">二手市场</text>
             <text class="feature-subtitle compact-subtitle">闲置流转 低价好物</text>
           </view>
-          <image class="market-art" src="/assets/home/secondhand-box.webp" mode="aspectFit" />
+          <image class="market-art" src="{{art.market}}" mode="aspectFit" />
         </view>
 
         <view hover-class="tap-card" hover-stay-time="80" class="feature-card forum-card" bindtap="openFeature" data-label="校园论坛">
@@ -92,7 +92,7 @@
         <text class="job-tag job-tag-a">活动协助</text>
         <text class="job-tag job-tag-b">家教</text>
         <text class="job-tag job-tag-c">门店兼职</text>
-        <image class="parttime-art" src="/assets/home/parttime-worker.webp" mode="aspectFit" />
+        <image class="parttime-art" src="{{art.parttime}}" mode="aspectFit" />
       </view>
 
       <view hover-class="tap-card" hover-stay-time="80" class="feature-card event-card" bindtap="openFeature" data-label="季节活动">
@@ -101,7 +101,7 @@
           <text class="feature-subtitle">精彩活动 不负好时光</text>
         </view>
         <view class="round-arrow pink-arrow">›</view>
-        <image class="event-art" src="/assets/home/spring-event.webp" mode="aspectFill" />
+        <image class="event-art" src="{{art.event}}" mode="aspectFill" />
       </view>
     </view>
 
@@ -187,7 +187,7 @@
           <text class="ad-highlight">校园专属优惠</text>
           <text class="ad-desc">轻薄高能 学习更高效</text>
           <text class="ad-button">立即查看 ›</text>
-          <image class="ad-laptop" src="/assets/home/laptop-silver.webp" mode="aspectFit" lazy-load />
+          <image class="ad-laptop" src="{{art.laptop}}" mode="aspectFit" lazy-load />
           <text class="ad-badge">广告</text>
         </view>
       </view>

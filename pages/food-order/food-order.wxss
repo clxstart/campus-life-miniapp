@@ -18,6 +18,9 @@
 .item-name{display:block;font-size:25rpx;line-height:1.5;margin-bottom:8rpx}
 .item-total{font-size:25rpx;font-weight:600;flex:none}
 .fee-row{display:flex;justify-content:space-between;padding-top:22rpx;font-size:24rpx;color:#788A80}
+.coupon-row{align-items:center}
+.coupon-value{color:#249B70;font-weight:600}
+.coupon-hint{display:block;padding-top:10rpx;font-size:21rpx;color:#98A2AC}
 .discount-row{color:#249B70}
 .total-row{display:flex;justify-content:space-between;align-items:center;margin-top:24rpx;padding-top:24rpx;border-top:1rpx solid #EAF0EC;font-size:27rpx;font-weight:700}
 .total-row .price{font-size:37rpx}

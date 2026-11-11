@@ -72,6 +72,11 @@ page{background:#f7f9fb}
 .role-worker{background:#e8f0ff;color:#3b6fd4}
 .role-employer{background:#f3ecff;color:#7c53c9}
 
+/* F10：结算发分提示（卡片 / 履约面板顶部一行）。成功绿，与页面收入色 #20a66a 同系 */
+.points-line{display:flex;align-items:center;margin-bottom:14rpx;padding:14rpx 16rpx;border-radius:14rpx;background:#e8f8ef;border:1rpx solid #c6ebd8}
+.points-line-mark{flex:none;width:32rpx;height:32rpx;border-radius:50%;background:#20a66a;color:#fff;font-size:22rpx;font-weight:700;line-height:32rpx;text-align:center}
+.points-line-text{flex:1;min-width:0;margin-left:10rpx;color:#176d4a;font-size:23rpx;line-height:32rpx;font-weight:600}
+
 /* 状态色 */
 .st-open{background:#e5f7ed;color:#2a9a67}
 .st-recruiting{background:#e5f7ed;color:#2a9a67}

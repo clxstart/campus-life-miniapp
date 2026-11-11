@@ -89,9 +89,12 @@ Page({
       contractStatus: item.contractStatus,
       contractStatusText: fmt.contractText(item.contractStatus),
       contractStatusClass: fmt.contractClass(item.contractStatus),
+      // F10 交易埋点：结算完成且确实发过分时，卡片顶部一行提示。
+      // 积分发给承接方，所以只有「我承接」的行会显示；发布方看到这一行会误解成自己也到账了。
+      awardedText: isWorker ? this.awardedLine(item.contractStatus, item.pointsAwarded) : '',
       // 我这一侧提交的工时 / 对方那一侧，方便一眼看出还差谁确认
-      myHoursText: fmt.hoursText(isWorker ? item.workerHours : item.employerHours),
-      otherHoursText: fmt.hoursText(isWorker ? item.employerHours : item.workerHours),
+      myHoursText: fmt.quantityText(isWorker ? item.workerHours : item.employerHours, item.payUnitSnapshot),
+      otherHoursText: fmt.quantityText(isWorker ? item.employerHours : item.workerHours, item.payUnitSnapshot),
       // 发布方视角要显示承接人是谁
       otherPartyText: isWorker ? '' : (item.workerName || ''),
       createdAtText: fmt.dateText(item.contractCreatedAt)
@@ -142,13 +145,15 @@ Page({
       workerName: contract.workerName || '',
       employerName: contract.employerName || '',
       payText: fmt.payText(contract.payCentsSnapshot, contract.payUnitSnapshot),
-      workerHoursText: fmt.hoursText(contract.workerHours),
-      employerHoursText: fmt.hoursText(contract.employerHours),
-      agreedHoursText: fmt.hoursText(contract.agreedHours),
+      workerHoursText: fmt.quantityText(contract.workerHours, contract.payUnitSnapshot),
+      employerHoursText: fmt.quantityText(contract.employerHours, contract.payUnitSnapshot),
+      agreedHoursText: fmt.quantityText(contract.agreedHours, contract.payUnitSnapshot),
       startedText: fmt.dateText(contract.startedAt),
       settledText: fmt.dateText(contract.settledAt),
       cancelReason: contract.cancelReason || '',
       disputeReason: (contract.dispute && contract.dispute.reason) || '',
+      // F10：结算完成的积分提示（争议中/退回不发，后端 pointsAwarded 为 0 时这行为空）
+      awardedText: this.awardedLine(status, contract.pointsAwarded),
       settlement,
       entries,
       // 动作白名单：与后端条件 UPDATE 的状态条件保持一致，不给出注定失败的按钮

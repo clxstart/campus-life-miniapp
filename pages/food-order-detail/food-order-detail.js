@@ -12,7 +12,18 @@ const STATUS = {
 }
 
 Page({
-  data: { orderId: '', order: null, statusTitle: '', statusHint: '', itemSummary: '', loading: true, error: '', offline: false },
+  data: {
+    orderId: '',
+    order: null,
+    statusTitle: '',
+    statusHint: '',
+    itemSummary: '',
+    loading: true,
+    error: '',
+    offline: false,
+    // F10 交易埋点：订单完成且实际发过分时顶部提示条文案（空串 = 不显示）
+    pointsNotice: ''
+  },
   onLoad(options) {
     this.orderId = decodeURIComponent(options.id || '')
     this._alive = true
@@ -22,9 +33,10 @@ Page({
     if (this._alive && this.data.order && !this.terminal(this.data.order.status)) this.schedulePoll()
   },
   onHide() { this.clearPoll() },
-  onUnload() { this._alive = false; this.clearPoll() },
+  onUnload() { this._alive = false; this.clearPoll(); this.clearNoticeTimer() },
   terminal(status) { return ['completed', 'cancelled', 'refunded'].includes(status) },
   clearPoll() { if (this._pollTimer) clearTimeout(this._pollTimer); this._pollTimer = null },
+  clearNoticeTimer() { if (this._noticeTimer) clearTimeout(this._noticeTimer); this._noticeTimer = null },
   schedulePoll() {
     this.clearPoll()
     if (!this._alive || !this.data.order || this.terminal(this.data.order.status)) return
@@ -39,6 +51,7 @@ Page({
       let items = []
       try { items = JSON.parse(order.items || '[]') } catch (error) {}
       this.setData({ order, statusTitle, statusHint, itemSummary: items.map(item => `${item.name}×${item.count}`).join('、'), loading: false, error: '', offline: !!order.offline })
+      this.syncPointsNotice(order)
       this.schedulePoll()
     } catch (error) {
       if (!this._alive) return
@@ -46,6 +59,30 @@ Page({
       if (silent) this.schedulePoll()
     }
   },
+
+  /**
+   * 完成提示条（F10 设计稿 §2.1）
+   *
+   * 唯一判据是后端返回的 pointsAwarded：它来自 point_log，模拟支付 / 退款 / 日上限命中
+   * 都不会有流水，因此一律显示 0 —— 前端绝不靠「状态是 completed」自己推断 +10，
+   * 否则会出现「页面说 +10、积分明细里查不到」这种对不上账的投诉。
+   * 4 秒自动收起，点 × 立即关闭；手动关掉或刷新后不再重复弹（_noticeDismissed 记在页面实例上）。
+   */
+  syncPointsNotice(order) {
+    const points = Number(order && order.pointsAwarded) || 0
+    if (!order || order.status !== 'completed' || points <= 0 || this._noticeDismissed) return
+    this.clearNoticeTimer()
+    this.setData({ pointsNotice: `订单完成，+${points} 积分已到账` })
+    this._noticeTimer = setTimeout(() => {
+      if (this._alive) this.setData({ pointsNotice: '' })
+    }, 4000)
+  },
+  closePointsNotice() {
+    this._noticeDismissed = true
+    this.clearNoticeTimer()
+    this.setData({ pointsNotice: '' })
+  },
+
   refresh() { this.loadOrder() },
   goBack() { wx.navigateBack({ delta: 1 }) }
 })

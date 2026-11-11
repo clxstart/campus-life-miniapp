@@ -15,7 +15,10 @@
 .offline{margin:16rpx 28rpx 0;padding:12rpx 20rpx;border-radius:12rpx;background:#fff5db;color:#a56a10;font-size:22rpx}
 
 /* 狐友式主tab：大字号，选中加粗变黑，无下划线，密度紧凑 */
-.tabs{margin-top:20rpx;white-space:nowrap;background:#fff}
+/* tab 行 + 右侧「日榜」胶囊：胶囊固定在右侧，tab 横向滚动不挤占 */
+.tabs-wrap{margin-top:20rpx;display:flex;align-items:flex-start;background:#fff}
+.tabs{flex:1;min-width:0;white-space:nowrap;background:#fff}
+.rank-pill{margin:4rpx 24rpx 0 12rpx;padding:8rpx 22rpx;border:1rpx solid #378be7;border-radius:999rpx;font-size:22rpx;color:#378be7;flex-shrink:0}
 .tab-row{display:inline-flex;gap:52rpx;padding:0 32rpx 20rpx}
 .tab{font-size:32rpx;color:#8b959f;padding:4rpx 0;position:relative}
 .tab.active{color:#1a2330;font-weight:700}

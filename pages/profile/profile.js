@@ -3,6 +3,7 @@ const { getNavigationMetrics } = require('../../utils/navigation')
 const { getTermWeek, daysUntil } = require('../../utils/term')
 const { formatTime } = require('../../utils/format-time')
 const popup = require('../../utils/ui-popup-helper')
+const { asset } = require('../../utils/remote-assets')
 
 // 当前登录用户：登录了就是真实用户 id，未登录回落到演示账号（api.DEMO_USER_ID）
 
@@ -16,11 +17,14 @@ Page({
       { key: 'views', icon: '迹', name: '浏览记录', desc: '', color: '#F0B24E' }
     ],
     menus: [
+      // V3.1 四个常驻入口：积分 / 宿舍 / 认证 / 论坛榜单
+      { key: 'points', icon: '积', title: '我的积分', value: '', tone: 'yellow' },
+      { key: 'dorm', icon: '舍', title: '我的宿舍', value: '—', tone: 'green' },
+      // 学生认证：右侧状态以后端 GET /api/verification/me 的 label 为准（未认证/审核中/已认证/认证未通过）
+      { key: 'cert', icon: '✓', title: '学生认证', value: '未认证', tone: 'blue' },
+      { key: 'forum-rank', icon: '榜', title: '论坛榜单', value: '日榜 / 周榜', tone: 'purple' },
       { key: 'food-orders', icon: '餐', title: '我的外卖订单', value: '', tone: 'green' },
       { key: 'timetable', icon: '课', title: '我的课表', value: '', tone: 'blue' },
-      // 校园身份认证：后端与 user 表都还没有认证状态字段，这里如实显示「未开通」，
-      // 不再写死「已认证」—— 展示与事实不符比功能缺失更容易误导用户。
-      { key: 'cert', icon: '✓', title: '校园身份认证', value: '未开通', tone: 'blue' },
       { key: 'address', icon: '⌖', title: '地址管理', value: '', tone: 'green' },
       { key: 'coupon', icon: '券', title: '优惠与权益', value: '', tone: 'yellow' },
       { key: 'feedback', icon: '?', title: '帮助与反馈', value: '', tone: 'purple' },
@@ -30,12 +34,20 @@ Page({
     ],
     // 认证状态：默认「未认证」，只有后端明确返回 verified 才展示已认证
     verify: { label: '未认证', verified: false, realNameStatus: 'none', studentStatus: 'none', canTakePaidJob: false },
+    // 未认证时昵称旁显示段位（认证后只显示认证标签，避免昵称行挤三个标签）
+    tierLabel: '',
+    // F10 二手成交（卖家侧）：我发布的物品 + 最近一笔成交，驱动「待确认成交」角标与两个按钮
+    myGoods: [],
+    goodsLoading: false,
     uiPopup: null
   },
 
   onLoad() { this._alive = true;
     this.loadProfile()
     this.loadVerification()
+    this.loadPoints()
+    this.loadDorm()
+    this.loadMyGoods()
     this.applyScheduleMeta()
     this.loadCounts()
   },
@@ -46,10 +58,39 @@ Page({
     try {
       const verify = await api.getVerification()
       if (!this._alive || !verify) return
-      this.setData({ verify: { ...this.data.verify, ...verify }, 'menus[2].value': verify.label || '未认证' })
+      this.setData({ verify: { ...this.data.verify, ...verify } })
+      this.patchMenuValue('cert', verify.label || '未认证')
     } catch (error) {
       if (!this._alive) return
-      this.setData({ 'menus[2].value': '未认证' })
+      // 拿不到就按未认证展示（不乐观），但入口保留，点进去会提示真实原因
+      this.patchMenuValue('cert', '未认证')
+    }
+  },
+
+  // 我的积分：菜单右侧显示真实余额；未认证时昵称旁显示段位两字（如「白银」）
+  async loadPoints() {
+    try {
+      const me = await api.getPointsMe()
+      if (!this._alive || !me) return
+      this.patchMenuValue('points', `${Number(me.balance) || 0} 积分`)
+      const tierName = me.tier && me.tier.name ? String(me.tier.name) : ''
+      // 只取「白银」两字，不带「·圈内熟人」副名，避免昵称行过长
+      this.setData({ tierLabel: tierName ? tierName.split('·')[0] : '' })
+    } catch (error) {
+      if (this._alive) this.patchMenuValue('points', '—')
+    }
+  },
+
+  // 我的宿舍：已加入显示宿舍名，后端明确未加入显示「未加入」，读失败显示「—」
+  async loadDorm() {
+    try {
+      const dorm = await api.getDormMe()
+      if (!this._alive) return
+      if (dorm && dorm.joined && dorm.dorm) this.patchMenuValue('dorm', dorm.dorm.name || '已加入')
+      else if (dorm && dorm.dissolved) this.patchMenuValue('dorm', '已解散')
+      else this.patchMenuValue('dorm', '未加入')
+    } catch (error) {
+      if (this._alive) this.patchMenuValue('dorm', '—')
     }
   },
 
@@ -72,12 +113,129 @@ Page({
       safe(api.getCoupons(api.currentUserId()))
     ])
     const count = (list, unit) => (Array.isArray(list) ? `${list.length}${unit}` : '—')
-    this.setData({
-      'services[1].desc': count(favorites, '个收藏'),
-      'services[2].desc': Array.isArray(views) ? `最近${views.length}条` : '—',
-      'menus[4].value': count(addresses, '个地址'),
-      'menus[5].value': count(coupons, '张可用')
+    this.setData({ 'services[1].desc': count(favorites, '个收藏'), 'services[2].desc': Array.isArray(views) ? `最近${views.length}条` : '—' })
+    // 菜单按 key 定位再写值：菜单顺序调整时不会写到相邻行上（历史 bug）
+    this.patchMenuValue('address', count(addresses, '个地址'))
+    this.patchMenuValue('coupon', count(coupons, '张可用'))
+  },
+
+  // ==================== F10 二手成交（卖家侧） ====================
+  //
+  // 设计稿 §2.3：卖家在「我的发布」看到「待确认成交」角标，点「确认成交」双方各得 5 积分；
+  // 点「没有成交」把这笔 pending 撤掉，商品回到在售，买家可以再次发起。
+  // 读接口断网时 api 层回落到空列表 —— 这里绝不本地编一条「待确认成交」出来。
+
+  async loadMyGoods() {
+    this.setData({ goodsLoading: true })
+    try {
+      const result = await api.getMyMarketTrades()
+      if (!this._alive) return
+      const list = (result && result.list) || []
+      this.setData({ myGoods: list.map(item => this.goodsRow(item)), goodsLoading: false })
+    } catch (error) {
+      if (!this._alive) return
+      // 拿不到就整块不显示，不猜也不假装「没有待确认成交」
+      this.setData({ myGoods: [], goodsLoading: false })
+    }
+  },
+
+  /** 成交记录行 → 页面视图。状态文案只由后端的 goodsStatus / tradeStatus 推导 */
+  goodsRow(item) {
+    const tradeStatus = item.tradeStatus || ''
+    const pending = tradeStatus === 'pending'
+    const sold = Number(item.goodsStatus) === 2 || tradeStatus === 'confirmed'
+    const price = Number(item.price || 0)
+    return {
+      goodsId: item.goodsId,
+      tradeId: item.tradeId,
+      title: item.title || '未命名物品',
+      cover: item.cover || asset('/assets/home/secondhand-box.webp'),
+      priceText: Number.isInteger(price) ? String(price) : price.toFixed(2),
+      buyerName: item.buyerNickname || '买家',
+      pending,
+      statusText: sold ? '已售出' : (pending ? '待确认成交' : '在售')
+    }
+  },
+
+  /** 卖家点「确认成交」：二次确认后才调接口，成交与发分都在服务端判定 */
+  confirmGoodsTrade(event) {
+    const tradeId = event.currentTarget.dataset.tradeId
+    const buyer = event.currentTarget.dataset.buyer
+    if (!tradeId || this._tradeBusy) return
+    popup.modal(this, {
+      title: '确认成交',
+      message: `确认与 ${buyer || '对方'} 成交？确认后双方各得 5 积分`,
+      confirmText: '确认成交',
+      confirm: async () => {
+        this._tradeBusy = true
+        try {
+          const result = await api.confirmMarketTrade(tradeId)
+          if (!this._alive) return
+          // 成交本身已经成功；积分可能没发：同一对用户 7 天只计一次，或当日已满 2 笔。
+          // 文案按后端 skipReason 分流 —— 不能一律喊「+5 积分」，否则用户去积分明细会对不上。
+          if (result && result.skipReason === 'pair7days') {
+            popup.modal(this, {
+              title: '成交已确认',
+              message: '本次成交已完成（同一对用户 7 天内只计一次积分）',
+              showCancel: false,
+              confirmText: '知道了'
+            })
+          } else if (result && result.skipReason === 'daily_cap') {
+            popup.modal(this, {
+              title: '成交已确认',
+              message: '今日成交积分已满 2 笔，本次成交成功但没有新增积分',
+              showCancel: false,
+              confirmText: '知道了'
+            })
+          } else if (result && result.alreadyConfirmed) {
+            popup.toast(this, '这笔成交已经确认过了', { tone: 'info' })
+          } else {
+            popup.toast(this, '成交成功，+5 积分', { tone: 'success' })
+          }
+          this.loadMyGoods()
+        } catch (error) {
+          if (this._alive) this.handleTradeError(error, '确认成交失败')
+        } finally {
+          this._tradeBusy = false
+        }
+      }
     })
+  },
+
+  /** 卖家点「没有成交」：撤掉待确认的成交，商品回到在售 */
+  rejectGoodsTrade(event) {
+    const tradeId = event.currentTarget.dataset.tradeId
+    if (!tradeId || this._tradeBusy) return
+    popup.modal(this, {
+      title: '没有成交',
+      message: '确认这单没有成交吗？确认后商品会重新回到在售，买家可以再次发起。',
+      tone: 'warn',
+      confirmText: '没有成交',
+      confirm: async () => {
+        this._tradeBusy = true
+        try {
+          await api.cancelMarketTrade(tradeId)
+          if (!this._alive) return
+          popup.toast(this, '已标记为未成交', { tone: 'info' })
+          this.loadMyGoods()
+        } catch (error) {
+          if (this._alive) this.handleTradeError(error, '标记未成交失败')
+        } finally {
+          this._tradeBusy = false
+        }
+      }
+    })
+  },
+
+  /** 成交相关写接口失败：原样转述后端原因，并刷新一次列表（状态可能已被对方或管理员改过） */
+  handleTradeError(error, fallback) {
+    popup.modal(this, {
+      title: fallback,
+      message: (error && error.message) || '操作失败，请稍后重试',
+      showCancel: false,
+      confirmText: '知道了'
+    })
+    if (this._alive) this.loadMyGoods()
   },
 
   // 课表菜单行的动态值：教学周、今日课程数（校历功能已下线）
@@ -89,10 +247,15 @@ Page({
       const todayIdx = (today.getDay() + 6) % 7
       const weekNo = getTermWeek(today, termInfo.termStart)
       const todayCourses = courses.filter(course => course.day === todayIdx).length
-      this.setData({
-        'menus[1].value': `第${weekNo}周 · 今天${todayCourses ? `${todayCourses}节` : '无课'}`
-      })
-    } catch (error) { this.setData({ 'menus[1].value': '点击查看课表' }) }
+      this.patchMenuValue('timetable', `第${weekNo}周 · 今天${todayCourses ? `${todayCourses}节` : '无课'}`)
+    } catch (error) { this.patchMenuValue('timetable', '点击查看课表') }
+  },
+
+  /** 菜单行按 key 写 value：位置变了也不会写错行 */
+  patchMenuValue(key, value) {
+    const index = this.data.menus.findIndex(row => row.key === key)
+    if (index < 0) return
+    this.setData({ [`menus[${index}].value`]: value })
   },
 
   openService(event) {
@@ -126,6 +289,11 @@ Page({
 
   openMenu(event) {
     const key = event.currentTarget.dataset.key
+    // V3.1 四个新入口
+    if (key === 'points') return wx.navigateTo({ url: '/pages/points/points' })
+    if (key === 'dorm') return wx.navigateTo({ url: '/pages/dorm/dorm' })
+    if (key === 'cert') return wx.navigateTo({ url: '/pages/verify/verify' })
+    if (key === 'forum-rank') return wx.navigateTo({ url: '/pages/forum-rank/forum-rank?type=daily' })
     if (key === 'food-orders') return wx.navigateTo({ url: '/pages/food-orders/food-orders' })
     if (key === 'timetable') return wx.navigateTo({ url: '/pages/timetable/timetable' })
     if (key === 'address') return this.openAddresses()
@@ -295,7 +463,8 @@ Page({
     popup.sheet(this, {
       title: `优惠与权益 · ${list.length}张可用`,
       actions: list.map((item) => ({ label: `${item.title}（${item.amount} · 至${item.expireAt}）` })),
-      action: ({ index }) => popup.toast(this, `已领取「${list[index].title}」，到店出示即可使用`, { tone: 'success' })
+      // 券只在本平台外卖下单时抵扣（设计稿：不在外面用，没有到店核销）
+      action: ({ index }) => popup.toast(this, `「${list[index].title}」在外卖下单时自动抵扣`, { tone: 'success' })
     })
   },
 

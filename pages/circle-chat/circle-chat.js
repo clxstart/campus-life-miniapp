@@ -2,6 +2,7 @@ const api = require('../../utils/api')
 const { getNavigationMetrics } = require('../../utils/navigation')
 const { formatTime } = require('../../utils/format-time')
 const popup = require('../../utils/ui-popup-helper')
+const chatSync = require('../../utils/chat-sync')
 
 function messageCard(message) {
   const senderId = Number(message.senderId)
@@ -97,6 +98,8 @@ Page({
 
   async loadMessages(options = {}) {
     if (!this._alive) return
+    // 首次进入 / 断线重连：先渲染最新一页并恢复交互，断线期间的历史在后台分段补齐（finding-12）
+    if (!options.older) return this.syncLatest()
     if (this._loadingMessages) {
       if (options.afterId != null) {
         const cursor = Number(options.afterId)
@@ -150,6 +153,43 @@ Page({
   },
 
   loadOlder() { return this.loadMessages({ older: true }) },
+
+  async syncLatest() {
+    // 世代号：新一轮同步开始或页面卸载后，旧一轮的后台补量自动作废，不会把过期结果写回页面
+    const generation = (this._syncGeneration || 0) + 1
+    this._syncGeneration = generation
+    const isCancelled = () => !this._alive || this._syncGeneration !== generation
+    const knownLastId = this.lastMessageId()
+    if (!this.data.messages.length) this.setData({ loading: true, error: '' })
+    try {
+      const outcome = await chatSync.catchUp({
+        knownLastId,
+        isCancelled,
+        fetchPage: params => api.getCircleMessages(this.circleId, params),
+        onPage: (rows, info) => {
+          this.mergeMessages(rows.map(messageCard), info.first)
+          if (info.first) {
+            // 最新一页到达即结束 loading；已读游标只推进到已展示的最新消息
+            const patch = { loading: false, error: '', offline: !!info.offline }
+            if (!knownLastId) patch.hasMore = !!info.hasMore
+            this.setData(patch)
+            const last = this.lastMessageId()
+            if (last) api.markCircleRead(this.circleId, last).catch(() => {})
+          }
+        }
+      })
+      if (isCancelled()) return
+      if (outcome.gapBeforeId) {
+        // 预算用尽或网络失败：保持列表连续，丢掉缺口之前的旧消息，上拉即可从缺口继续加载
+        this.setData({ messages: chatSync.dropBeforeGap(this.data.messages, outcome.gapBeforeId), hasMore: true })
+      }
+    } catch (error) {
+      if (isCancelled()) return
+      // 只有最新一页失败才算加载失败；已有消息时保留现有列表
+      this.setData({ loading: false, error: this.data.messages.length ? '' : (error.message || '消息加载失败') })
+      if (this.data.messages.length) popup.toast(this, '网络不稳定，消息可能未同步完整', { tone: 'info' })
+    }
+  },
 
   onSocketMessage(message) {
     if (!this._alive || !message) return
@@ -276,7 +316,12 @@ Page({
 
   async sendPayload(payload) {
     if (this.data.sending) return
-    const clientId = `circle-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+    // 弱网重试：同一条内容失败后再发，必须复用 clientId。
+    // 否则服务端已落库但响应丢了的情况下，重发会变成第二条消息。
+    const pending = this._pendingSend
+    const content = payload.content || ''
+    const reuse = pending && pending.type === payload.type && pending.content === content && !payload.image
+    const clientId = reuse ? pending.clientId : `circle-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
     const optimistic = messageCard({
       id: `local-${clientId}`,
       circleId: this.circleId,
@@ -294,13 +339,20 @@ Page({
     this.mergeMessages([optimistic], true)
     try {
       const message = await api.sendCircleMessage(this.circleId, { ...payload, clientId })
+      this._pendingSend = null
       if (!this._alive) return
       this.mergeMessages([messageCard(message)], true)
     } catch (error) {
       if (this._alive) {
         const confirmed = this.data.messages.some(item => item.clientId === clientId && !item.pending)
-        if (confirmed) return
-        this.setData({ messages: this.data.messages.filter(item => item.clientId !== clientId) })
+        if (confirmed) { this._pendingSend = null; return }
+        this._pendingSend = { clientId, type: payload.type, content }
+        this.setData({
+          messages: this.data.messages.filter(item => item.clientId !== clientId),
+          // 把内容放回输入框：用户直接再点发送就是同一条消息的重试
+          inputValue: content,
+          inputCursor: content.length
+        })
         popup.toast(this, error.message || '发送失败，请重试', { tone: 'error' })
       }
     } finally { if (this._alive) this.setData({ sending: false }) }

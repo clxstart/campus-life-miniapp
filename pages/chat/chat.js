@@ -105,9 +105,15 @@ Page({
     if (!Number.isSafeInteger(this.peerId) || this.peerId < 1 || this.peerId === api.currentUserId()) { popup.toast(this, '聊天对象无效'); return }
     this._seq = (this._seq || 0) + 1
     this._busy = false
+    // 弱网重试：同一条内容失败后再发复用 clientId，避免服务端已落库但响应丢失时重复发送。
+    const pending = this._pendingChat
+    const clientId = pending && pending.content === content
+      ? pending.clientId
+      : `chat-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
     this.setData({ sending: true, loading: false })
     try {
-      const message = await api.sendChatMessage(this.peerId, content, { name: this.data.name })
+      const message = await api.sendChatMessage(this.peerId, content, { name: this.data.name, clientId })
+      this._pendingChat = null
       if (!this._alive) return
       const sourceChanged = this.data.offline !== !!message.offline
       const messages = (sourceChanged ? [] : this.data.messages).filter(old => String(old.id) !== String(message.id)).concat({ ...message, time: formatTime(message.createdAt) })
@@ -115,6 +121,7 @@ Page({
       this.setData({ messages, inputValue: '', inputCursor: 0, emojiVisible: false, offline: !!message.offline, error: '', scrollTo: 'message-' + message.id })
       if (message.offline) popup.toast(this, '已保存到本机演示记录，未发送给对方', { tone: 'warn' })
     } catch (error) {
+      this._pendingChat = { content, clientId }
       if (this._alive) popup.toast(this, error.message || '发送失败，请重试', { tone: 'error' })
     } finally {
       if (this._alive) { this.setData({ sending: false }); this.loadMessages(false, true) }

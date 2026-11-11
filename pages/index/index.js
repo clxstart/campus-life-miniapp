@@ -2,6 +2,12 @@ const app = getApp()
 const popup = require('../../utils/ui-popup-helper')
 const api = require('../../utils/api')
 const school = require('../../utils/school')
+const { assetMap } = require('../../utils/remote-assets')
+
+// 新人礼包（功能 6 §2.1）：只弹一次的本地标记。
+// 为什么用 storage 而不是后端字段：建号只发生一次，登录响应里的 newUser 就是权威信号；
+// storage 只负责「同一台设备只弹一次」，换设备/清缓存后再弹一次也不会重复发奖（发奖靠 biz_key 幂等）。
+const NEWBIE_GIFT_SHOWN = 'newbieGiftShown'
 
 // key 与首页各入口的 data-label 精确一致。
 // 今日推荐卡不走这里，它由 /recommend/home 返回的 url 直接跳转。
@@ -26,6 +32,14 @@ Page({
     navBarHeight: 44,
     capsuleReservedRight: 16,
     activeTab: 'home',
+    // 首页插画：wxml 调不了函数，只能先在 data 里解析好（见 utils/remote-assets.js）
+    art: assetMap({
+      food: '/assets/home/food-bowl.webp',
+      market: '/assets/home/secondhand-box.webp',
+      parttime: '/assets/home/parttime-worker.webp',
+      event: '/assets/home/spring-event.webp',
+      laptop: '/assets/home/laptop-silver.webp'
+    }),
     // 今日推荐：外卖最火 + 二手最火，数据来自 /recommend/home（真实热度）
     recommendations: [],
     recommendLoading: true,
@@ -47,6 +61,43 @@ Page({
     // 学校列表在 utils/school.js 里做了「同一时刻单请求 + 5 分钟缓存」，
     // 所以 syncSchoolLogo 和 ensureSchool 不会再各打一次 /api/schools。
     this.loadRecommendations(0)
+    // 登录是异步的，通常在 onLoad 之后才回来；登录完成后再判断要不要弹新人礼包
+    app.onLoginReady(() => this.maybeShowNewbieGift())
+  },
+
+  onShow() { this.maybeShowNewbieGift() },
+
+  /**
+   * 新人礼包一次性提示（设计稿 §2.1）。
+   *
+   * 三个条件同时满足才弹：登录已完成、这次登录是首次建号（newUser）、本地没弹过。
+   * 用 popup.modal（不是 toast，要给用户时间读完），文案与设计稿一致；
+   * 不叠加学生认证引导（设计稿要求礼包优先）。
+   */
+  maybeShowNewbieGift() {
+    if (!this._alive) return
+    if (this._newbieGiftChecked) return
+    if (!app.globalData.loginReady || !app.globalData.newUser) return
+    let shown = false
+    try { shown = !!wx.getStorageSync(NEWBIE_GIFT_SHOWN) } catch (error) {}
+    if (shown) return
+
+    this._newbieGiftChecked = true
+    // 先落标记再弹：弹窗打开期间 onShow 可能再进一次，避免弹两遍
+    try { wx.setStorageSync(NEWBIE_GIFT_SHOWN, 1) } catch (error) {}
+    popup.modal(this, {
+      title: '新人礼包已到账',
+      message: '30 积分\n白银体验 7 天（快速应答）',
+      tone: 'success',
+      confirmText: '去看看',
+      cancelText: '知道了',
+      confirm: () => {
+        wx.navigateTo({
+          url: '/pages/points/points',
+          fail: () => popup.toast(this, '积分页打开失败，请稍后再试', { tone: 'error' })
+        })
+      }
+    })
   },
 
   // 学校 logo：管理端填了才显示（当前两所都为空，界面上不占位）

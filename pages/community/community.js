@@ -14,6 +14,8 @@ Page({
   onShow(){ if(this._needReload){ this._needReload=false; this.loadPosts(true) } },
   // 页面卸载后异步请求可能才回来，标记一下避免对已销毁页面 setData
   onUnload(){ this._alive=false },
+  // 论坛日榜 / 周榜入口：tab 行右侧小胶囊（不新增第 8 个 tab，否则 tab 行会折行）
+  openRank(){ wx.navigateTo({ url: '/pages/forum-rank/forum-rank?type=daily' }) },
   initNavigation(){try{const w=wx.getWindowInfo?wx.getWindowInfo():wx.getSystemInfoSync();this.setData({statusBarHeight:w.statusBarHeight||20})}catch(e){}},
   loadPosts(reset=false){
     if(this.data.loading)return

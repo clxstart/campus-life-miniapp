@@ -47,6 +47,9 @@ App({
     schoolName: '内蒙古大学',
     userId: 1,
     loginReady: false,
+    // 本次进程内是不是「首次登录建号」：只有建号那一次后端才返回 newUser=true。
+    // 首页据此弹「新人礼包已到账」（功能 6 §2.1），弹过由 storage 的 newbieGiftShown 兜住。
+    newUser: false,
     socket: null,
     socketCircleId: null,
     socketListeners: [],
@@ -79,6 +82,9 @@ App({
     api.ensureLogin().then(res => {
       if (res && res.userId) {
         this.globalData.userId = res.userId
+        // 建号成功时后端返回 newUser=true（老账号登录/缓存命中都没有这个字段）。
+        // 首页用它决定要不要弹新人礼包，弹完把 newbieGiftShown 写进 storage，只弹一次。
+        this.globalData.newUser = !!res.newUser
         this.globalData.loginReady = true
         if (typeof this.loginCallback === 'function') this.loginCallback(res)
       }

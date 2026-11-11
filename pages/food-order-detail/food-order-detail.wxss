@@ -20,3 +20,13 @@
 .items{display:block;color:#45534D;font-size:24rpx;line-height:1.7}
 .fee-row{margin-top:18rpx;padding-top:18rpx;border-top:1rpx solid #EEF2EF;color:#65736B}
 .offline-note{margin:24rpx;text-align:center;color:#98A2AC;font-size:21rpx}
+/* F10：订单完成发分提示条。用页面既有的绿色系（#249B70 / #EAF6EE），与下方状态块同一套色 */
+.points-banner{display:flex;align-items:center;margin:18rpx 24rpx 0;padding:20rpx 22rpx;border-radius:16rpx;background:#EAF6EE;border:1rpx solid #CDE7D8}
+.points-banner-mark{flex:none;width:38rpx;height:38rpx;border-radius:50%;background:#249B70;color:#fff;font-size:26rpx;font-weight:700;line-height:38rpx;text-align:center}
+.points-banner-text{flex:1;min-width:0;margin-left:14rpx;color:#193D32;font-size:25rpx;line-height:36rpx;font-weight:600}
+.points-banner-close{flex:none;width:44rpx;height:44rpx;line-height:40rpx;text-align:center;color:#7BA48F;font-size:32rpx}
+/* F10：订单完成发分提示条（成功色，与页面既有的绿色状态块同一套色） */
+.points-banner{display:flex;align-items:center;margin:18rpx 24rpx 0;padding:20rpx 22rpx;border-radius:16rpx;background:#EAF6EE;border:1rpx solid #CDE7D8}
+.points-banner-mark{flex:none;width:38rpx;height:38rpx;border-radius:50%;background:#249B70;color:#fff;font-size:26rpx;font-weight:700;line-height:38rpx;text-align:center}
+.points-banner-text{flex:1;min-width:0;margin-left:14rpx;color:#193D32;font-size:25rpx;line-height:36rpx;font-weight:600}
+.points-banner-close{flex:none;width:44rpx;height:44rpx;line-height:40rpx;text-align:center;color:#7BA48F;font-size:32rpx}

@@ -553,6 +553,62 @@
   color: #8b959e;
 }
 
+/* ===== 创建圈子入口：与 circle-card 同一套圆角/阴影语言，不新增视觉体系 ===== */
+.circle-create-banner {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-top: 18rpx;
+  padding: 22rpx 24rpx;
+  border-radius: 24rpx;
+  background: #ffffff;
+  box-shadow: 0 8rpx 24rpx rgba(80, 125, 175, 0.09);
+}
+
+.circle-create-banner--off {
+  background: #f7f9fc;
+  box-shadow: none;
+}
+
+.create-banner-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.create-banner-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #21303d;
+}
+
+.create-banner-hint {
+  font-size: 20rpx;
+  line-height: 1.4;
+  color: #828b93;
+}
+
+.create-banner-action {
+  flex: none;
+  padding: 12rpx 22rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #5b9df0 0%, #7eb6f6 100%);
+  color: #ffffff;
+  font-size: 22rpx;
+}
+
+.circle-create-banner--off .create-banner-title,
+.circle-create-banner--off .create-banner-hint {
+  color: #a0a9b2;
+}
+
+.circle-create-banner--off .create-banner-action {
+  background: #eef3f9;
+  color: #8b959e;
+}
+
 /* 本校/全部切换：分段控件 */
 .scope-switch{display:flex;margin-left:auto;margin-right:16rpx;padding:4rpx;border-radius:22rpx;background:#f0f2f4}
 .scope-opt{padding:8rpx 20rpx;border-radius:18rpx;color:#737e88;font-size:21rpx}

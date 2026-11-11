@@ -34,6 +34,8 @@ Page({
     myContract: null,
     myContractStatusText: '',
     myContractHoursText: '',
+    // F10 交易埋点：结算完成且确实发过分时，履约卡顶部的一行提示（空串 = 不显示）
+    myContractAwardedText: '',
     acting: false,
     uiPopup: null
   },
@@ -114,7 +116,8 @@ Page({
         myApplicationText: job.myApplication ? fmt.applicationText(job.myApplication.status) : '',
         myContract,
         myContractStatusText: myContract ? fmt.contractText(myContract.status) : '',
-        myContractHoursText: myContract ? fmt.hoursText(myContract.agreedHours || myContract.workerHours) : '',
+        myContractHoursText: myContract ? fmt.quantityText(myContract.agreedHours || myContract.workerHours, view.payUnit) : '',
+        myContractAwardedText: this.awardedLine(myContract),
         loading: false
       })
       if (isOwner) this.loadApplications()
@@ -122,6 +125,19 @@ Page({
       if (!this._alive) return
       this.setData({ loading: false, loadError: (error && error.message) || '岗位详情加载失败' })
     }
+  },
+
+  /**
+   * F10 交易埋点：结算完成的积分提示（设计稿 §2.2）
+   *
+   * 只在「合约 settled」且后端 pointsAwarded > 0 时给文案。后者读的是 point_log，
+   * 所以争议中、整单退回、日上限命中都不会谎报「+5 已到账」。
+   * 积分发给承接方，本页的 myContract 正是「我承接的那张单」，所以文案对本人成立。
+   */
+  awardedLine(contract) {
+    const points = Number(contract && contract.pointsAwarded) || 0
+    if (!contract || contract.status !== 'settled' || points <= 0) return ''
+    return `结算完成，+${points} 积分已到账`
   },
 
   /** 发布者：报名列表（只有发布者能看，其他人会 403） */

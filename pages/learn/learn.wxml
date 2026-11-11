@@ -11,7 +11,7 @@
       <view class="school-pill"><image lazy-load="true" class="pin-icon" src="/assets/icons/pin.svg" /><text class="school-name">{{schoolName || '校园学习社区'}}</text></view>
     </view>
     <view hover-class="tap" hover-stay-time="80" class="hero" catchtap="openGuide">
-      <image lazy-load="true" class="hero-art" src="/assets/learn/hero.jpg" mode="aspectFill" />
+      <image lazy-load="true" class="hero-art" src="{{art.hero}}" mode="aspectFill" />
       <view class="hero-copy"><text class="hero-kicker">让好奇心，多走一步</text><text class="hero-title">每一份努力，<text class="hero-line">都有回响。</text></text><view class="hero-link">寻找学习的同路人 <text class="hero-arrow">↗</text></view></view>
     </view>
     <view hover-class="tap-card" hover-stay-time="80" class="ai-card" catchtap="openWechatQr">
@@ -19,7 +19,7 @@
     </view>
     <view class="section-head"><text class="section-title">给学习一点灵感</text><text class="section-aside">从这里开始</text></view>
     <view class="guide-grid">
-      <view hover-class="tap-card" hover-stay-time="80" class="guide-card" catchtap="openGuide"><image lazy-load="true" class="guide-photo" src="/assets/learn/desk.jpg" mode="aspectFill" /><view class="guide-copy"><text class="guide-label">{{current.badge}}</text><text class="guide-title">{{current.guide}}</text><text class="guide-bottom">读一份入门建议 <text class="inline-arrow">↗</text></text></view></view>
+      <view hover-class="tap-card" hover-stay-time="80" class="guide-card" catchtap="openGuide"><image lazy-load="true" class="guide-photo" src="{{art.desk}}" mode="aspectFill" /><view class="guide-copy"><text class="guide-label">{{current.badge}}</text><text class="guide-title">{{current.guide}}</text><text class="guide-bottom">读一份入门建议 <text class="inline-arrow">↗</text></text></view></view>
       <view hover-class="tap-card" hover-stay-time="80" class="plan-card" catchtap="openPlan"><text class="plan-kicker">慢慢来，也很快</text><text class="plan-title">专注当下<text class="plan-line">就是在向前</text></text><image lazy-load="true" class="plan-art" src="/assets/learn/books.png" mode="aspectFit" /><view class="plan-bottom">今天，也学一点 <text class="inline-arrow">↗</text></view></view>
     </view>
     <view class="section-head discussion-head"><text class="section-title">同学在聊</text><text class="section-aside">{{current.hint}}</text></view>

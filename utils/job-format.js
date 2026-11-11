@@ -97,12 +97,19 @@ function payText(cents, unit) {
   return moneyText(value) + '/' + payUnitText(unit)
 }
 
-/** 工时展示：2 → 2，2.5 → 2.5，未填写 → '—' */
+/** 工时/计价数量展示：2 → 2，2.5 → 2.5，未填写 → '—' */
 function hoursText(hours) {
   if (hours === null || hours === undefined || hours === '') return '—'
   const value = Number(hours)
   if (!isFinite(value)) return '—'
   return String(Math.round(value * 100) / 100)
+}
+
+/** 带单位的计价数量：2 + hour → 「2 小时」。按天/单/班次的岗位不会被误读成小时。 */
+function quantityText(value, unit) {
+  const text = hoursText(value)
+  if (text === '—') return text
+  return text + ' ' + payUnitText(unit)
 }
 
 /** 岗位状态中文 */
@@ -184,6 +191,7 @@ function settlementView(settlement) {
     // 还没提交工时的时候后端给 0：这种情况页面要说「尚未产生」，不能写「按 0 小时结算」
     hasHours: isFinite(hours) && hours > 0,
     hoursText: hoursText(data.hours),
+    quantityText: quantityText(data.hours, data.payUnit),
     payableText: moneyText(data.payableCents),
     feeText: moneyText(data.feeCents),
     incomeText: moneyText(data.incomeCents),
@@ -209,6 +217,8 @@ function jobView(job) {
     categoryText: categoryText(item.categoryKey),
     settle: item.settle || '',
     payText: payText(item.payCents, item.payUnit),
+    payUnit: item.payUnit || '',
+    payUnitText: payUnitText(item.payUnit),
     // 有偿岗位才需要认证；无偿互助不需要
     paid: pay > 0,
     workflowStatus: item.workflowStatus || '',
@@ -227,6 +237,7 @@ module.exports = {
   payUnitText,
   payText,
   hoursText,
+  quantityText,
   workflowText,
   workflowClass,
   isOpenStatus,

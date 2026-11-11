@@ -23,6 +23,11 @@ page{background:#f7f9fb}
 
 .desc-text{display:block;color:#586470;font-size:23rpx;line-height:36rpx}
 
+/* F10：结算发分提示（履约卡顶部一行）。绿色成功色，与页面的收入绿 #20a66a 同系 */
+.points-line{display:flex;align-items:center;margin-bottom:14rpx;padding:14rpx 16rpx;border-radius:14rpx;background:#e8f8ef;border:1rpx solid #c6ebd8}
+.points-line-mark{flex:none;width:32rpx;height:32rpx;border-radius:50%;background:#20a66a;color:#fff;font-size:22rpx;font-weight:700;line-height:32rpx;text-align:center}
+.points-line-text{flex:1;min-width:0;margin-left:10rpx;color:#176d4a;font-size:23rpx;line-height:32rpx;font-weight:600}
+
 /* 金额规则：三块金额分行列出，数字由后端按工时算 */
 .money-row{display:flex;align-items:flex-start;gap:16rpx;padding:12rpx 0;border-bottom:1rpx solid #f4f7f9}
 .money-key{flex:none;width:150rpx;color:#45515c;font-size:22rpx;font-weight:600}

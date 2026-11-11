@@ -11,7 +11,7 @@
   <view wx:elif="{{!goods.length}}" class="state"><text class="state-title">还没有相关物品</text>换个分类看看吧</view>
   <view wx:else class="goods-grid">
     <view hover-class="tap-card" hover-stay-time="80" wx:for="{{goods}}" wx:key="id" class="goods-card" data-id="{{item.id}}" bindtap="openDetail">
-      <image lazy-load="true" class="goods-image" src="{{item.image || '/assets/home/secondhand-box.webp'}}" mode="aspectFill"/>
+      <image lazy-load="true" class="goods-image" src="{{item.image || defaultCover}}" mode="aspectFill"/>
       <view class="goods-body"><view class="goods-title">{{item.title}}</view><view class="goods-price">¥{{item.priceText}}</view><text class="condition">{{item.conditionText}}</text><view class="seller"><view class="seller-avatar" style="background:{{item.sellerColor}}">{{item.sellerInitial}}</view><text class="seller-name">{{item.sellerName}}</text></view></view>
     </view>
   </view>

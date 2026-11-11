@@ -381,3 +381,113 @@
 .menu-arrow {
   font-size: 27rpx;
 }
+
+/* ===== F10 二手成交（卖家侧）：我发布的物品 =====
+ * 沿用本页既有的浅蓝主色 #3476f6 与 13rpx 级别的紧凑排版，不引入新的一套视觉语言。
+ */
+.goods-list {
+  margin-top: 13rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 13rpx;
+}
+
+.goods-card {
+  position: relative;
+  padding: 17rpx;
+  border-radius: 21rpx;
+  background: #ffffff;
+  box-shadow: 0 5rpx 17rpx rgba(48, 69, 89, 0.04);
+}
+
+/* 右上角「待确认成交」角标 */
+.goods-badge {
+  position: absolute;
+  top: 14rpx;
+  right: 14rpx;
+  padding: 3rpx 10rpx;
+  border-radius: 9rpx;
+  background: #fff3e2;
+  color: #b4762a;
+  font-size: 13rpx;
+  line-height: 19rpx;
+  font-weight: 600;
+}
+
+.goods-row {
+  display: flex;
+  align-items: center;
+}
+
+.goods-cover {
+  flex: none;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 16rpx;
+  background: #eef2f6;
+}
+
+.goods-copy {
+  flex: 1;
+  min-width: 0;
+  margin-left: 15rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.goods-title {
+  overflow: hidden;
+  font-size: 18rpx;
+  line-height: 25rpx;
+  font-weight: 600;
+  color: #202a33;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goods-price {
+  margin-top: 3rpx;
+  font-size: 17rpx;
+  line-height: 24rpx;
+  font-weight: 700;
+  color: #e0605a;
+}
+
+.goods-status {
+  margin-top: 3rpx;
+  font-size: 13rpx;
+  line-height: 19rpx;
+  color: #9aa1a8;
+}
+
+.goods-status.pending {
+  color: #b4762a;
+}
+
+.goods-acts {
+  display: flex;
+  gap: 10rpx;
+  margin-top: 13rpx;
+  padding-top: 13rpx;
+  border-top: 1rpx solid #eef1f4;
+}
+
+.goods-btn {
+  flex: 1;
+  height: 60rpx;
+  line-height: 60rpx;
+  border-radius: 30rpx;
+  text-align: center;
+  font-size: 15rpx;
+}
+
+.goods-btn.ghost {
+  background: #f2f5f8;
+  color: #5b6672;
+}
+
+.goods-btn.solid {
+  background: #3476f6;
+  color: #ffffff;
+  font-weight: 600;
+}

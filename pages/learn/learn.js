@@ -4,10 +4,13 @@ const popup = require('../../utils/ui-popup-helper')
 const { getNavigationMetrics } = require('../../utils/navigation')
 const { formatTime } = require('../../utils/format-time')
 const { categories, findCategory } = require('../../utils/learn')
+const { assetMap } = require('../../utils/remote-assets')
 
 Page({
   data: {
     ...getNavigationMetrics(), categories, category: 'daike', current: findCategory('daike'),
+    // 头图与卡片插画（wxml 调不了函数，先解析好）
+    art: assetMap({ hero: '/assets/learn/hero.jpg', desk: '/assets/learn/desk.jpg' }),
     schoolName: '', schoolId: null, posts: [], page: 0, cursor: '', size: 10,
     total: 0, loading: false, hasMore: false, offline: false, error: '', uiPopup: null
   },
