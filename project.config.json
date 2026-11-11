@@ -63,6 +63,22 @@
         "type": "folder"
       },
       {
+        "value": "备案材料包",
+        "type": "folder"
+      },
+      {
+        "value": "package-lock.json",
+        "type": "file"
+      },
+      {
+        "value": ".env.example",
+        "type": "file"
+      },
+      {
+        "value": ".env.production.example",
+        "type": "file"
+      },
+      {
         "value": ".md",
         "type": "suffix"
       },
