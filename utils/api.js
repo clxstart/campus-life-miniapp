@@ -14,6 +14,7 @@
  *   circle.js  圈子：列表、详情、加入退出、圈子群聊
  *   learn.js   学习专区：话题、分类计数
  *   pet.js     宠物：查询、喂食、摸摸、签到
+ *   points.js  积分域：积分/成长值/段位、签到、兑换、认证、宿舍、成交
  */
 const mock = require('./mock-data')
 // 请求内核（地址 / 登录态 / 鉴权门 / 统一请求入口）已抽到 utils/api/core.js
@@ -288,6 +289,11 @@ const learn = require('./api/learn')
 const pet = require('./api/pet')
 Object.assign(module.exports, { getLearnTopics: learn.getLearnTopics, getLearnCounts: learn.getLearnCounts })
 Object.assign(module.exports, { getPet: pet.getPet, petFeed: pet.petFeed, petTouch: pet.petTouch, petCheckin: pet.petCheckin })
+
+// 积分域已抽到 utils/api/points.js：积分/成长值/段位、签到连签、兑换商品池、
+// 论坛榜、学生认证、宿舍域、二手成交确认。页面仍只 require('utils/api')。
+const points = require('./api/points')
+Object.assign(module.exports, points)
 
 
 
