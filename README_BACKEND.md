@@ -138,6 +138,34 @@ mvn spring-boot:run -P "!jdk-1.8"
 **任一行有错则整批拒绝**，返回带行号的错误清单，不写入半截数据；`replace=true` 时先清空该用户本学期课表。
 将来拿到真实教务接口，只需替换该方法的数据来源，接口形状不变。
 
+## 管理端兼职与履约（校园帮 §9）
+
+管理端页面：`#/jobs`（`web/src/views/Jobs.vue`）。
+
+- `GET /api/admin/jobs?keyword=&pending=&page=&size=`
+  岗位列表（含待审核）；`school` 角色强制只看本校，`super` 可看全部。
+- `POST /api/admin/jobs/{id}/review` `{approve, reason}`
+  审核通过 / 下架。**在途履约单（taken/working/pending_confirm/disputed）只停新报名，不冻结结算**。
+- `POST /api/admin/jobs/{id}/fee` `{feeMode, feeValue}`
+  逐岗位服务费；只在接单/录用时快照，改价不影响旧单。
+- `GET /api/admin/jobs/contracts?status=&jobId=&page=&size=`
+  履约单处理台列表：带双方昵称、争议、工时/计价数量、**报酬与费率快照**（取 `job_contract.*_snapshot`，不是岗位当前值）。
+- `GET /api/admin/jobs/contracts/{id}`
+  单张履约单详情：账单流水、争议、结算估算。
+- `POST /api/admin/jobs/contracts/{id}/arbitrate` `{decision: settled|refunded, hours, reason}`
+  争议裁定。**settled 必须显式传 hours**：双方申报不一致时系统不自动采信任一方；裁定写 `admin_log`。
+
+权限与边界：
+
+- 以上接口都在 `/api/admin/**`，`AdminInterceptor` 只放行 `super|school`；`school` 的学校范围从登录态取，不接受前端传入。
+- 功能开关 `PUT /api/admin/feature-flags/{key}` **仅超级管理员**可改：`feature_flag` 是全局开关，校管能打开校外招聘/有偿接单会造成跨校合规风险。
+- 履约账单（`earnings_ledger`）不是钱包余额、不是已付款、不可提现；页面文案已同步。
+
+## 认证审核的学校范围
+
+- `GET /api/admin/verifications`、`POST /api/admin/verifications/{userId}/review` 对 `school` 角色按 `user.school_id` 限定本校；跨校审核返回 403。
+- 核验结论只存 `user_verification`（不存证件原文），`provider=manual_admin`。
+
 ## 验证
 
 项目根目录运行：

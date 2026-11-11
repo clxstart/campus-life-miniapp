@@ -88,5 +88,24 @@ H=$(post "/jobs" "$T1" /tmp/job.json)
 check "闸门关闭后发布 403" "$H" "403"
 
 echo ""
+echo "=== 清理本轮 fixture（避免测试岗位留在学生端列表）==="
+$MYSQL -e "USE campus_life;
+  DELETE FROM earnings_ledger WHERE biz_type='job' AND ref_id IN (SELECT id FROM job_contract WHERE job_id=$JOB);
+  DELETE FROM job_dispute WHERE contract_id IN (SELECT id FROM job_contract WHERE job_id=$JOB);
+  DELETE FROM job_contract WHERE job_id=$JOB;
+  DELETE FROM job_application WHERE job_id=$JOB;
+  DELETE FROM job WHERE id=$JOB;" 2>/dev/null
+
+echo ""
+echo "=== 清理本轮 fixture（避免测试岗位留在学生端列表）==="
+MYSQL="mysql -uroot -pchang090011 -N"
+$MYSQL -e "USE campus_life;
+  DELETE FROM earnings_ledger WHERE biz_type='job' AND ref_id IN (SELECT id FROM job_contract WHERE job_id=$JOB);
+  DELETE FROM job_dispute WHERE contract_id IN (SELECT id FROM job_contract WHERE job_id=$JOB);
+  DELETE FROM job_contract WHERE job_id=$JOB;
+  DELETE FROM job_application WHERE job_id=$JOB;
+  DELETE FROM job WHERE id=$JOB;" 2>/dev/null
+
+echo ""
 echo "结果: $pass 通过, $fail 失败"
 [ "$fail" -eq 0 ] || exit 1

@@ -206,7 +206,7 @@ check "no settled income while disputed" 0 "$(q "SELECT COUNT(*) FROM earnings_l
 
 echo
 echo "== (6b) admin arbitration on the frozen contract ====================="
-ARB=$(payload arb.json '{"decision":"settled","reason":"worker evidence"}')
+ARB=$(payload arb.json '{"decision":"settled","hours":3,"reason":"worker evidence"}')
 check "admin arbitrate disputed contract -> 200" 200 "$(req POST "/api/admin/jobs/contracts/$C6/arbitrate" "$ADMIN" "$ARB")"
 check "contract settled by arbitration" settled "$(q "SELECT status FROM job_contract WHERE id=$C6")"
 check "job settled by arbitration" settled "$(q "SELECT workflow_status FROM job WHERE id=900006")"

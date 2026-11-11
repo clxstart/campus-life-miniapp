@@ -43,12 +43,14 @@ sleep "$GAP"
 run_one 01-circle-streak.sh "圈子连续火花" ; sleep "$GAP"
 run_one 02-dispatch.sh     "配送楼栋派单" ; sleep "$GAP"
 run_one 03-jobs-marketplace.sh "兼职岗位域" ; sleep "$GAP"
-run_one 04-jobs-offsite.sh "校外报名录用"
+run_one 04-jobs-offsite.sh "校外报名录用" ; sleep "$GAP"
+run_one 05-emoji.sh        "聊天 emoji" ; sleep "$GAP"
+run_one 06-admin-jobs.sh   "兼职管理端履约单"
 
 echo ""
 echo "=============================================================="
 if [ ${#failed_scripts[@]} -eq 0 ]; then
-  echo "  验收结果：4 个套件全部通过"
+  echo "  验收结果：6 个套件全部通过"
   echo "=============================================================="
   exit 0
 else
