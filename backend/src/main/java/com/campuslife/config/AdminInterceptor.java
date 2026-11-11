@@ -13,6 +13,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Component @RequiredArgsConstructor
 public class AdminInterceptor implements HandlerInterceptor {
     private final AdminJwtUtil jwt;
+    private final AdminTokenGuard guard;
 
     public static final String ADMIN_ID = "adminId";
     public static final String ADMIN_ROLE = "adminRole";
@@ -53,6 +54,16 @@ public class AdminInterceptor implements HandlerInterceptor {
             response.setStatus(403);
             response.setContentType("application/json;charset=UTF-8");
             response.getWriter().write("{\"code\":403,\"msg\":\"骑手账号不能访问管理端\",\"data\":null}");
+            return false;
+        }
+        // finding-03：签名有效还不够，必须确认账号当前仍启用、令牌版本与权限范围未变；查库失败一律拒绝
+        AdminTokenGuard.Result checked = guard.check(claims);
+        if (checked.verdict() == AdminTokenGuard.Verdict.UNAVAILABLE) {
+            reject(response, 503, "鉴权服务暂不可用，请稍后重试");
+            return false;
+        }
+        if (checked.verdict() != AdminTokenGuard.Verdict.OK) {
+            reject(response, 401, "账号已停用或权限已变更，请重新登录");
             return false;
         }
         request.setAttribute(ADMIN_ID, Long.valueOf(claims.getSubject()));

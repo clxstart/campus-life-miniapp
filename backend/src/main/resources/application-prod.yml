@@ -9,6 +9,23 @@ spring:
     password: ${DB_PASSWORD}
 
 campus:
+  # 部署形态必须显式声明（finding-10）：没有默认值，缺失即启动失败。
+  #   single  —— 单实例：上传落本机磁盘，限流/群聊在线人数/周期任务都只在本进程内生效。
+  #              这不是 HA 部署，故障恢复需人工介入（RTO ≈ 发现+重启时间，RPO ≈ 最近一次数据库备份）。
+  #   cluster —— 多实例：必须同时提供 Redis 与 S3 兼容对象存储，缺任何一项启动直接失败。
+  ha:
+    mode: ${CAMPUS_HA_MODE}
+    node-id: ${CAMPUS_HA_NODE_ID:}
+    redis-url: ${CAMPUS_HA_REDIS_URL:}
+    rate-limit-fail-open: ${CAMPUS_HA_RATE_LIMIT_FAIL_OPEN:false}
+    storage:
+      type: ${CAMPUS_HA_STORAGE_TYPE:}
+      endpoint: ${CAMPUS_HA_STORAGE_ENDPOINT:}
+      region: ${CAMPUS_HA_STORAGE_REGION:}
+      bucket: ${CAMPUS_HA_STORAGE_BUCKET:}
+      access-key: ${CAMPUS_HA_STORAGE_ACCESS_KEY:}
+      secret-key: ${CAMPUS_HA_STORAGE_SECRET_KEY:}
+      public-base-url: ${CAMPUS_HA_STORAGE_PUBLIC_BASE_URL:}
   jwt:
     secret: ${CAMPUS_JWT_SECRET}
   wx:
@@ -33,3 +50,6 @@ wxpay:
   private-key-path: ${WXPAY_PRIVATE_KEY_PATH:}
   notify-url: ${WXPAY_NOTIFY_URL}
   refund-notify-url: ${WXPAY_REFUND_NOTIFY_URL}
+  # 外部接口超时（finding-10）：不设置时下单/查询/退款可能长时间挂住线程与数据库连接
+  http-connection-timeout-ms: ${WXPAY_HTTP_CONNECT_TIMEOUT_MS:5000}
+  http-timeout-ms: ${WXPAY_HTTP_TIMEOUT_MS:10000}

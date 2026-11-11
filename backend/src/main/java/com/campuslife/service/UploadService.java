@@ -1,5 +1,9 @@
 package com.campuslife.service;
 
+import com.campuslife.ha.LocalObjectStorage;
+import com.campuslife.ha.ObjectStorage;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,26 +17,40 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Stream;
 
+/**
+ * 图片上传。校验逻辑与响应字段保持原样，存储后端由 campus.ha 决定（finding-10）：
+ *   单实例 → 本机目录；集群 → S3 兼容对象存储，任意节点都能读到同一张图。
+ */
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class UploadService {
     private static final Set<String> ALLOWED = Set.of("jpg", "jpeg", "png", "gif", "webp");
     private static final long MAX_BYTES = 5L * 1024 * 1024;
 
-    @Value("${campus.upload.dir:uploads}") private String uploadDir;
+    private final ObjectStorage storage;
+
     @Value("${campus.upload.public-prefix:/uploads}") private String publicPrefix;
     @Value("${campus.upload.private-prefix:/private}") private String privatePrefix;
-    // 对外可访问的基址；小程序只能显示 http(s) 开头的图片地址
-    @Value("${campus.upload.base-url:http://127.0.0.1:8080}") private String baseUrl;
 
+    /**
+     * 本机上传目录；对象存储模式下返回一个不参与读写的占位路径，
+     * 调用方需要通过 {@link #localDisk()} 判断是否真的在本机落盘。
+     */
     public Path root() {
-        Path dir = Paths.get(uploadDir).toAbsolutePath().normalize();
-        try { Files.createDirectories(dir); } catch (IOException error) { throw new IllegalStateException("上传目录不可用：" + error.getMessage()); }
-        return dir;
+        Path local = localDisk();
+        if (local != null) return local;
+        return Paths.get(System.getProperty("java.io.tmpdir"), "campus-upload-not-used").toAbsolutePath().normalize();
     }
 
-    /** 私有目录：学生证等敏感图片，不通过 /uploads/** 暴露 */
+    /** 真正用于磁盘读写的目录；对象存储模式返回 null */
+    public Path localDisk() { return storage.localRoot(); }
+
+    /** 私有目录（仅本机模式有意义） */
     public Path privateRoot() {
-        Path dir = root().resolve("private");
+        Path local = localDisk();
+        if (local == null) return Paths.get(System.getProperty("java.io.tmpdir"), "campus-upload-not-used").toAbsolutePath().normalize();
+        Path dir = local.resolve("private");
         try { Files.createDirectories(dir); } catch (IOException error) { throw new IllegalStateException("私有上传目录不可用：" + error.getMessage()); }
         return dir;
     }
@@ -58,16 +76,15 @@ public class UploadService {
         // 文件头校验：只认扩展名不够，把 .php 改名成 .jpg 也能过。
         // 这里读前 12 字节比对真实图片签名，挡住伪装文件。
         String actual = detectImageType(file);
-        if (actual == null) {
-            throw new IllegalArgumentException("文件内容不是有效图片，请重新选择");
-        }
+        if (actual == null) throw new IllegalArgumentException("文件内容不是有效图片，请重新选择");
 
         // 文件名由服务端生成，不使用客户端提供的名字，避免路径穿越
-        String name = UUID.randomUUID().toString().replace("-", "") + "." + ext;
-        Path target = (isPrivate ? privateRoot() : root()).resolve(name);
-        try {
-            file.transferTo(target);
+        String name = LocalObjectStorage.randomName(ext);
+        try (InputStream in = file.getInputStream()) {
+            if (isPrivate) storage.putPrivate(name, in, file.getSize(), file.getContentType());
+            else storage.put(name, in, file.getSize(), file.getContentType());
         } catch (IOException error) {
+            log.warn("图片保存失败 name={}", name, error);
             throw new IllegalStateException("图片保存失败");
         }
 
@@ -79,7 +96,7 @@ public class UploadService {
             out.put("url", "");
         } else {
             // url 返回完整地址：小程序把以 / 开头的路径当本地资源，只有 http(s) 才会走网络请求。
-            out.put("url", baseUrl + publicPrefix + "/" + name);
+            out.put("url", storage.publicUrl(name));
             out.put("path", publicPrefix + "/" + name);
         }
         out.put("name", name);
@@ -89,6 +106,10 @@ public class UploadService {
         out.put("uploadedAt", LocalDate.now().toString());
         return out;
     }
+
+    public byte[] readPrivate(String name) throws IOException { return storage.readPrivate(name); }
+
+    public byte[] readPublic(String name) throws IOException { return storage.readPublic(name); }
 
     /**
      * 读文件头判断真实图片类型。
@@ -117,7 +138,7 @@ public class UploadService {
     }
 
     /**
-     * 清理上传目录里的老文件（dryRun 只预览）。
+     * 清理上传目录里的老文件（dryRun 只预览）。仅本机存储有意义。
      *
      * 没有跨服务查全库引用关系，所以按「文件修改时间超过 N 天」做保守清理 ——
      * 宁可少删，不能误删正在使用的图片。
@@ -132,7 +153,17 @@ public class UploadService {
         int total;
         int orphans = 0;
 
-        try (Stream<Path> stream = Files.list(root())) {
+        Path root = localDisk();
+        if (root == null) {
+            Map<String,Object> skipped = new LinkedHashMap<>();
+            skipped.put("total", 0); skipped.put("orphans", 0); skipped.put("removed", 0);
+            skipped.put("dryRun", dryRun); skipped.put("olderThanDays", days);
+            skipped.put("skipped", true);
+            skipped.put("reason", "当前为对象存储模式，请在对象存储侧配置生命周期规则清理，勿用本接口");
+            return skipped;
+        }
+
+        try (Stream<Path> stream = Files.list(root)) {
             List<Path> files = stream.filter(Files::isRegularFile).toList();
             total = files.size();
             for (Path file : files) {

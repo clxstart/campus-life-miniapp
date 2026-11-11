@@ -42,7 +42,11 @@ public class AppConfigService {
     /** 管理端可写的项。比对外项多一个开关，因为开关不需要原样对外。 */
     private static final List<String> WRITABLE_KEYS = List.of(
         "contact.wechat_qr", "contact.wechat_id", "contact.title", "contact.hint", "contact.enabled",
-        "group.wechat_qr", "group.title", "group.hint", "group.enabled");
+        "group.wechat_qr", "group.title", "group.hint", "group.enabled",
+        // V3.1 学生认证细则。加键要同时改三处：种子 SQL、这里、前端「认证规则」卡片。
+        "verification.require.real_name", "verification.require.student_no",
+        "verification.require.college", "verification.require.phone",
+        "verification.student_no_pattern", "verification.review_mode", "verification.daily_limit");
 
     public String get(String key) {
         long now = System.currentTimeMillis();
@@ -93,6 +97,7 @@ public class AppConfigService {
             }
             String value = e.getValue() == null ? "" : String.valueOf(e.getValue()).trim();
             if (value.length() > 500) throw new IllegalArgumentException("配置值过长：" + key);
+            validate(key, value);
             changed += mapper.update(key, value);
             cache.remove(key);
         }
@@ -103,6 +108,49 @@ public class AppConfigService {
     /** 咨询入口是否开启（供小程序判断要不要显示入口）。 */
     public boolean contactEnabled() {
         return "1".equals(publicContact().get("enabled"));
+    }
+
+    /**
+     * 认证细则的写入校验。
+     *
+     * 为什么在写入口就拦：这些键组合起来能造出真实的漏洞 ——
+     * 「review_mode=auto + 空正则」等于任何学号都通过。读取侧还有一层「空正则禁 auto」的强制兜底
+     * （见 VerificationService.effectiveReviewMode），但让后台在保存时就收到明确错误，
+     * 比让他保存成功、之后反复怀疑「为什么有人秒过」要好。
+     */
+    private static void validate(String key, String value) {
+        switch (key) {
+            case "verification.require.real_name", "verification.require.student_no",
+                 "verification.require.college", "verification.require.phone" -> {
+                if (!"0".equals(value) && !"1".equals(value)) {
+                    throw new IllegalArgumentException(key + " 只能是 0 或 1");
+                }
+            }
+            case "verification.review_mode" -> {
+                if (!"manual".equals(value) && !"auto".equals(value)) {
+                    throw new IllegalArgumentException("审核方式只能是 manual 或 auto");
+                }
+            }
+            case "verification.student_no_pattern" -> {
+                // 允许为空（前端只显示格式提示、后端不预校验），但非空就必须能编译，
+                // 否则 apply 时的 matches() 会直接抛异常，变成 500
+                if (!value.isEmpty()) {
+                    try {
+                        java.util.regex.Pattern.compile(value);
+                    } catch (java.util.regex.PatternSyntaxException e) {
+                        throw new IllegalArgumentException("学号正则无法编译：" + e.getDescription());
+                    }
+                }
+            }
+            case "verification.daily_limit" -> {
+                try {
+                    Integer.parseInt(value);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("每日提交次数必须是数字");
+                }
+            }
+            default -> { }
+        }
     }
 }
 

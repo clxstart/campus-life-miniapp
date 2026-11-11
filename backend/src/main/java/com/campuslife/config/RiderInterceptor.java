@@ -1,6 +1,5 @@
 package com.campuslife.config;
 
-import com.campuslife.mapper.AdminMapper;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,7 +13,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class RiderInterceptor implements HandlerInterceptor {
     private final AdminJwtUtil jwt;
-    private final AdminMapper adminMapper;
+    private final AdminTokenGuard guard;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -26,14 +25,12 @@ public class RiderInterceptor implements HandlerInterceptor {
         if (claims == null) return reject(response, 401, "登录已过期，请重新登录");
         if (!"rider".equals(claims.get("role", String.class))) return reject(response, 403, "仅骑手账号可访问");
 
-        Long id;
-        try { id = Long.valueOf(claims.getSubject()); }
-        catch (RuntimeException error) { return reject(response, 401, "登录已过期，请重新登录"); }
-        Map<String,Object> account = adminMapper.accountBrief(id);
-        Object status = account == null ? null : account.get("status");
-        if (account == null || !"rider".equals(account.get("role")) || !(status instanceof Number number) || number.intValue() != 1) {
-            return reject(response, 401, "骑手账号已停用，请联系管理员");
-        }
+        // 与管理端共用令牌状态校验：停用、重置密码、调校区后旧令牌立即失效；查库失败拒绝而非放行
+        AdminTokenGuard.Result checked = guard.check(claims);
+        if (checked.verdict() == AdminTokenGuard.Verdict.UNAVAILABLE) return reject(response, 503, "鉴权服务暂不可用，请稍后重试");
+        if (checked.verdict() != AdminTokenGuard.Verdict.OK) return reject(response, 401, "骑手账号已停用或登录已失效，请重新登录");
+        Map<String,Object> account = checked.account();
+        Long id = Long.valueOf(claims.getSubject());
         request.setAttribute(AdminInterceptor.ADMIN_ID, id);
         request.setAttribute(AdminInterceptor.ADMIN_ROLE, "rider");
         request.setAttribute(AdminInterceptor.ADMIN_SCHOOL, account.get("schoolId"));

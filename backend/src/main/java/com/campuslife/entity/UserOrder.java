@@ -32,6 +32,11 @@ public class UserOrder {
     private BigDecimal discountAmount;
     private BigDecimal total;
     private String status;
+    // 券 v3.1：本单用了哪张券、平台补贴了多少。
+    // 商家收入不扣券钱，所以这笔钱在 earnings_ledger 里单独记一条 platform_subsidy
+    // （见 PaymentLedgerService.applyCoupon）；退款时券作废不退。
+    private Long couponId;
+    private BigDecimal couponDiscount;
     // task-12: 支付相关
     private Integer payAmountCents;
     private String outTradeNo;

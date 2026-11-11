@@ -2,7 +2,9 @@ package com.campuslife.service;
 
 import com.campuslife.config.ForbiddenException;
 import com.campuslife.mapper.AdminModuleMapper;
+import com.campuslife.mapper.CampusMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,10 +15,12 @@ import java.util.*;
 
 // 管理端各模块业务。
 // 数据隔离：超管传 schoolId=null（看全部），校管强制用自己的 schoolId。
+@Slf4j
 @Service @RequiredArgsConstructor
 public class AdminModuleService {
     private final AuditService auditService;
     private final AdminModuleMapper mapper;
+    private final CampusMapper campusMapper;
 
     // ---- 通用工具 ----
     private static String text(Object value) { return value == null ? "" : String.valueOf(value); }
@@ -573,11 +577,49 @@ public class AdminModuleService {
 
     // ---- 圈子 ----
     // 圈子列表：分页返回，避免多校铺开后一次拉全库
-    public Map<String, Object> circles(Long schoolId, String keyword, int page, int size) {
+    public Map<String, Object> circles(Long schoolId, String keyword, Integer status, int page, int size) {
         int[] p = paging(page, size);
         String kw = like(keyword);
-        return page(mapper.circles(schoolId, kw, p[1], p[2]),
-                    mapper.countCircles(schoolId, kw), p[0], p[1]);
+        return page(mapper.circles(schoolId, kw, status, p[1], p[2]),
+                    mapper.countCircles(schoolId, kw, status), p[0], p[1]);
+    }
+
+    /**
+     * 审核用户创建的圈子：通过后 status=1 进入列表；驳回写原因并通知创建者。
+     *
+     * 为什么驳回必须填原因：用户会拿着「审核未通过」来问，运营必须能拿出具体理由；
+     * 同时通知里要带原因，否则用户只能反复猜。
+     */
+    @Transactional
+    public void setCircleStatus(Long schoolId, Long id, Integer status, String reason) {
+        if (id == null || id < 1) throw new IllegalArgumentException("圈子编号无效");
+        if (status == null || (status != 0 && status != 1)) throw new IllegalArgumentException("状态只能是 0 或 1");
+        Map<String, Object> brief = mapper.circleBrief(id);
+        if (brief == null) throw new IllegalArgumentException("圈子不存在");
+        if (schoolId != null) {
+            long ownerSchool = longOr(brief.get("schoolId"), 0);
+            if (ownerSchool != schoolId) throw new ForbiddenException("只能审核本校圈子");
+        }
+        String why = reason == null ? "" : reason.trim();
+        if (why.length() > 100) throw new IllegalArgumentException("驳回原因不能超过100字");
+        if (status == 0 && why.isEmpty()) throw new IllegalArgumentException("请填写驳回原因");
+        if (status == 1) why = "";
+        mapper.setCircleStatus(id, status, status == 1 ? "passed" : "rejected", why);
+        Long creatorId = longOr(brief.get("creatorId"), 0);
+        if (creatorId > 0) {
+            String name = String.valueOf(brief.get("name"));
+            try {
+                campusMapper.notifyUser(creatorId,
+                    status == 1 ? "圈子审核通过" : "圈子审核未通过",
+                    status == 1 ? "你创建的圈子「" + name + "」已通过审核，现在可以在圈子列表看到它。"
+                                : "你创建的圈子「" + name + "」未通过审核：" + why + "。修改后可以重新提交。",
+                    "circle", id);
+            } catch (Exception error) {
+                // 通知是 best-effort：通知表异常不能把已判定的审核结果一起回滚。
+                // 否则运营点「通过」会报错、圈子仍是待审，只能反复重试。
+                log.warn("圈子 {} 审核结果通知创建者 {} 失败（审核结果已保留）: {}", id, creatorId, error.getMessage());
+            }
+        }
     }
 
     @Transactional

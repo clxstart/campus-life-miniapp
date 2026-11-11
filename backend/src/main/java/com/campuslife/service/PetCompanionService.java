@@ -26,6 +26,8 @@ public class PetCompanionService {
 
     private final PetCompanionMapper mapper;
     private final PetMapper petMapper;
+    /** 积分只走 PointsService：衣柜兑换扣分、派遣奖励加分都从这里出。 */
+    private final PointsService points;
     private final SecureRandom random = new SecureRandom();
 
     /**
@@ -146,13 +148,13 @@ public class PetCompanionService {
 
         if (mapper.owned(userId, itemId) != null) throw new IllegalStateException("你已经拥有这件物品");
 
-        mapper.ensurePointsRow(userId);
         if (price > 0) {
-            int affected = mapper.deductPoints(userId, price);
-            if (affected != 1) {
+            // 衣柜兑换每人每件只有一次（上面 owned 已经挡了），业务号用 itemId 即可幂等
+            boolean paid = points.spend(userId, "pet", "pet_wardrobe:" + itemId, price,
+                "pet_wardrobe", "兑换宠物装扮：" + item.get("name"));
+            if (!paid) {
                 throw new IllegalStateException("积分不足，还差 " + (price - points(userId)) + " 分");
             }
-            mapper.logPoints(userId, -price, "pet_wardrobe", "兑换宠物装扮：" + item.get("name"));
         }
         try {
             mapper.addOwned(userId, itemId);
@@ -295,9 +297,8 @@ public class PetCompanionService {
             // 时间未到 或 并发重复领取
             throw new IllegalStateException("还不能领取：任务未完成或已被领取");
         }
-        mapper.ensurePointsRow(userId);
-        mapper.addPoints(userId, reward);
-        mapper.logPoints(userId, reward, "pet_dispatch", "派遣任务奖励");
+        // 派遣奖励是变额（按任务时长随机），走 awardCustom：目录只管开关与日上限，金额由这里给
+        points.awardCustom(userId, "pet_dispatch", "dispatch:" + dispatchId, reward, 0, "派遣任务奖励");
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("ok", true);

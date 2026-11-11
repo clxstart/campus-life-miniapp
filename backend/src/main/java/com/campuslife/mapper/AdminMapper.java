@@ -18,6 +18,25 @@ import java.util.Map;
         """)
     AdminUser findByUsername(@Param("username") String username);
 
+    /**
+     * 每个管理端请求都要走一次：按主键取「当前」账号状态，供 AdminTokenGuard 校验令牌是否已失效。
+     *
+     * 为什么不能只信 JWT：停用账号、改密码、调整角色/学校/店铺归属之后，
+     * 已签发的令牌在过期前依然有效。用库里的 token_version 与令牌里的 tv 对比，
+     * 任何一次权限变更 +1 就能让旧令牌立刻作废，失效窗口是即时的（无缓存）。
+     *
+     * 返回 Map 而不是实体：字段少、只读，且要能区分「查不到」与「查到但 status=0」。
+     */
+    @Select("""
+        SELECT id, username, real_name AS realName, role,
+               school_id AS schoolId, shop_id AS shopId, status,
+               token_version AS tokenVersion,
+               must_change_password AS mustChangePassword,
+               rider_status AS riderStatus
+        FROM admin_user WHERE id = #{id} LIMIT 1
+        """)
+    Map<String,Object> tokenState(@Param("id") Long id);
+
     // 登录失败累计；达到阈值时写入锁定截止时间
     @Update("UPDATE admin_user SET fail_count = fail_count + 1, locked_until = #{lockedUntil} WHERE id = #{id}")
     int bumpFail(@Param("id") Long id, @Param("lockedUntil") LocalDateTime lockedUntil);

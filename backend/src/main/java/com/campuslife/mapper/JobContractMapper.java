@@ -8,6 +8,10 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 履约单读写。
@@ -85,6 +89,23 @@ public interface JobContractMapper extends BaseMapper<JobContract> {
     @Select("SELECT * FROM job_contract WHERE job_id = #{jobId} AND worker_id = #{workerId}")
     JobContract findByJobAndWorker(@Param("jobId") Long jobId, @Param("workerId") Long workerId);
 
+    /**
+     * F10 交易埋点：这份合约结算**实际**发过多少积分给承接方（0 = 没发）。
+     *
+     * 读 point_log 而不是 task_log：日上限命中时 task_log 仍会插一行（p 仍是奖励值），
+     * 但不产生流水；争议冻结 / 整单退回也从未发分。
+     * 「结算完成，+5 积分已到账」只在有正数流水时显示，避免页面与积分明细对不上。
+     */
+    @Select("""
+        SELECT COALESCE(MAX(amount), 0) FROM point_log
+        WHERE user_id = #{workerId} AND biz_key = CONCAT('job_settle:contract:', #{contractId})
+        """)
+    int settledPoints(@Param("workerId") Long workerId, @Param("contractId") Long contractId);
+
+    /** 岗位下全部履约单：只用于多名额岗位的聚合状态展示，不用于权限判定。 */
+    @Select("SELECT * FROM job_contract WHERE job_id = #{jobId} ORDER BY id")
+    List<JobContract> byJob(@Param("jobId") Long jobId);
+
     @Select("""
         SELECT c.id, c.job_id AS jobId, c.worker_id AS workerId, c.employer_id AS employerId,
                c.status, c.fee_mode_snapshot AS feeModeSnapshot, c.fee_value_snapshot AS feeValueSnapshot,
@@ -96,9 +117,62 @@ public interface JobContractMapper extends BaseMapper<JobContract> {
                w.nickname AS workerName, e.nickname AS employerName
         FROM job_contract c
         JOIN job j ON j.id = c.job_id
+        LEFT JOIN school s ON s.id = j.school_id
         LEFT JOIN `user` w ON w.id = c.worker_id
         LEFT JOIN `user` e ON e.id = c.employer_id
         WHERE c.id = #{id}
         """)
     java.util.Map<String, Object> detail(@Param("id") Long id);
+
+    /**
+     * 管理端履约单列表（争议处理台）。
+     *
+     * 只读聚合：履约单 + 岗位 + 双方昵称 + 最近一条争议。
+     * 金额字段全部取 job_contract 的**快照列**，不 join 回 job 的当前费率 ——
+     * 管理端看到的必须是"这一单当时约定的价格"，否则改价后争议双方各说各话。
+     */
+    @Select("""
+        <script>
+        SELECT c.id, c.job_id AS jobId, j.title AS jobTitle, j.school_id AS schoolId, s.name AS schoolName,
+               j.`scope` AS scope, c.worker_id AS workerId, w.nickname AS workerName,
+               c.employer_id AS employerId, e.nickname AS employerName,
+               c.status, c.pay_cents_snapshot AS payCentsSnapshot, c.pay_unit_snapshot AS payUnitSnapshot,
+               c.fee_mode_snapshot AS feeModeSnapshot, c.fee_value_snapshot AS feeValueSnapshot,
+               c.worker_hours AS workerHours, c.employer_hours AS employerHours,
+               c.agreed_hours AS agreedHours, c.cancel_reason AS cancelReason,
+               c.created_at AS createdAt, c.settled_at AS settledAt,
+               d.id AS disputeId, d.status AS disputeStatus, d.reason AS disputeReason
+        FROM job_contract c
+        JOIN job j ON j.id = c.job_id
+        LEFT JOIN school s ON s.id = j.school_id
+        LEFT JOIN `user` w ON w.id = c.worker_id
+        LEFT JOIN `user` e ON e.id = c.employer_id
+        LEFT JOIN job_dispute d ON d.id = (SELECT MAX(x.id) FROM job_dispute x WHERE x.contract_id = c.id)
+        <where>
+          <if test="schoolId != null">j.school_id = #{schoolId} AND</if>
+          <if test="jobId != null">c.job_id = #{jobId} AND</if>
+          <if test="status != null and status != ''">c.status = #{status} AND</if>
+          1 = 1
+        </where>
+        ORDER BY c.id DESC LIMIT #{limit} OFFSET #{offset}
+        </script>
+        """)
+    List<Map<String, Object>> adminList(@Param("schoolId") Long schoolId, @Param("jobId") Long jobId,
+                                        @Param("status") String status,
+                                        @Param("limit") int limit, @Param("offset") int offset);
+
+    @Select("""
+        <script>
+        SELECT COUNT(*) FROM job_contract c
+        JOIN job j ON j.id = c.job_id
+        <where>
+          <if test="schoolId != null">j.school_id = #{schoolId} AND</if>
+          <if test="jobId != null">c.job_id = #{jobId} AND</if>
+          <if test="status != null and status != ''">c.status = #{status} AND</if>
+          1 = 1
+        </where>
+        </script>
+        """)
+    long adminCount(@Param("schoolId") Long schoolId, @Param("jobId") Long jobId,
+                    @Param("status") String status);
 }

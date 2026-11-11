@@ -26,12 +26,31 @@ public interface EarningsLedgerMapper {
                @Param("status") String status, @Param("note") String note,
                @Param("operatorId") Long operatorId);
 
+    /** INSERT IGNORE 返回 0 时用来区分“已存在（幂等）”和“被静默吞掉的写入失败”。 */
+    @Select("SELECT COUNT(*) FROM earnings_ledger WHERE biz_no = #{bizNo}")
+    int countByBizNo(@Param("bizNo") String bizNo);
+
+    /** 退款时把平台补贴条目置 void；条件 status<>'void' 保证重复退款不会反复写。 */
+    @Update("UPDATE earnings_ledger SET status = 'void' WHERE biz_no = #{bizNo} AND status <> 'void'")
+    int voidByBizNo(@Param("bizNo") String bizNo);
+
     /**
      * 状态推进（frozen → settled / refunded）。
      * 带 from 条件是为了幂等：同一笔业务重复推进只会命中一次，第二次影响 0 行。
      */
     @Update("UPDATE earnings_ledger SET status = #{to} WHERE biz_no = #{bizNo} AND status = #{from}")
     int switchStatus(@Param("bizNo") String bizNo, @Param("from") String from, @Param("to") String to);
+
+    /**
+     * 争议裁定后按「管理员确认的计价数量」重算金额。
+     *
+     * 为什么需要它：争议冻结时 {@link #record} 已经按**承接方申报量**写入了三行（INSERT IGNORE），
+     * 之后裁定 settled 若直接把 frozen 切成 settled，金额会永远停在申报值 —— 平台按申报量收服务费、
+     * 雇主按申报量扣款、承接方按申报量拿钱，与管理员确认的数量无关。这是资金口径错误，不只是展示问题。
+     * 幂等：写入的是同一个确定值，重复调用结果一致。
+     */
+    @Update("UPDATE earnings_ledger SET amount_cents = #{amountCents}, note = #{note} WHERE biz_no = #{bizNo}")
+    int reprice(@Param("bizNo") String bizNo, @Param("amountCents") int amountCents, @Param("note") String note);
 
     /** 某张履约单的账单（只读，给详情页展示）。 */
     @Select("""

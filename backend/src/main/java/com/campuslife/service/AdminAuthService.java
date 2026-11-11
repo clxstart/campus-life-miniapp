@@ -46,7 +46,10 @@ public class AdminAuthService {
         }
         mapper.markLogin(admin.getId());
         Map<String,Object> out = new LinkedHashMap<>();
-        out.put("token", jwt.issue(admin.getId(), admin.getRole(), admin.getSchoolId(), admin.getShopId(), admin.getRealName()));
+        // 令牌携带当前 token_version，账号停用/重置密码后旧令牌由 AdminTokenGuard 拒绝（finding-03）
+        Map<String,Object> state = mapper.tokenState(admin.getId());
+        long tokenVersion = state != null && state.get("tokenVersion") instanceof Number n ? n.longValue() : 0L;
+        out.put("token", jwt.issue(admin.getId(), admin.getRole(), admin.getSchoolId(), admin.getShopId(), admin.getRealName(), tokenVersion));
         out.put("expiresIn", jwt.ttlSeconds());
         out.put("id", admin.getId());
         out.put("username", admin.getUsername());

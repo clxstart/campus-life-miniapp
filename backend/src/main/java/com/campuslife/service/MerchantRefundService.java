@@ -33,7 +33,11 @@ public class MerchantRefundService {
         }
 
         long amountCents = number(context.get("amountCents"));
-        if (amountCents < 1 || !"paid".equals(context.get("payStatus"))) {
+        // 用户退款在领取阶段会把 pay_status 原子改为 refunding，商家拒单则仍是 paid；
+        // 两种都是合法的「可提交退款」状态。refunded 不允许再提交渠道。
+        String payStatus = text(context.get("payStatus"));
+        // 兼容历史数据：早期订单可能没有写 pay_status，但 status 已是已付款之后的状态
+        if (amountCents < 1 || !(payStatus.isBlank() || "paid".equals(payStatus) || "refunding".equals(payStatus))) {
             return statusService.markFailed(outRefundNo, "原支付状态或退款金额无效，需平台人工处理");
         }
         String transactionId = text(context.get("transactionId"));
@@ -46,7 +50,10 @@ public class MerchantRefundService {
         if (!transactionId.isBlank()) request.setTransactionId(transactionId);
         else request.setOutTradeNo(outTradeNo);
         request.setOutRefundNo(outRefundNo);
-        request.setReason("商家无法接单");
+        // 渠道侧原因使用账本里记录的真实原因（用户申请/商家拒单），避免所有退款在微信后台都显示「商家无法接单」
+        String reason = text(context.get("reason"));
+        if (reason.isBlank()) reason = "商家无法接单";
+        request.setReason(reason.length() > 80 ? reason.substring(0, 80) : reason);
         request.setNotifyUrl(properties.getRefundNotifyUrl());
         AmountReq amount = new AmountReq();
         amount.setRefund(amountCents);

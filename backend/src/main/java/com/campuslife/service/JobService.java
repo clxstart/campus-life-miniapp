@@ -17,6 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -51,6 +53,9 @@ public class JobService {
     /** 有偿接单总闸门（人已核验 + 平台开放，两个条件都要）。 */
     public static final String FLAG_PAID = VerificationService.FLAG_PAID_JOB;
 
+    /** F10 交易埋点：兼职结算发分的任务键（5P/15G、日限 2 单，见 db/module-points-v31.sql）。 */
+    private static final String TASK_JOB_SETTLE = "job_settle";
+
     private static final Set<String> SCOPES = Set.of("campus", "offsite");
     private static final Set<String> TAKE_MODES = Set.of("first_come", "apply");
     private static final Set<String> PAY_UNITS = Set.of("hour", "order", "shift", "day", "custom");
@@ -58,6 +63,9 @@ public class JobService {
         "other", "takeover_class", "tutor", "promotion", "service", "delivery");
     private static final Set<String> EMPLOYER_KINDS = Set.of("student", "partner");
     private static final Set<String> FEE_MODES = Set.of("none", "amount", "rate");
+    /** 履约单状态（与 job_contract.status 的取值保持一致）。 */
+    private static final Set<String> CONTRACT_STATUSES = Set.of(
+        "created", "working", "pending_confirm", "settled", "disputed", "cancelled", "refunded");
 
     /**
      * 岗位状态机白名单。**任何** workflow_status 变更都要先过这里。
@@ -90,8 +98,12 @@ public class JobService {
     private final VerificationService verification;
     private final UserMapper users;
     private final AuditService auditService;
+    /** 段位特权：白银及以上的「快速应答」在列表第 1 页置顶最多 2 条同校岗位。 */
+    private final TierService tierService;
     /** 管理端操作留痕（争议裁定/删单/改费率必须写）。 */
     private final AdminAuthService adminAuth;
+    /** F10 交易埋点：兼职结算发分（事务提交后、独立事务，失败只记日志，不影响结算）。 */
+    private final AfterCommitPointsAwarder awarder;
 
     // ==================================================================
     // 用户端：列表 / 详情 / 发布
@@ -117,12 +129,47 @@ public class JobService {
         int safePage = Math.max(1, page);
         List<Map<String, Object>> rows = jobs.list(settleValue, like, schoolId, scopeValue,
             safeSize, (safePage - 1) * safeSize);
+        if (safePage == 1) injectPriority(rows, userId);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("list", rows);
         out.put("total", jobs.count(settleValue, like, schoolId, scopeValue));
         out.put("page", safePage);
         out.put("size", safeSize);
         return out;
+    }
+
+    /**
+     * 快速应答（白银特权）：只在第 1 页、最多 2 条、同校优先。
+     *
+     * 为什么是"把已有行提到前面"而不是额外查 2 条插进来：
+     *   插进来会导致第 2 页出现重复岗位、总数对不上。
+     *   这里只调整第 1 页内的顺序并打 priority 标记，翻页结果与原来完全一致。
+     * 同校岗位不足 2 条时有几条标几条，不凑数。
+     */
+    private void injectPriority(List<Map<String, Object>> rows, Long userId) {
+        // 只有 1 条时也要标 priority：设计稿的口径是「岗位总数 ≤2 不显示分隔文案」，
+        // 分隔文案是前端的事，后端该给的标记不能因为页面短就不给。
+        if (rows == null || rows.isEmpty() || userId == null || userId < 1) return;
+        if (!Boolean.TRUE.equals(tierService.privileges(userId).get("priorityReply"))) return;
+        User viewer = users.selectById(userId);
+        if (viewer == null || viewer.getSchoolId() == null) return;
+        Long mySchool = viewer.getSchoolId();
+
+        List<Integer> indexes = new ArrayList<>();
+        for (int i = 0; i < rows.size() && indexes.size() < 2; i++) {
+            Map<String, Object> row = rows.get(i);
+            if (mySchool.equals(num(row.get("schoolId")))) indexes.add(i);
+        }
+        if (indexes.isEmpty()) return;
+
+        List<Map<String, Object>> picked = new ArrayList<>();
+        for (int idx : indexes) {
+            Map<String, Object> row = rows.get(idx);
+            row.put("priority", true);
+            picked.add(row);
+        }
+        for (int i = indexes.size() - 1; i >= 0; i--) rows.remove((int) indexes.get(i));
+        rows.addAll(0, picked);
     }
 
     /** 岗位详情：含我的申请、我的履约单；发布者还能看到报名列表。 */
@@ -146,6 +193,8 @@ public class JobService {
                 brief.put("workerHours", mine.getWorkerHours());
                 brief.put("employerHours", mine.getEmployerHours());
                 brief.put("agreedHours", mine.getAgreedHours());
+                // F10：结算实际到账积分（0 = 没发）。前端只在 settled 且 >0 时显示提示条。
+                brief.put("pointsAwarded", settledPoints(mine.getId(), mine.getWorkerId()));
                 row.put("myContract", brief);
             }
             if (viewerId.equals(ownerId)) row.put("applications", applications.byJob(jobId));
@@ -158,7 +207,14 @@ public class JobService {
         if (userId == null || userId < 1) throw new IllegalArgumentException("用户参数无效");
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("published", jobs.minePublished(userId));
-        out.put("working", jobs.mineWorking(userId));
+        List<Map<String, Object>> working = jobs.mineWorking(userId);
+        // F10：履约列表要能显示「结算完成，+5 积分已到账」。只对已结算的行补查一次实发积分
+        // （积分发给承接方，也就是这里的本人），未结算的行恒定 0，不查。
+        for (Map<String, Object> row : working) {
+            if (!"settled".equals(str(row.get("contractStatus")))) continue;
+            row.put("pointsAwarded", settledPoints(num(row.get("contractId")), userId));
+        }
+        out.put("working", working);
         // 发布方视角：录用后要能回来确认工时，否则结算流程走不完
         out.put("employer", jobs.mineEmployer(userId));
         return out;
@@ -350,6 +406,8 @@ public class JobService {
             throw new ForbiddenException("校外岗位资质未核验，暂未开放");
         }
         assertGate(job, userId);
+        assertSameSchool(job, userId);
+        assertNotExpired(job);
         if (!"passed".equals(job.getAuditStatus())
             || !Set.of("open", "recruiting").contains(job.getWorkflowStatus())) {
             throw new IllegalStateException("岗位已下架或已停止报名");
@@ -436,6 +494,7 @@ public class JobService {
             throw new IllegalStateException("校内岗位是先到先接，不需要录用");
         }
         // 占名额：条件 UPDATE 的影响行数就是唯一判定
+        assertNotExpired(job);
         if (jobs.occupySeat(jobId) != 1) {
             throw new IllegalStateException("该岗位名额已满或已停止招募");
         }
@@ -460,6 +519,9 @@ public class JobService {
             throw new IllegalStateException("该同学与该岗位已有履约记录，不能重复录用");
         }
         log.info("[campus] 岗位 {} 录用了用户 {}（履约单 {}）", jobId, application.getApplicantId(), contract.getId());
+        // 首次录用后岗位应从 open 进入 recruiting，否则「已有合同但状态还是 open」会让
+        // 下架判断（takeDown）误走取消分支，岗位显示成“已取消”而合同其实还在。
+        refreshJobWorkflow(jobId);
         out.put("status", "accepted");
         out.put("contractId", contract.getId());
         out.put("workerId", application.getApplicantId());
@@ -474,7 +536,7 @@ public class JobService {
     public Map<String, Object> start(Long contractId, Long userId) {
         JobContract contract = requireParty(contractId, userId);
         if (contracts.start(contractId) != 1) throw new IllegalStateException("履约单当前状态不能开工");
-        advanceJob(contract.getJobId(), "working", "taken", "recruiting");
+        refreshJobWorkflow(contract.getJobId());
         return contractDetail(contractId, userId);
     }
 
@@ -511,8 +573,8 @@ public class JobService {
             }
             throw new IllegalStateException("履约单当前状态不能提交工时");
         }
-        // 首次提交后岗位进入「待确认」；已经在待确认则保持不变（advanceJob 容忍同态）
-        advanceJob(contract.getJobId(), "pending_confirm", "taken", "working");
+        // 提交后按该岗位全部履约单重新聚合岗位状态：多名额岗位不能用“单张合同”的状态覆盖
+        refreshJobWorkflow(contract.getJobId());
 
         JobContract fresh = contracts.selectById(contract.getId());
         BigDecimal w = fresh.getWorkerHours();
@@ -539,7 +601,10 @@ public class JobService {
         if (note.length() > 200) throw new IllegalArgumentException("取消原因不能超过200字");
 
         if (contracts.cancelBeforeStart(contractId, note) == 1) {
-            advanceJob(contract.getJobId(), "cancelled", "taken", "recruiting");
+            Job job = jobs.selectById(contract.getJobId());
+            // 校外岗位的名额是录用时占掉的，开工前取消要把名额还回去；校内是 taken_by 抢占，不涉及计数
+            if (job != null && "offsite".equals(job.getScope())) jobs.releaseSeat(job.getId());
+            refreshJobWorkflow(contract.getJobId());
             writeLedger(contract, BigDecimal.ZERO, "refunded", "开工前取消，整单未履约");
             return contractDetail(contractId, userId);
         }
@@ -551,7 +616,7 @@ public class JobService {
             } else {
                 writeLedger(fresh, BigDecimal.ZERO, "refunded", "开工后取消，双方未确认履约量，整单退回");
             }
-            advanceJob(fresh.getJobId(), "cancelled", "working", "pending_confirm", "taken", "recruiting");
+            refreshJobWorkflow(fresh.getJobId());
             return contractDetail(contractId, userId);
         }
         JobContract fresh = contracts.selectById(contractId);
@@ -581,6 +646,8 @@ public class JobService {
         row.put("ledger", ledger.byRef(contractId));
         row.put("dispute", disputes.latest(contractId));
         row.put("settlement", estimate(contractId));
+        // F10：这份合约结算实际到账积分（0 = 没发）。积分是发给承接方的，发布方看到的也同一个数。
+        row.put("pointsAwarded", settledPoints(contractId, workerId));
         return row;
     }
 
@@ -594,7 +661,7 @@ public class JobService {
         String kw = keyword == null ? "" : keyword.trim();
         String like = kw.isEmpty() ? "" : "%" + escapeLike(kw) + "%";
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("list", jobs.adminList(schoolId, like, pendingOnly, safeSize, (safePage - 1) * safeSize));
+        out.put("list", jobs.adminList(schoolId, like, pendingOnly, safeSize, offset(safePage, safeSize)));
         out.put("total", jobs.adminCount(schoolId, like, pendingOnly));
         out.put("page", safePage);
         out.put("size", safeSize);
@@ -611,10 +678,10 @@ public class JobService {
         if (note.length() > 200) throw new IllegalArgumentException("审核意见不能超过200字");
         if (!approve && note.isEmpty()) note = "管理员下架";
 
-        int changed = approve ? jobs.approve(jobId, note) : jobs.reject(jobId, note);
+        int changed = approve ? jobs.approve(jobId, note) : takeDown(job, note);
         if (changed != 1) {
             if (approve) throw new IllegalArgumentException("岗位不存在");
-            throw new IllegalStateException("该岗位已结算，不能下架");
+            throw new IllegalStateException("该岗位当前状态不能下架");
         }
         String detail = (approve ? "审核通过" : "审核驳回/下架") + (note.isEmpty() ? "" : "，原因：" + note);
         logAdmin(adminId, adminName, approve ? "job_review_approve" : "job_review_reject",
@@ -640,6 +707,28 @@ public class JobService {
         return jobs.detail(jobId);
     }
 
+    /**
+     * 管理端履约单列表 —— 争议处理台的唯一入口。
+     *
+     * 校管只能看本校岗位的履约单（条件写进 SQL，不是查出来再过滤）；
+     * 状态过滤只接受白名单值，避免把任意字符串拼进查询。
+     * 金额与费率展示的是快照列，与管理端当前配置无关：改价不影响旧单。
+     */
+    public Map<String, Object> adminContracts(Long schoolId, Long jobId, String status, int page, int size) {
+        int safeSize = Math.min(100, Math.max(1, size));
+        int safePage = Math.max(1, page);
+        String normalized = status == null ? "" : status.trim();
+        if (!normalized.isEmpty() && !CONTRACT_STATUSES.contains(normalized)) {
+            throw new IllegalArgumentException("履约单状态参数无效");
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("list", contracts.adminList(schoolId, jobId, normalized, safeSize, offset(safePage, safeSize)));
+        out.put("total", contracts.adminCount(schoolId, jobId, normalized));
+        out.put("page", safePage);
+        out.put("size", safeSize);
+        return out;
+    }
+
     /** 管理端查看履约单（校管只能看本校岗位的履约单）。 */
     public Map<String, Object> adminContract(Long contractId, Long scopeSchoolId) {
         JobContract contract = contracts.selectById(contractId);
@@ -649,11 +738,14 @@ public class JobService {
     }
 
     /**
-     * 争议裁定：settled（按承接方工时结算）或 refunded（整单退回）。
+     * 争议裁定：settled（按管理员确认的计价数量结算）或 refunded（整单退回）。
      * 必须写管理员审计 —— 动钱的动作不能只留一句日志。
+     *
+     * settled 必须显式传 hours：争议的前提就是双方申报不一致，
+     * 自动取承接方申报等于偏向一方（方案 §5.3.4）。管理员看着两侧数字自己填。
      */
     @Transactional
-    public Map<String, Object> arbitrate(Long contractId, String decision, String reason,
+    public Map<String, Object> arbitrate(Long contractId, String decision, Object rawHours, String reason,
                                          Long adminId, String adminName, Long scopeSchoolId, String ip) {
         JobContract contract = contracts.selectById(contractId);
         if (contract == null) throw new IllegalArgumentException("履约单不存在");
@@ -664,26 +756,39 @@ public class JobService {
         if (verdict.isEmpty()) throw new IllegalArgumentException("裁定只能是 settled 或 refunded");
         String note = reason == null ? "" : reason.trim();
         if (note.length() > 200) throw new IllegalArgumentException("裁定说明不能超过200字");
+        if ("settled".equals(verdict) && rawHours == null) {
+            throw new IllegalArgumentException("按结算裁定时必须填写确认的计价数量");
+        }
 
-        BigDecimal hours = "settled".equals(verdict) ? claimedHours(contract) : BigDecimal.ZERO;
+        BigDecimal hours = "settled".equals(verdict) ? parseHours(rawHours) : BigDecimal.ZERO;
         int changed = contracts.arbitrate(contractId, verdict, hours);
         if (changed != 1) {
             JobContract fresh = contracts.selectById(contractId);
-            if (fresh != null && verdict.equals(fresh.getStatus())) return contractDetail(contractId, null);
+            if (fresh != null && verdict.equals(fresh.getStatus())) {
+                // 幂等只对“同一个裁定”成立：换了数量重提不能被静默忽略
+                BigDecimal recorded = fresh.getAgreedHours() == null ? BigDecimal.ZERO : fresh.getAgreedHours();
+                if ("settled".equals(verdict) && recorded.compareTo(hours) != 0) {
+                    throw new IllegalStateException("该争议已按 " + plain(recorded) + " 个计价单位裁定，不能改为 " + plain(hours));
+                }
+                return contractDetail(contractId, null);
+            }
             throw new IllegalStateException("履约单当前状态不能裁定（需先进入争议）");
         }
 
         if ("settled".equals(verdict)) {
-            advanceJob(job.getId(), "settled", "disputed");
-            writeLedger(contract, hours, "settled", "争议裁定：按承接方工时结算");
+            refreshJobWorkflow(job.getId());
+            writeLedger(contract, hours, "settled", "争议裁定：按管理员确认的 " + plain(hours) + " 个计价单位结算");
+            // 争议裁定成 settled 也是「合约结算完成」，同样发一次分（幂等键同 contract:{id}）
+            awardSettleAfterCommit(contract);
         } else {
-            advanceJob(job.getId(), "refunded", "disputed");
+            refreshJobWorkflow(job.getId());
             writeLedger(contract, BigDecimal.ZERO, "refunded", "争议裁定：整单退回");
         }
         JobDispute dispute = disputes.latest(contractId);
         if (dispute != null) disputes.resolve(dispute.getId(), verdict, adminId);
         logAdmin(adminId, adminName, "job_arbitrate", "job_contract", String.valueOf(contractId),
-            "争议裁定 " + verdict + (note.isEmpty() ? "" : "，说明：" + note), ip);
+            "争议裁定 " + verdict + ("settled".equals(verdict) ? "，计价数量 " + plain(hours) : "")
+                + (note.isEmpty() ? "" : "，说明：" + note), ip);
         return contractDetail(contractId, null);
     }
 
@@ -692,8 +797,27 @@ public class JobService {
     public void delete(Long jobId, Long adminId, String adminName, Long scopeSchoolId, String ip) {
         Job job = requireJob(jobId);
         assertSchoolScope(job, scopeSchoolId);
-        if (jobs.reject(jobId, "管理员删除") != 1) throw new IllegalStateException("该岗位已结算，不能删除");
+        if (takeDown(job, "管理员删除") != 1) throw new IllegalStateException("该岗位当前状态不能删除");
         logAdmin(adminId, adminName, "job_delete", "job", String.valueOf(jobId), "删除兼职（软删下架）", ip);
+    }
+
+    /**
+     * 下架的唯一入口：在途履约单保留 workflow_status，只把 audit_status 置为 rejected。
+     * 否则管理员一下架，working/pending_confirm/disputed 的合同就会因为岗位状态变 cancelled
+     * 而无法提交工时、无法结算、也无法发起争议（方案只要求“下架后不可继续录用”）。
+     */
+    private int takeDown(Job job, String reason) {
+        String status = job.getWorkflowStatus() == null ? "" : job.getWorkflowStatus();
+        boolean recruitingWithContracts = "recruiting".equals(status)
+            && job.getAcceptedCount() != null && job.getAcceptedCount() > 0;
+        if (recruitingWithContracts
+            || Set.of("taken", "working", "pending_confirm", "disputed").contains(status)) {
+            // 已有人被录用/在履约：只停新报名，岗位状态交给合同聚合，避免先显示“已取消”再被刷回履约中
+            int changed = jobs.rejectKeepingWorkflow(job.getId(), reason);
+            if (changed == 1) refreshJobWorkflow(job.getId());
+            return changed;
+        }
+        return jobs.reject(job.getId(), reason);
     }
 
     // ==================================================================
@@ -716,8 +840,60 @@ public class JobService {
         throw new IllegalStateException("岗位状态已变更（当前：" + current.getWorkflowStatus() + "），请刷新后重试");
     }
 
-    private void assertTransition(String from, String to) {
-        Set<String> allowed = JOB_FLOW.get(from);
+    /**
+     * 按岗位下所有履约单聚合岗位展示状态。
+     *
+     * 为什么不能继续用 {@link #advanceJob}: 岗位只有一条 workflow_status，
+     * 而 headcount>1 的校外岗位会有多张合同。第一张结算后岗位进入 settled，
+     * 第二张再提交工时时 advanceJob 会从 settled 找不到回 pending_confirm 的边而抛错，
+     * 导致整张合同事务回滚 —— 第二个人永远结算不了。
+     *
+     * 聚合规则（只影响展示；权限与结算仍由 job_contract 的条件 UPDATE 决定）：
+     *   有争议 → disputed
+     *   有待确认 → pending_confirm
+     *   有履约中 → working
+     *   有已承接未开工 → 校外 recruiting / 校内 taken
+     *   其余：有已结算 → settled；有已退回 → refunded；否则 cancelled
+     */
+    private void refreshJobWorkflow(Long jobId) {
+        Job job = jobs.selectById(jobId);
+        if (job == null) return;
+        List<JobContract> all = contracts.byJob(jobId);
+        if (all == null || all.isEmpty()) return;
+        boolean disputed = false, pending = false, working = false, created = false;
+        boolean settledAny = false, refundedAny = false;
+        for (JobContract c : all) {
+            String status = c.getStatus() == null ? "" : c.getStatus();
+            switch (status) {
+                case "disputed" -> disputed = true;
+                case "pending_confirm" -> pending = true;
+                case "working" -> working = true;
+                case "created" -> created = true;
+                case "settled" -> settledAny = true;
+                case "refunded" -> refundedAny = true;
+                default -> { }
+            }
+        }
+        String desired;
+        int accepted = job.getAcceptedCount() == null ? 0 : job.getAcceptedCount();
+        int headcount = job.getHeadcount() == null ? 1 : job.getHeadcount();
+        // 校外多名额岗位：只要还有名额且仍在审核通过状态，岗位继续处于招募中，
+        // 否则第一个人开工后岗位就离开 recruiting，剩余名额再也报不了名、录不了人。
+        // 各张合同的进度看合同本身的状态，岗位这一列只表达“还招不招人”。
+        if ("offsite".equals(job.getScope()) && "passed".equals(job.getAuditStatus()) && accepted < headcount) {
+            desired = "recruiting";
+        }
+        else if (disputed) desired = "disputed";
+        else if (pending) desired = "pending_confirm";
+        else if (working) desired = "working";
+        else if (created) desired = "offsite".equals(job.getScope()) ? "recruiting" : "taken";
+        else if (settledAny) desired = "settled";
+        else if (refundedAny) desired = "refunded";
+        else desired = "cancelled";
+        if (!desired.equals(job.getWorkflowStatus())) jobs.setWorkflowForced(jobId, desired);
+    }
+
+    private void assertTransition(String from, String to) {        Set<String> allowed = JOB_FLOW.get(from);
         if (allowed == null || !allowed.contains(to)) {
             throw new IllegalStateException("岗位状态不允许从 " + from + " 变为 " + to);
         }
@@ -733,9 +909,59 @@ public class JobService {
             }
             throw new IllegalStateException("履约单当前状态不能结算");
         }
-        advanceJob(contract.getJobId(), "settled", "pending_confirm");
+        refreshJobWorkflow(contract.getJobId());
         writeLedger(contract, hours, "settled", "双方工时一致，结算");
+        // F10 交易任务埋点：合约确实进入 settled 且账单已写才发分（+5P/+15G）
+        awardSettleAfterCommit(contract);
         return contractDetail(contract.getId(), viewerId);
+    }
+
+    /**
+     * 兼职结算完成发分（F10，设计稿「兼职发分时机 = 合约 settled」）。
+     *
+     * 只在真正写 earnings_ledger 的 settled 分支调用：争议冻结（frozen）不发、整单退回
+     * （refunded）不发、开工后取消（合约终态是 cancelled，只是按履约量补账）也不发。
+     * 发给承接方（contract.workerId）。发分放在事务提交后、走
+     * {@link AfterCommitPointsAwarder} 的独立事务 —— 积分服务异常不能把结算回滚掉。
+     *
+     * 幂等键 contract:{contractId}：重复确认工时/重复裁定同一份合约只发一次。
+     */
+    private void awardSettleAfterCommit(JobContract contract) {
+        Long contractId = contract == null ? null : contract.getId();
+        Long workerId = contract == null ? null : contract.getWorkerId();
+        if (contractId == null || contractId < 1 || workerId == null || workerId < 1) {
+            log.warn("[campus] 兼职结算缺少合约/承接方，跳过发分 contract={}", contractId);
+            return;
+        }
+        Runnable task = () -> awarder.award(workerId, TASK_JOB_SETTLE, "contract:" + contractId, "兼职结算");
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    task.run();
+                }
+            });
+        } else {
+            // 没有事务上下文（例如单测直接 new 出来的服务）：立即执行，行为等价于已提交
+            task.run();
+        }
+    }
+
+    /**
+     * F10：这份合约**实际**发过多少积分给承接方（0 = 没发）。
+     *
+     * 判据读 point_log：日上限命中时 task_log 有行但无流水，争议冻结/整单退回从未发分，
+     * 所以不能只看 status=settled 就告诉用户「+5 已到账」。
+     * 查询失败按 0 处理 —— 提示条不能把履约详情页打成 500。
+     */
+    private int settledPoints(Long contractId, Long workerId) {
+        if (contractId == null || contractId < 1 || workerId == null || workerId < 1) return 0;
+        try {
+            return contracts.settledPoints(workerId, contractId);
+        } catch (RuntimeException e) {
+            log.warn("[campus] 查询兼职发分状态失败（按未发分处理） contract={}: {}", contractId, e.getMessage());
+            return 0;
+        }
     }
 
     private Map<String, Object> raiseDispute(JobContract contract, String reason, Long raisedBy, Long viewerId) {
@@ -746,7 +972,7 @@ public class JobService {
             }
             throw new IllegalStateException("履约单当前状态不能发起争议");
         }
-        advanceJob(contract.getJobId(), "disputed", "taken", "working", "pending_confirm");
+        refreshJobWorkflow(contract.getJobId());
         JobDispute dispute = new JobDispute();
         dispute.setContractId(contract.getId());
         dispute.setRaisedBy(raisedBy == null ? 0L : raisedBy);
@@ -786,6 +1012,13 @@ public class JobService {
             ledger.switchStatus(base + ":payable", "frozen", status);
             ledger.switchStatus(base + ":fee", "frozen", status);
             ledger.switchStatus(base + ":income", "frozen", status);
+            // 冻结时 record() 已按承接方申报量写死了金额（INSERT IGNORE 之后不会覆盖）。
+            // 争议裁定按管理员确认的 hours 结算时，必须把三行金额重算过来，否则
+            // 平台/雇主/承接方看到的都是申报量而非裁定量的钱。refunded 时这里重算为 0，
+            // 正好表达「整单退回、不产生任何应付」。
+            ledger.reprice(base + ":payable", payable, note);
+            ledger.reprice(base + ":fee", fee, note);
+            ledger.reprice(base + ":income", income, note);
         }
     }
 
@@ -857,7 +1090,31 @@ public class JobService {
         if (!"passed".equals(job.getAuditStatus())) {
             throw new IllegalStateException("岗位尚未通过审核，暂不能接取");
         }
+        assertSameSchool(job, userId);
+        assertNotExpired(job);
         assertGate(job, userId);
+    }
+
+    /**
+     * 校内互助岗位只面向本校学生；跨校直接拿 id 调接口也必须被服务端挡住。
+     * 校外岗位由合作方面向多校招募，不做同校限制（由 job.offsite.enabled 闸门与合作方审核兜底）。
+     */
+    private void assertSameSchool(Job job, Long userId) {
+        if (!"campus".equals(job.getScope())) return;
+        User user = userId == null || userId < 1 ? null : users.selectById(userId);
+        if (user == null) throw new IllegalArgumentException("用户不存在");
+        // fail-closed：未绑定学校的用户或岗位不能参与校内互助，不能把“不知道是哪个学校”当成“同校”
+        if (job.getSchoolId() == null || user.getSchoolId() == null
+            || !job.getSchoolId().equals(user.getSchoolId())) {
+            throw new ForbiddenException("只能参与本校岗位（请先完善学校信息）");
+        }
+    }
+
+    /** 截止时间不是展示字段：过期后接单/报名/录用都必须被服务端拒绝。 */
+    private void assertNotExpired(Job job) {
+        if (job.getDeadlineAt() != null && job.getDeadlineAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("岗位已过报名/接单截止时间");
+        }
     }
 
     private Job requireJob(Long jobId) {
@@ -916,7 +1173,17 @@ public class JobService {
     }
 
     private static int money(BigDecimal value) {
-        return value.setScale(0, RoundingMode.HALF_UP).intValueExact();
+        long cents = value.setScale(0, RoundingMode.HALF_UP).longValueExact();
+        if (cents > Integer.MAX_VALUE || cents < 0) {
+            throw new IllegalArgumentException("金额超出可记账范围，请核对报酬与计价数量");
+        }
+        return (int) cents;
+    }
+
+    /** 分页偏移：int 乘法在大页码会溢出成负数，MySQL 会直接 500。 */
+    private static int offset(int page, int size) {
+        long value = (long) (Math.max(1, page) - 1) * Math.max(1, size);
+        return (int) Math.min(Integer.MAX_VALUE - Math.max(1, size), Math.max(0, value));
     }
 
     private Long resolveSchoolId(String schoolScope, Long explicitSchoolId, Long userId) {

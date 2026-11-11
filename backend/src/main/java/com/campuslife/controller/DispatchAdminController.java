@@ -50,19 +50,22 @@ public class DispatchAdminController {
         String reason = text(body.get("reason"));
         // countPay 默认 true：默认整笔配送费归实际配送人（方案 §7.2）
         boolean countPay = body.get("countPay") == null || Boolean.parseBoolean(String.valueOf(body.get("countPay")));
-        return ApiResponse.ok(dispatch.assign(id, riderId, action, reason, adminId(request), countPay));
+        return ApiResponse.ok(dispatch.assign(id, riderId, action, reason, adminId(request), countPay, scopeSchool(request)));
     }
 
     @GetMapping("/orders/{id}/log")
     public ApiResponse<List<Map<String, Object>>> log(@PathVariable Long id, HttpServletRequest request) {
         requireManager(request);
-        return ApiResponse.ok(dispatch.log(id));
+        return ApiResponse.ok(dispatch.log(id, scopeSchool(request)));
     }
 
-    /** 补派：把历史上已接单但没有责任骑手的订单再派一次。 */
+    /** 补派：把历史上已接单但没有责任骑手的订单再派一次。范围是全平台，仅超管可执行。 */
     @PostMapping("/redispatch")
     public ApiResponse<Map<String, Object>> redispatch(HttpServletRequest request) {
         requireManager(request);
+        if (!"super".equals(role(request))) {
+            throw new ForbiddenException("补派是跨校操作，仅超级管理员可执行；校级管理员请在本校异常队列逐单改派");
+        }
         int assigned = dispatch.dispatchAwaiting();
         return ApiResponse.ok(Map.of("assigned", assigned));
     }
@@ -81,6 +84,7 @@ public class DispatchAdminController {
     public ApiResponse<Building> createBuilding(@RequestBody Map<String, Object> body, HttpServletRequest request) {
         requireManager(request);
         Building b = build(body, request);
+        assertDefaultRider(b);
         buildings.insert(b);
         return ApiResponse.ok(b);
     }
@@ -97,6 +101,7 @@ public class DispatchAdminController {
         Building b = build(body, request);
         b.setId(id);
         b.setSchoolId(existing.getSchoolId());
+        assertDefaultRider(b);
         buildings.updateById(b);
         return ApiResponse.ok(buildings.byId(id));
     }
@@ -132,6 +137,25 @@ public class DispatchAdminController {
         b.setDefaultRiderId(riderId == null || riderId < 1 ? null : riderId);
         b.setStatus(1);
         return b;
+    }
+
+    /**
+     * 默认骑手必须是存在、启用、role=rider 且与楼栋同校的账号。
+     * 否则要么派单时才被拦下进队列（外校），要么被放行（未绑定学校）——在保存时就拒绝。
+     */
+    private void assertDefaultRider(Building b) {
+        Long riderId = b.getDefaultRiderId();
+        if (riderId == null) return;
+        Map<String, Object> rider = mapper.riderInfo(riderId);
+        if (rider == null || !"rider".equals(text(rider.get("role")))) {
+            throw new IllegalArgumentException("默认骑手不存在或不是骑手账号");
+        }
+        Long status = number(rider.get("status"));
+        if (status != null && status == 0) throw new IllegalArgumentException("默认骑手账号已停用");
+        Long riderSchool = number(rider.get("schoolId"));
+        if (riderSchool == null || !riderSchool.equals(b.getSchoolId())) {
+            throw new IllegalArgumentException("默认骑手必须属于该楼栋所在学校");
+        }
     }
 
     // ---------- 鉴权 helper ----------

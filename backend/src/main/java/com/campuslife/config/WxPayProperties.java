@@ -27,4 +27,8 @@ public class WxPayProperties {
     /** 退款结果回调地址（申请退款时传给微信）。 */
     private String refundNotifyUrl = "";
     private boolean sandbox;
+    /** 外部接口连接超时（毫秒）：不设置时渠道异常会长时间占用线程与数据库连接（finding-10）。 */
+    private int httpConnectionTimeoutMs = 5000;
+    /** 外部接口读取超时（毫秒）。 */
+    private int httpTimeoutMs = 10000;
 }

@@ -24,13 +24,24 @@ public class AdminVerificationController {
 
     private final VerificationService service;
 
+    /**
+     * 待审/已审列表。
+     *
+     * V3.1 起返回学校名、学院、姓名、学号、手机号（脱敏）、提交时间 —— 没有这些字段，审核员看到的只是一个
+     * 「待审核用户 7」，根本没法核对，这也是本次学生认证要修的主要断点。
+     *
+     * @param schoolId 学校筛选（在校管权限范围内再收窄）
+     * @param keyword  姓名/学号模糊搜索
+     */
     @GetMapping
     public ApiResponse<List<Map<String, Object>>> list(@RequestParam(required = false) String status,
+                                                       @RequestParam(required = false) Long schoolId,
+                                                       @RequestParam(required = false) String keyword,
                                                        @RequestParam(defaultValue = "1") int page,
                                                        @RequestParam(defaultValue = "20") int size,
                                                        HttpServletRequest request) {
         requireManager(request);
-        return ApiResponse.ok(service.listForAdmin(status, page, size));
+        return ApiResponse.ok(service.listForAdmin(status, page, size, scopeSchool(request), schoolId, keyword));
     }
 
     @PostMapping("/{userId}/review")
@@ -46,7 +57,8 @@ public class AdminVerificationController {
             text(body.get("reason")),
             adminId(request),
             adminName(request),
-            ip(request)
+            ip(request),
+            scopeSchool(request)
         ));
     }
 
@@ -56,6 +68,15 @@ public class AdminVerificationController {
     }
 
     private static String role(HttpServletRequest request) { return String.valueOf(request.getAttribute(AdminInterceptor.ADMIN_ROLE)); }
+
+    /** super 返回 null（不限学校）；school 返回自己的学校，未绑定学校直接拒绝。 */
+    private static Long scopeSchool(HttpServletRequest request) {
+        if ("super".equals(role(request))) return null;
+        Object value = request.getAttribute(AdminInterceptor.ADMIN_SCHOOL);
+        Long id = value instanceof Number n ? n.longValue() : null;
+        if (id == null) throw new ForbiddenException("当前账号未绑定学校");
+        return id;
+    }
     private static Long adminId(HttpServletRequest request) { return (Long) request.getAttribute(AdminInterceptor.ADMIN_ID); }
     private static String adminName(HttpServletRequest request) { Object v = request.getAttribute(AdminInterceptor.ADMIN_NAME); return v == null ? "" : String.valueOf(v); }
     private static String text(Object value) { return value == null ? "" : String.valueOf(value); }

@@ -11,6 +11,8 @@ import java.util.Map;
 
 @Service @RequiredArgsConstructor public class PetService {
     private final PetMapper mapper;
+    /** 积分只走 PointsService：宠物自己的加减分（喂食扣分、签到加分）也必须有唯一入口。 */
+    private final PointsService points;
 
     // 升级所需经验：Lv n→n+1 需要 50*n*(n+1)
     private static int needExp(int level) { return level >= 10 ? Integer.MAX_VALUE : 50 * level * (level + 1); }
@@ -78,13 +80,14 @@ import java.util.Map;
             throw new IllegalStateException("今天已经做过太多次啦");
 
         if (cost > 0) {
-            int rows = mapper.deductPoints(userId, cost);
-            if (rows == 0) throw new IllegalStateException("积分不足，去发帖赚积分吧");
-            mapper.logPoints(userId, -cost, "pet_feed", null, "喂食消耗");
+            // 喂食是可重复消费（每天最多 5 次），所以不带业务幂等键，让每次都是一笔新支出；
+            // 扣分不能扣成负数由 spend() 的条件更新保证。
+            boolean paid = points.spend(userId, "pet", null, cost, "pet_feed", "喂食消耗");
+            if (!paid) throw new IllegalStateException("积分不足，去发帖赚积分吧");
         }
         if (pointsGain > 0) {
-            mapper.addPoints(userId, pointsGain);
-            mapper.logPoints(userId, pointsGain, "checkin", null, "每日签到");
+            // 宠物签到并入统一任务体系（task_key=pet_checkin），bizKey 用日期天然做到每天一次
+            points.award(userId, "pet_checkin", java.time.LocalDate.now(PointsService.SHANGHAI).toString(), "宠物签到");
         }
 
         Map<String, Object> pet = mapper.findPet(userId);

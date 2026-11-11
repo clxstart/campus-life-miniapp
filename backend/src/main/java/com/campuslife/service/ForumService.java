@@ -1,7 +1,7 @@
 package com.campuslife.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper; import com.baomidou.mybatisplus.extension.plugins.pagination.Page; import com.campuslife.dto.*; import com.campuslife.entity.*; import com.campuslife.mapper.*; import lombok.RequiredArgsConstructor; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional; import java.time.LocalDateTime; import java.util.*;
 @Service @RequiredArgsConstructor public class ForumService {
- private final CampusMapper campusMapper; private final CircleService circleService; private final PostMapper postMapper; private final UserMapper userMapper; private final PostLikeMapper likeMapper; private final CommentMapper commentMapper; private final CommentLikeMapper commentLikeMapper; private final FollowMapper followMapper; private final PostViewMapper viewMapper; private final FavoriteMapper favoriteMapper; private final com.campuslife.mapper.BannerMapper bannerMapper; private final AuditService auditService; private final UserBlockService blockService;
+ private final CampusMapper campusMapper; private final CircleService circleService; private final PostMapper postMapper; private final UserMapper userMapper; private final PostLikeMapper likeMapper; private final CommentMapper commentMapper; private final CommentLikeMapper commentLikeMapper; private final FollowMapper followMapper; private final PostViewMapper viewMapper; private final FavoriteMapper favoriteMapper; private final com.campuslife.mapper.BannerMapper bannerMapper; private final AuditService auditService; private final UserBlockService blockService; private final TierService tierService;
  public List<com.campuslife.entity.Banner> banners(String slot){return bannerMapper.selectList(new LambdaQueryWrapper<com.campuslife.entity.Banner>().eq(com.campuslife.entity.Banner::getSlot,slot).eq(com.campuslife.entity.Banner::getStatus,1).orderByAsc(com.campuslife.entity.Banner::getSort));}
  public Map<String,Object> page(String tag,String scope,String postScope,Long userId,int page,int size){
    return page(tag,scope,postScope,userId,page,size,null);
@@ -143,12 +143,21 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper; import
      if(selectedSchoolId==null||campusMapper.publicSchools().stream().noneMatch(row->row.get("id") instanceof Number&&selectedSchoolId.equals(((Number)row.get("id")).longValue())))throw new IllegalArgumentException("请先选择有效学校");
      p.setSchoolId(selectedSchoolId);
    }else if(Boolean.TRUE.equals(r.getCrossSchool())){p.setSchoolId(null);}else{p.setSchoolId(userSchoolId(r.getUserId()));}
-   String auditStatus=auditService.initialStatus(textAudit,r.getImage()!=null&&!r.getImage().isBlank());
+   // 发帖免审（黄金特权）：先发后审。
+   // 只有「文本审核已通过且没有疑似」才免审；命中疑似仍走原审核，避免 reviewing 状态的内容永久可见。
+   // 图片仍然异步过微信审核，命中即由 AuditService 下架并通知作者。
+   boolean hasImages=r.getImage()!=null&&!r.getImage().isBlank();
+   boolean fastlane=textAudit.pass()&&!textAudit.reviewing()
+     &&Boolean.TRUE.equals(tierService.privileges(r.getUserId()).get("postFastlane"));
+   String auditStatus=fastlane
+     ?(hasImages?"pending":"passed")
+     :auditService.initialStatus(textAudit,hasImages);
    LocalDateTime now=LocalDateTime.now();
    p.setAuditStatus(auditStatus);p.setAuditReason(textAudit.reason());p.setAuditAt("passed".equals(auditStatus)?now:null);
-   p.setLikeCount(0);p.setCommentCount(0);p.setStatus("passed".equals(auditStatus)?1:0);p.setCreatedAt(now);p.setUpdatedAt(now);
+   p.setLikeCount(0);p.setCommentCount(0);p.setStatus(fastlane?1:("passed".equals(auditStatus)?1:0));p.setCreatedAt(now);p.setUpdatedAt(now);
    postMapper.insert(p);
    auditService.logTextResult("post",p.getId(),r.getUserId(),r.getTitle()+"\n"+r.getContent(),textAudit);
+   if(fastlane)auditService.logFastlane("post",p.getId(),r.getUserId(),r.getTitle()+"\n"+r.getContent());
    if(p.getImage()!=null&&!p.getImage().isBlank())auditService.scheduleImagesAfterCommit(List.of(p.getImage()),"post",p.getId(),r.getUserId());
    if(p.getCircleId()!=null)circleService.syncPostCount(p.getCircleId());
    return p;

@@ -55,21 +55,10 @@ public interface PetCompanionMapper {
     String equippedPart(@Param("userId") Long userId);
 
     // ==================== 积分 ====================
+    // 加减分已全部迁到 PointsMapper / PointsService（唯一写入口），这里只保留只读余额。
 
     @Select("SELECT balance FROM user_points WHERE user_id=#{userId}")
     Integer balance(@Param("userId") Long userId);
-
-    /** 扣积分：带余额校验，防止扣成负数 */
-    @Update("UPDATE user_points SET balance = balance - #{cost} WHERE user_id=#{userId} AND balance >= #{cost}")
-    int deductPoints(@Param("userId") Long userId, @Param("cost") int cost);
-
-    /** 积分流水：point_log 的实际字段是 amount / type / remark */
-    @Insert("INSERT INTO point_log(user_id, amount, type, remark, created_at) VALUES(#{userId}, #{change}, #{type}, #{reason}, NOW())")
-    int logPoints(@Param("userId") Long userId, @Param("change") int change,
-                  @Param("type") String type, @Param("reason") String reason);
-
-    @Insert("INSERT INTO user_points(user_id, balance, total_earned) VALUES(#{userId}, 0, 0) ON DUPLICATE KEY UPDATE user_id=user_id")
-    int ensurePointsRow(@Param("userId") Long userId);
 
     // ==================== 派遣 ====================
 
@@ -114,9 +103,6 @@ public interface PetCompanionMapper {
     /** 领取：只能领一次的原子更新 */
     @Update("UPDATE pet_dispatch SET status='claimed', reward=#{reward}, claimed_at=NOW() WHERE id=#{id} AND user_id=#{userId} AND status='claimable'")
     int claim(@Param("userId") Long userId, @Param("id") Long id, @Param("reward") int reward);
-
-    @Update("UPDATE user_points SET balance = balance + #{amount}, total_earned = total_earned + #{amount} WHERE user_id=#{userId}")
-    int addPoints(@Param("userId") Long userId, @Param("amount") int amount);
 
     @Select("SELECT COUNT(*) FROM pet_dispatch WHERE user_id=#{userId} AND status='claimed'")
     int claimedCount(@Param("userId") Long userId);

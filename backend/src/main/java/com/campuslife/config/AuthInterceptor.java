@@ -76,9 +76,22 @@ public class AuthInterceptor implements HandlerInterceptor {
         "/api/notifications",
         "/api/timetable",
         "/api/pet",
+        // 积分账本同样是「我的数据」：不拦住的话未登录会拿到一个空账，前端看不出是没登录
+        "/api/points",
+        // 积分账本同样是「我的数据」：不拦住的话未登录会拿到一个空账，前端看不出是没登录
+        "/api/points",
         // 圈子群聊历史与未读数也是「我的数据」：之前没拦住，未登录会走到 400「参数无效」，
         // 前端看不出是没登录，也不会去重新登录。现在统一成 401。
-        "/api/circle-messages"
+        "/api/circle-messages",
+        // 我的宿舍同样只属于本人；未登录不能读成「未加入」
+        "/api/dorm",
+        // 二手成交「我的发布与待确认」（V3.1 F10）。此前控制器里抛 ForbiddenException，
+        // 未登录拿到的是 403「请先登录」，与全站 401 口径不一致，前端也不会重新登录。
+        // /api/market 下只有这一条读接口，其余都是 POST，拦下来不会误伤公开列表。
+        "/api/market",
+        // 我的认证状态（V3.1 F8）。注意只拦 /me：GET /api/verification/config 是公开的
+        // （认证页登录前后都要能渲染表单结构），用精确前缀避免误伤。
+        "/api/verification/me"
     );
 
     /** /api/users/{id}/xxx 里属于「我的数据」的子资源。 */

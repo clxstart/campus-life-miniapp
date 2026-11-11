@@ -26,21 +26,11 @@ import java.util.Map;
             "AND action = #{action} AND created_at >= CURDATE()")
     int countToday(@Param("userId") Long userId, @Param("action") String action);
 
-    @Update("UPDATE user_points SET balance = balance - #{cost} " +
-            "WHERE user_id = #{userId} AND balance >= #{cost}")
-    int deductPoints(@Param("userId") Long userId, @Param("cost") int cost);
+    // 积分加减分已全部迁到 PointsMapper / PointsService（唯一写入口）。
+    // 这里只保留建行与读取：ensurePoints 是 INSERT IGNORE，不构成第二套账。
 
     @Insert("INSERT IGNORE INTO user_points (user_id, balance, total_earned) VALUES (#{userId}, 0, 0)")
     void ensurePoints(@Param("userId") Long userId);
-
-    @Update("UPDATE user_points SET balance = balance + #{amount}, total_earned = total_earned + #{amount} " +
-            "WHERE user_id = #{userId}")
-    void addPoints(@Param("userId") Long userId, @Param("amount") int amount);
-
-    @Insert("INSERT INTO point_log (user_id, amount, type, ref_id, remark) " +
-            "VALUES (#{userId}, #{amount}, #{type}, #{refId}, #{remark})")
-    void logPoints(@Param("userId") Long userId, @Param("amount") int amount, @Param("type") String type,
-                   @Param("refId") Long refId, @Param("remark") String remark);
 
     @Insert("INSERT INTO pet_interaction_log (user_id, action, exp_gain, cost_points) " +
             "VALUES (#{userId}, #{action}, #{expGain}, #{cost})")

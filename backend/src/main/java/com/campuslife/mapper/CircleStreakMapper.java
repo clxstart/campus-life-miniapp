@@ -26,8 +26,16 @@ public interface CircleStreakMapper {
                 @Param("messageId") Long messageId,
                 @Param("actorId") Long actorId);
 
-    @Select("SELECT id, streak_days AS streakDays, last_active_date AS lastActiveDate, spark_on AS sparkOn FROM circle WHERE id=#{circleId}")
+    /** 加锁读：RR 隔离级别下普通 SELECT 读的是事务快照，可能拿到旧连续天数；FOR UPDATE 读最新已提交版本。 */
+    @Select("SELECT id, streak_days AS streakDays, last_active_date AS lastActiveDate, spark_on AS sparkOn FROM circle WHERE id=#{circleId} FOR UPDATE")
     Map<String, Object> streak(@Param("circleId") Long circleId);
+
+    /**
+     * 锁住圈子行再读改写连续天数：跨午夜两个请求会各自 INSERT IGNORE 成功（日期不同），
+     * 没有行锁时可能互相用旧值覆盖（后写者把连续天数写回 1）。事务内 FOR UPDATE 串行化。
+     */
+    @Select("SELECT id FROM circle WHERE id=#{circleId} FOR UPDATE")
+    Long lockCircle(@Param("circleId") Long circleId);
 
     @Update("""
         UPDATE circle SET streak_days=#{streakDays}, last_active_date=#{lastActiveDate}, spark_on=#{sparkOn}

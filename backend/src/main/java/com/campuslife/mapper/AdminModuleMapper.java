@@ -172,11 +172,14 @@ import java.util.Map;
         <script>
         SELECT c.id, c.name, c.slug, c.category, c.description, c.cover, c.theme,
                c.member_count AS memberCount, c.post_count AS postCount, c.hot, c.sort, c.status,
-               c.school_id AS schoolId, s.name AS schoolName
+               c.school_id AS schoolId, s.name AS schoolName,
+               c.creator_id AS creatorId, u.nickname AS creatorName, c.created_at AS createdAt
         FROM circle c LEFT JOIN school s ON s.id = c.school_id
+        LEFT JOIN `user` u ON u.id = c.creator_id
         <where>
           <if test="schoolId != null">c.school_id = #{schoolId} AND</if>
           <if test="keyword != null and keyword != ''">c.name LIKE #{keyword} AND</if>
+          <if test="status != null">c.status = #{status} AND</if>
           1 = 1
         </where>
         ORDER BY c.sort, c.id
@@ -185,6 +188,7 @@ import java.util.Map;
         """)
     List<Map<String,Object>> circles(@Param("schoolId") Long schoolId,
                                      @Param("keyword") String keyword,
+                                     @Param("status") Integer status,
                                      @Param("limit") Integer limit,
                                      @Param("offset") Integer offset);
 
@@ -195,11 +199,25 @@ import java.util.Map;
         <where>
           <if test="schoolId != null">c.school_id = #{schoolId} AND</if>
           <if test="keyword != null and keyword != ''">c.name LIKE #{keyword} AND</if>
+          <if test="status != null">c.status = #{status} AND</if>
           1 = 1
         </where>
         </script>
         """)
-    long countCircles(@Param("schoolId") Long schoolId, @Param("keyword") String keyword);
+    long countCircles(@Param("schoolId") Long schoolId, @Param("keyword") String keyword,
+                      @Param("status") Integer status);
+
+    @Select("SELECT id, name, creator_id AS creatorId, school_id AS schoolId, status FROM circle WHERE id = #{id}")
+    Map<String,Object> circleBrief(@Param("id") Long id);
+
+    /** 审核结果：1=通过（列表可见） 0=驳回/下架（列表不可见）。 */
+    @Update("""
+        UPDATE circle SET status = #{status}, audit_status = #{auditStatus},
+               audit_reason = #{reason}, audit_at = NOW()
+        WHERE id = #{id}
+        """)
+    int setCircleStatus(@Param("id") Long id, @Param("status") int status,
+                        @Param("auditStatus") String auditStatus, @Param("reason") String reason);
 
     @Insert("""
         INSERT INTO circle(name, slug, category, description, cover, theme, hot, sort, school_id, status, audit_status, audit_reason, audit_at)

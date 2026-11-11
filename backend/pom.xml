@@ -91,6 +91,26 @@
       <artifactId>toolgood-words</artifactId>
       <version>3.1.0.1</version>
     </dependency>
+    <!-- finding-10 集群模式：共享限流、群聊跨节点广播/在线人数（Redis）。
+         直接用 Lettuce 客户端（版本由 Spring Boot BOM 管理），不引入 spring-boot-starter-data-redis，
+         避免单机模式下自动装配 Redis 连接与健康检查。campus.ha.mode=single 时完全不连接 Redis。 -->
+    <dependency>
+      <groupId>io.lettuce</groupId>
+      <artifactId>lettuce-core</artifactId>
+      <version>6.3.1.RELEASE</version>
+    </dependency>
+    <!-- finding-10 集群模式：上传文件写入 S3 兼容对象存储（MinIO / AWS S3 / 阿里云 OSS / 腾讯云 COS 均可） -->
+    <dependency>
+      <groupId>io.minio</groupId>
+      <artifactId>minio</artifactId>
+      <version>8.5.12</version>
+    </dependency>
+    <!-- 测试：JUnit5 + Mockito + AssertJ（版本由 Spring Boot 3.2.5 BOM 管理），仅 test 作用域，不进生产包 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

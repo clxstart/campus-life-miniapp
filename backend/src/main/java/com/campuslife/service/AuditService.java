@@ -215,6 +215,14 @@ public class AuditService {
         }
     }
 
+    /**
+     * 先发后审留痕：source='fastlane'。
+     * 审核日志要能区分「谁让这条内容先上线」，否则事后追查只能靠猜。
+     */
+    public void logFastlane(String type, Long targetId, Long userId, String text) {
+        writeLog(type, targetId, userId, text, "fastlane", "pass", List.of());
+    }
+
     public void rejectIfNeeded(AuditResult result) {
         if (!result.pass()) throw new AuditRejectedException(result.reason());
     }
@@ -296,12 +304,8 @@ public class AuditService {
                 if (url == null || url.isBlank()) continue;
                 JsonNode response = checkImage(url);
                 int errcode = response.path("errcode").asInt(-1);
-                if (errcode == 87014) {
-                    String reason = "图片未通过微信内容安全检测";
-                    imageRejected(type, targetId, reason);
-                    writeLog(type, targetId, userId, url, "wechat", "reject", List.of());
-                    return;
-                }
+                // 命中/未通过的落地逻辑抽到 applyImageVerdict：不依赖微信 HTTP 也能测「下架 + 留痕」
+                if (!applyImageVerdict(type, targetId, userId, url, errcode)) return;
                 if (errcode != 0) throw new IllegalStateException("WeChat image moderation returned an error: " + response);
             }
             imagePassed(type, targetId);
@@ -353,9 +357,37 @@ public class AuditService {
         else auditMapper.imagePassedGoods(id);
     }
 
-    private void imageRejected(String type, Long id, String reason) {
-        if ("post".equals(type)) auditMapper.imageRejectedPost(id, reason);
-        else auditMapper.imageRejectedGoods(id, reason);
+    private void imageRejected(String type, Long id, String reason, Long userId) {
+        if ("post".equals(type)) {
+            auditMapper.imageRejectedPost(id, reason);
+            // 先发后审的帖子被撤回：补一条 source='fastlane_revoked' 留痕。
+            // 只有走过免审（audit_log 里有 source='fastlane'）的帖子才写，普通审核的违规不冒充免审撤回。
+            if (auditMapper.countFastlaneLog(type, id) > 0) {
+                writeLog(type, id, userId, reason, "fastlane_revoked", "reject", List.of());
+            }
+            // 先发后审命中：帖子已下架必须通知作者，否则用户只会看到「帖子不见了」
+            if (userId != null && userId > 0) {
+                campusMapper.notifyUser(userId, "帖子已下架", "你的帖子因违反社区规范已被下架", "audit", id);
+            }
+        } else {
+            auditMapper.imageRejectedGoods(id, reason);
+        }
+    }
+
+    /**
+     * 图片审核结论落地：只有命中违规（87014）才动数据。
+     *
+     * 抽成独立方法有两个理由：
+     *   1. 生产路径（auditImages）与测试共用同一段落地逻辑，不会出现「测试通过、线上另一套」；
+     *   2. 落地不依赖微信 HTTP（取图/换 token），可对真实库断言「下架 + audit_log + 通知」。
+     *
+     * @return true 表示这张图通过、继续检查下一张；false 表示已命中违规并下架，停止
+     */
+    boolean applyImageVerdict(String type, Long targetId, Long userId, String url, int errcode) {
+        if (errcode != 87014) return true;
+        imageRejected(requireType(type), targetId, "图片未通过微信内容安全检测", userId);
+        writeLog(type, targetId, userId, url, "wechat", "reject", List.of());
+        return false;
     }
 
     public Map<String,Object> list(String type, String status, String keyword, String startDate, String endDate,

@@ -23,6 +23,9 @@ public class WxPayConfiguration {
         config.setPrivateKeyPath(properties.getPrivateKeyPath());
         config.setNotifyUrl(properties.getNotifyUrl());
         config.setUseSandboxEnv(properties.isSandbox());
+        // finding-10：给外部渠道设置明确的连接/读取超时，避免渠道卡住时线程与数据库连接被长时间占用
+        config.setHttpConnectionTimeout(properties.getHttpConnectionTimeoutMs());
+        config.setHttpTimeout(properties.getHttpTimeoutMs());
         WxPayServiceImpl service = new WxPayServiceImpl();
         service.setConfig(config);
         return service;

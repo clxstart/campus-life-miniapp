@@ -1,5 +1,6 @@
 package com.campuslife.service;
 
+import com.campuslife.config.ForbiddenException;
 import com.campuslife.entity.Building;
 import com.campuslife.mapper.BuildingMapper;
 import com.campuslife.mapper.DispatchMapper;
@@ -34,6 +35,15 @@ public class DispatchService {
     private final BuildingMapper buildings;
     private final EarningsLedgerMapper ledger;
 
+    /**
+     * 指向自身代理的引用：批量补派里逐单调用 autoDispatch 必须走代理，
+     * 否则类内自调用会绕过 @Transactional(REQUIRES_NEW)，单笔失败的半截写入会跟着整批提交。
+     * 用 @Lazy 字段注入，避免构造期循环依赖。
+     */
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.context.annotation.Lazy
+    private DispatchService self;
+
     /** 派单结果，给调用方和测试一个明确结论。 */
     public record Outcome(String result, Long riderId, String reason) {
         public boolean assigned() { return "auto".equals(result); }
@@ -43,7 +53,7 @@ public class DispatchService {
      * 订单进入可派单状态（商家已接单）后调用。
      * 失败只记录并进入队列，**绝不抛异常影响主流程**——派单不该让支付/接单失败。
      */
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public Outcome autoDispatch(Long orderId) {
         Map<String, Object> order = dispatch.orderForDispatch(orderId);
         if (order == null) return new Outcome("skipped", null, "订单不存在");
@@ -62,7 +72,8 @@ public class DispatchService {
         if (!"rider".equals(str(rider.get("role")))) return queue(orderId, "默认骑手账号角色异常，等待负责人改派");
         if (num(rider.get("status")) != null && num(rider.get("status")) == 0) return queue(orderId, "默认骑手已停用，等待负责人改派");
         Long riderSchool = num(rider.get("schoolId"));
-        if (riderSchool != null && !riderSchool.equals(schoolId)) return queue(orderId, "默认骑手不属于本校，等待负责人改派");
+        // fail-closed：未绑定学校的骑手视为不属于本校，不能被任何学校自动派单
+        if (riderSchool == null || !riderSchool.equals(schoolId)) return queue(orderId, "默认骑手未绑定本校，等待负责人改派");
         String riderStatus = str(rider.get("riderStatus"));
         if (!available(riderStatus)) return queue(orderId, "默认骑手当前不可用（" + riderStatus + "），等待负责人改派");
 
@@ -79,15 +90,17 @@ public class DispatchService {
         return new Outcome("auto", defaultRiderId, "已派给楼栋默认骑手");
     }
 
-    /** 批量补派：给历史上已接单但没有责任骑手的订单补一次派单。 */
-    @Transactional
+    /**
+     * 批量补派：给历史上已接单但没有责任骑手的订单补一次派单。
+     * 本方法不开事务：每单经 self 代理各自开 REQUIRES_NEW 事务，单笔失败只回滚这一单。
+     */
     public int dispatchAwaiting() {
         int assigned = 0;
         List<Long> ids = dispatch.awaitingDispatchIds();
         if (ids == null) return 0;
         for (Long id : ids) {
             try {
-                if (autoDispatch(id).assigned()) assigned++;
+                if (self.autoDispatch(id).assigned()) assigned++;
             } catch (Exception e) {
                 log.warn("[campus] 订单 {} 补派失败: {}", id, e.getMessage());
             }
@@ -108,7 +121,8 @@ public class DispatchService {
      * @param action  reassign（改派给别人）或 takeover（负责人自己接过来）
      */
     @Transactional
-    public Map<String, Object> assign(Long orderId, Long riderId, String action, String reason, Long adminId, boolean countPay) {
+    public Map<String, Object> assign(Long orderId, Long riderId, String action, String reason, Long adminId, boolean countPay,
+                                      Long scopeSchoolId) {
         if (orderId == null || orderId < 1) throw new IllegalArgumentException("订单编号无效");
         if (riderId == null || riderId < 1) throw new IllegalArgumentException("请选择负责配送的骑手");
         String act = "takeover".equals(action) ? "takeover" : "reassign";
@@ -119,6 +133,15 @@ public class DispatchService {
 
         Map<String, Object> order = dispatch.orderForDispatch(orderId);
         if (order == null) throw new IllegalArgumentException("订单不存在");
+        Long orderSchool = num(order.get("schoolId"));
+        if (scopeSchoolId != null && !scopeSchoolId.equals(orderSchool)) {
+            throw new ForbiddenException("只能调度本校订单");
+        }
+        Long riderSchool = num(rider.get("schoolId"));
+        // fail-closed：骑手未绑定学校、或与订单学校不一致，都不能承接
+        if (orderSchool == null || riderSchool == null || !orderSchool.equals(riderSchool)) {
+            throw new IllegalArgumentException("该骑手不属于订单所在学校，不能承接配送");
+        }
         Long from = num(order.get("riderId"));
         String note = reason == null ? "" : reason.trim();
         if (note.length() > 200) note = note.substring(0, 200);
@@ -162,19 +185,43 @@ public class DispatchService {
         if (!countPay) {
             // 负责人接管且明确不计报酬：按方案 §7.2 这笔配送费不计入骑手收入，
             // 仍留一条 0 元 void 记录，保证"处理过"这件事可追溯。
-            ledger.record("delivery:" + orderId + ":review", "delivery", orderId, rider,
+            String bizNo = "delivery:" + orderId + ":review";
+            int written = ledger.record(bizNo, "delivery", orderId, rider,
                 "delivery_income", 0, "void", "负责人接管且不计配送报酬", null);
+            ensureLedgerWritten(written, bizNo, orderId);
             return false;
         }
         int cents = pay == null ? 0 : (int) Math.max(0, num2(pay.get("payCents")));
-        int written = ledger.record("delivery:" + orderId + ":income", "delivery", orderId, rider,
+        String bizNo = "delivery:" + orderId + ":income";
+        int written = ledger.record(bizNo, "delivery", orderId, rider,
             "delivery_income", cents, "recorded", "配送报酬（履约账单，非余额）", null);
-        return written == 1;
+        ensureLedgerWritten(written, bizNo, orderId);
+        return true;
+    }
+
+    /**
+     * INSERT IGNORE 会把唯一键冲突以外的错误（如截断、非法值）也降级成 0 行警告。
+     * 0 行时只有“这条 biz_no 确实已存在”才是合法幂等；否则抛异常让送达整体回滚，
+     * 避免出现 delivery_pay_recorded=1 但没有任何账单行的静默漏记。
+     */
+    private void ensureLedgerWritten(int written, String bizNo, Long orderId) {
+        if (written == 1) return;
+        if (ledger.countByBizNo(bizNo) > 0) return;
+        throw new IllegalStateException("订单 " + orderId + " 配送报酬记账失败，请稍后重试");
     }
 
     public List<Map<String, Object>> queue(Long schoolId) { return dispatch.dispatchQueue(schoolId); }
 
-    public List<Map<String, Object>> log(Long orderId) { return dispatch.dispatchLog(orderId); }
+    /** 调度日志：校管只能看本校订单，避免用订单 id 探测他校配送信息。 */
+    public List<Map<String, Object>> log(Long orderId, Long scopeSchoolId) {
+        if (orderId == null || orderId < 1) throw new IllegalArgumentException("订单编号无效");
+        Map<String, Object> order = dispatch.orderForDispatch(orderId);
+        if (order == null) throw new IllegalArgumentException("订单不存在");
+        if (scopeSchoolId != null && !scopeSchoolId.equals(num(order.get("schoolId")))) {
+            throw new ForbiddenException("只能查看本校订单的调度记录");
+        }
+        return dispatch.dispatchLog(orderId);
+    }
 
     /**
      * 地址匹配楼栋：先去掉所有空白字符再比，因为用户填的地址空格位置完全随机

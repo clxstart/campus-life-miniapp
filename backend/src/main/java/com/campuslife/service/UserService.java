@@ -4,7 +4,7 @@ import com.campuslife.dto.*;
 import com.campuslife.entity.*;
 import com.campuslife.mapper.*;
 import lombok.RequiredArgsConstructor; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime; import java.util.*;
+import java.time.LocalDate; import java.time.LocalDateTime; import java.util.*;
 @Service @RequiredArgsConstructor public class UserService {
  private final CampusMapper campusMapper; private final UserMapper userMapper; private final PostMapper postMapper; private final FollowMapper followMapper; private final FavoriteMapper favoriteMapper; private final PostViewMapper viewMapper; private final UserAddressMapper addressMapper; private final CouponMapper couponMapper; private final FeedbackMapper feedbackMapper;
  // 个人资料：昵称/学校/头像 + 真实统计（发帖数、关注数、粉丝数）

@@ -22,16 +22,41 @@ public class RiderService {
         return mapper.stats(schoolId, riderId);
     }
 
+    /** 订单池响应白名单：未分配订单只给遮掩号码，不含任何完整号码别名。 */
+    static final List<String> POOL_FIELDS = List.of(
+        "id", "shopId", "shopName", "shopAddress", "address", "contactName", "contactPhone",
+        "items", "deliveryFee", "createdAt");
+    /** 我的配送单响应白名单：完整号码改由 {@link #revealPhone} 按单、按承运关系单独查询。 */
+    static final List<String> MINE_FIELDS = List.of(
+        "id", "shopId", "shopName", "shopAddress", "shopPhone", "address", "contactName", "contactPhone",
+        "items", "deliveryFee", "createdAt", "pickedAt", "status");
+
     public List<Map<String,Object>> pool(Long schoolId) {
-        List<Map<String,Object>> orders = mapper.pool(schoolId);
-        orders.forEach(order -> order.put("contactPhone", maskPhone(order.get("contactPhoneFull"))));
-        return orders;
+        return mapper.pool(schoolId).stream().map(row -> project(row, POOL_FIELDS)).toList();
     }
 
     public List<Map<String,Object>> mine(Long riderId) {
-        List<Map<String,Object>> orders = mapper.mine(riderId);
-        orders.forEach(order -> order.put("contactPhone", maskPhone(order.get("contactPhoneFull"))));
-        return orders;
+        return mapper.mine(riderId).stream().map(row -> project(row, MINE_FIELDS)).toList();
+    }
+
+    /**
+     * 承运骑手在配送中按需查看收件人完整号码（联系送达用）。
+     * 只对“本人承运 + 配送中/已取货”的订单生效；订单池与已完成订单一律拒绝。
+     */
+    public String revealPhone(Long orderId, Long riderId) {
+        String phone = mapper.activeContactPhone(orderId, riderId);
+        if (phone == null) throw new com.campuslife.config.ForbiddenException("仅可查看本人配送中订单的联系电话");
+        return phone;
+    }
+
+    /** 按白名单拷贝字段，并把联系电话统一遮掩；未列入白名单的列不会进入响应。 */
+    static Map<String,Object> project(Map<String,Object> row, List<String> fields) {
+        Map<String,Object> out = new LinkedHashMap<>();
+        for (String key : fields) {
+            if (!row.containsKey(key)) continue;
+            out.put(key, "contactPhone".equals(key) ? maskPhone(row.get(key)) : row.get(key));
+        }
+        return out;
     }
 
     @Transactional
@@ -74,14 +99,8 @@ public class RiderService {
             throw new IllegalStateException("订单状态已变化，无法标记送达");
         }
         mapper.refreshRiderStatus(riderId);
-        // 送达才记配送报酬，且只记一次（delivery_pay_recorded + ledger.biz_no 双保险）。
-        try {
-            dispatch.recordDeliveryIncome(orderId, riderId);
-        } catch (Exception e) {
-            // 记账失败不能把"已送达"这个事实回滚掉，留给对账处理
-            org.slf4j.LoggerFactory.getLogger(RiderService.class)
-                .warn("[campus] 订单 {} 配送报酬记账失败: {}", orderId, e.getMessage());
-        }
+        // 送达与报酬记账必须在同一事务：记账失败就整体回滚，不能出现“已送达但收入丢了”的假成功。
+        dispatch.recordDeliveryIncome(orderId, riderId);
     }
 
     public Map<String,Object> history(Long riderId, String startDate, String endDate, int page, int size) {

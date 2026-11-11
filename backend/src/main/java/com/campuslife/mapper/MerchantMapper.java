@@ -169,7 +169,7 @@ public interface MerchantMapper {
     int insertRefund(@Param("orderId") Long orderId, @Param("outRefundNo") String outRefundNo,
                      @Param("amountCents") Integer amountCents, @Param("reason") String reason);
 
-    @Select("SELECT r.order_id AS orderId, r.out_refund_no AS outRefundNo, r.refund_id AS refundId, r.amount_cents AS amountCents, r.status AS refundStatus, o.user_id AS userId, o.pay_status AS payStatus, o.pay_amount_cents AS payAmountCents, o.out_trade_no AS outTradeNo, o.transaction_id AS transactionId FROM refund_record r JOIN user_order o ON o.id=r.order_id WHERE r.order_id=#{orderId} ORDER BY r.id DESC LIMIT 1")
+    @Select("SELECT r.order_id AS orderId, r.out_refund_no AS outRefundNo, r.refund_id AS refundId, r.amount_cents AS amountCents, r.status AS refundStatus, r.reason AS reason, o.user_id AS userId, o.pay_status AS payStatus, o.pay_amount_cents AS payAmountCents, o.out_trade_no AS outTradeNo, o.transaction_id AS transactionId FROM refund_record r JOIN user_order o ON o.id=r.order_id WHERE r.order_id=#{orderId} ORDER BY r.id DESC LIMIT 1")
     Map<String,Object> refundContext(@Param("orderId") Long orderId);
 
     @Select("SELECT r.order_id AS orderId, r.out_refund_no AS outRefundNo, r.amount_cents AS amountCents, r.status AS refundStatus, o.user_id AS userId, o.out_trade_no AS outTradeNo, o.transaction_id AS transactionId FROM refund_record r JOIN user_order o ON o.id=r.order_id WHERE r.out_refund_no=#{outRefundNo} LIMIT 1 FOR UPDATE")
@@ -196,6 +196,20 @@ public interface MerchantMapper {
         """)
     int updateOrderStatusForRefund(@Param("orderId") Long orderId, @Param("targetStatus") String targetStatus);
 
+    /**
+     * 补偿退款成功后的订单收敛（finding-followup）：
+     * PAID_AFTER_CLOSE 的订单在退款前已经 closed/cancelled，成功退款后也要收敛为 refunded，
+     * 使「订单状态 = pay_status = refund_record = payment_exception」可以互相核对。
+     * refunded 不在来源列表，重复通知只会 0 行命中，不会把终态改回去。
+     */
+    @Update("""
+        UPDATE user_order
+        SET status = 'refunded', pay_status = 'refunded'
+        WHERE id=#{orderId}
+          AND status IN ('closed','cancelled','paid','accepted','delivering','picked','completed','refunding')
+        """)
+    int updateOrderStatusForCompensation(@Param("orderId") Long orderId);
+
     @Insert("INSERT INTO notification(user_id,title,content,category,tone) VALUES(#{userId},#{title},#{content},'food','blue')")
     int notifyUser(@Param("userId") Long userId, @Param("title") String title, @Param("content") String content);
 
@@ -218,4 +232,17 @@ public interface MerchantMapper {
 
     @Select("SELECT o.id, o.user_id AS userId, o.shop_id AS shopId, s.name AS shopName, o.items, o.address, o.remark, o.subtotal, o.packing_fee AS packingFee, o.delivery_fee AS deliveryFee, o.discount_amount AS discountAmount, o.total, o.status, o.created_at AS createdAt FROM user_order o JOIN shop s ON s.id=o.shop_id WHERE o.id=#{id} AND o.user_id=#{userId}")
     Map<String,Object> userOrder(@Param("id") Long id, @Param("userId") Long userId);
+
+    /**
+     * F10：这一单外卖**实际**发过多少积分（0 = 没发）。
+     *
+     * 判据必须是 point_log 而不是 task_log：日上限命中时 task_log 仍会插一行（p 是奖励值），
+     * 但不会产生任何流水；模拟支付/退款则连 task_log 都没有。
+     * 只有 point_log 有正数流水，才等于「真的到账」——订单详情页的提示条只认这个。
+     */
+    @Select("""
+        SELECT COALESCE(MAX(amount), 0) FROM point_log
+        WHERE user_id = #{userId} AND biz_key = CONCAT('food_order:order:', #{orderId})
+        """)
+    int awardedFoodOrderPoints(@Param("userId") Long userId, @Param("orderId") Long orderId);
 }

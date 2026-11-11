@@ -6,12 +6,71 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 // 首页「今日推荐」：外卖最火 + 二手最火，按真实行为热度排序。
 // 「换一批」通过 offset 轮换，永远展示当前真正最热的那几条。
 @Service @RequiredArgsConstructor
 public class RecommendService {
     private final RecommendMapper mapper;
+
+    // 60 秒结果缓存。
+    //
+    // 为什么需要：hotGoods / hotShops 的排序键是计算式（浏览×3 + 收藏×5 + 咨询×8），
+    // 任何索引都用不上，每次请求都等于「全表扫 + filesort」；再配两条 COUNT(*)。
+    // 这是首页——进入小程序的第一屏——最贵的部分。缓存 60 秒把它从「每人每次」
+    // 降到「每分钟一次」，而 60 秒的陈旧度对「今日推荐」完全够用。
+    //
+    // 只缓存「按结果集算」的部分：商品的 "我收藏过没有" 是按人算的，不进缓存，
+    // 每次请求用一次 IN 查询现算，所以点收藏立即生效。
+    private static final long CACHE_TTL_MS = 60_000L;
+    /** 条目上限：offset 虽然被取模收敛，仍兜一道，防止有人用 batch 试出大量 key。 */
+    private static final int CACHE_MAX = 256;
+
+    private record Cached(Object value, long at) {}
+
+    private final Map<String, Cached> cache = new ConcurrentHashMap<>();
+
+    @SuppressWarnings("unchecked")
+    private <T> T cached(String key, java.util.function.Supplier<T> loader) {
+        long now = System.currentTimeMillis();
+        Cached hit = cache.get(key);
+        if (hit != null && now - hit.at() < CACHE_TTL_MS) return (T) hit.value();
+        T value = loader.get();
+        if (cache.size() >= CACHE_MAX) cache.clear();
+        cache.put(key, new Cached(value, now));
+        return value;
+    }
+
+    private long countShops() { return cached("count:shop", mapper::countShops); }
+
+    private long countGoods() { return cached("count:goods", mapper::countGoods); }
+
+    private List<Map<String,Object>> hotShops(int size, int offset) {
+        return cached("shops:" + size + ":" + offset, () -> mapper.hotShops(size, offset));
+    }
+
+    private List<Map<String,Object>> hotGoods(int size, int offset) {
+        return cached("goods:" + size + ":" + offset, () -> mapper.hotGoods(size, offset));
+    }
+
+    /** 本用户在这批商品里收藏过哪几个。按人算，不进缓存。 */
+    private Set<Long> favoredIds(Long userId, List<Map<String,Object>> goods) {
+        if (goods.isEmpty()) return Set.of();
+        List<Long> ids = new ArrayList<>(goods.size());
+        for (Map<String,Object> item : goods) {
+            long id = number(item.get("id"));
+            if (id > 0) ids.add(id);
+        }
+        if (ids.isEmpty()) return Set.of();
+        try {
+            List<Long> hit = mapper.favoriteGoodsIds(userId, ids);
+            return hit == null ? Set.of() : new HashSet<>(hit);
+        } catch (Exception e) {
+            // 收藏星标是装饰信息，查不出来不该让整个首页失败
+            return Set.of();
+        }
+    }
 
     private static long number(Object value) {
         if (value instanceof Boolean b) return b ? 1 : 0;
@@ -24,15 +83,16 @@ public class RecommendService {
     public Map<String,Object> home(Long userId, int batch, int perType) {
         Long uid = (userId == null || userId < 1) ? 1L : userId;
         int size = Math.max(1, Math.min(perType, 10));
-        long shopTotal = mapper.countShops();
-        long goodsTotal = mapper.countGoods();
+        long shopTotal = countShops();
+        long goodsTotal = countGoods();
 
         // 轮换：批次 * 每类条数，取模保证循环；总数为 0 时不取模，避免除零
         int shopOffset = shopTotal == 0 ? 0 : (int) (((long) batch * size) % shopTotal);
         int goodsOffset = goodsTotal == 0 ? 0 : (int) (((long) batch * size) % goodsTotal);
 
-        List<Map<String,Object>> shops = mapper.hotShops(size, shopOffset);
-        List<Map<String,Object>> goods = mapper.hotGoods(uid, size, goodsOffset);
+        List<Map<String,Object>> shops = hotShops(size, shopOffset);
+        List<Map<String,Object>> goods = hotGoods(size, goodsOffset);
+        Set<Long> favored = favoredIds(uid, goods);
 
         List<Map<String,Object>> cards = new ArrayList<>();
         for (Map<String,Object> shop : shops) {
@@ -63,7 +123,7 @@ public class RecommendService {
             card.put("price", item.get("price"));
             card.put("heat", number(item.get("heat")));
             card.put("heatText", goodsHeatText(number(item.get("viewCount")), number(item.get("favoriteCount")), number(item.get("contactCount"))));
-            card.put("favored", number(item.get("favored")) > 0);
+            card.put("favored", favored.contains(number(item.get("id"))));
             card.put("url", "/pages/market-detail/market-detail?id=" + item.get("id"));
             cards.add(card);
         }

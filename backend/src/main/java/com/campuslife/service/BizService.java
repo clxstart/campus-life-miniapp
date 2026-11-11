@@ -13,6 +13,7 @@ import com.campuslife.mapper.UserMapper;
 import com.campuslife.mapper.UserAddressMapper;
 import com.campuslife.mapper.UserOrderMapper;
 import com.campuslife.dto.AuditResult;
+import com.campuslife.entity.Coupon;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -46,6 +48,8 @@ public class BizService {
     private final ObjectMapper json;
     private final AuditService auditService;
     private final FeatureFlags featureFlags;
+    /** 券校验与锁定：抵扣额只在这里算，接口不接受前端传金额。 */
+    private final CouponService couponService;
     private static final BigDecimal PACKING_FEE = new BigDecimal("2.00");
 
     // 外卖店铺：按校隔离（各校商家不同），schoolScope=all 时看全部学校
@@ -592,7 +596,17 @@ public class BizService {
         }
         if (subtotal.compareTo(shop.getMinPrice()) < 0) throw new IllegalArgumentException("未达到起送金额");
         BigDecimal discount = subtotal.compareTo(shop.getDiscountThreshold()) >= 0 ? shop.getDiscountAmount().min(subtotal) : BigDecimal.ZERO;
-        BigDecimal total = subtotal.subtract(discount).add(PACKING_FEE).add(shop.getDeliveryFee()).setScale(2);
+        // V3.1 券抵扣：只认服务端算出来的面额；券面额不会超过商品应付（运费/打包费仍需付）
+        BigDecimal couponDiscount = BigDecimal.ZERO;
+        Coupon coupon = null;
+        if (r.getCouponId() != null && r.getCouponId() > 0) {
+            coupon = couponService.usable(r.getUserId(), r.getCouponId(), subtotal);
+            couponDiscount = BigDecimal.valueOf(coupon.getValueCents())
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.DOWN)
+                .min(subtotal.subtract(discount).max(BigDecimal.ZERO));
+        }
+        BigDecimal total = subtotal.subtract(discount).subtract(couponDiscount)
+            .add(PACKING_FEE).add(shop.getDeliveryFee()).setScale(2);
         if (total.compareTo(new BigDecimal("99999999.99")) > 0) throw new IllegalArgumentException("订单金额超出限制");
         UserOrder order = new UserOrder();
         // task-14: 收货人姓名/电话快照——优先用请求传入，回退到用户地址簿
@@ -603,7 +617,8 @@ public class BizService {
         order.setUserId(r.getUserId()); order.setShopId(shop.getId()); order.setItems(snapshotJson(snapshots)); order.setAddress(r.getAddress().trim());
         order.setContactName(r.getContactName() == null || r.getContactName().isBlank() ? (address == null ? "" : address.getContact()) : r.getContactName().trim());
         order.setContactPhone(r.getContactPhone() == null || r.getContactPhone().isBlank() ? (address == null ? "" : address.getPhone()) : r.getContactPhone().trim());
-        order.setRemark(r.getRemark() == null ? "" : r.getRemark().trim()); order.setSubtotal(subtotal); order.setPackingFee(PACKING_FEE); order.setDeliveryFee(shop.getDeliveryFee()); order.setDiscountAmount(discount); order.setTotal(total);
+        order.setRemark(r.getRemark() == null ? "" : r.getRemark().trim()); order.setSubtotal(subtotal); order.setPackingFee(PACKING_FEE); order.setDeliveryFee(shop.getDeliveryFee()); order.setDiscountAmount(discount); order.setCouponDiscount(couponDiscount); order.setTotal(total);
+        order.setCouponId(coupon == null ? null : coupon.getId());
         // task-12: 支付字段在下单时一并初始化，支付回调只更新这几列
         order.setStatus(OrderStatus.CREATED.value());
         order.setPayAmountCents(total.movePointRight(2).setScale(0).intValueExact());
@@ -611,6 +626,10 @@ public class BizService {
         order.setOutTradeNo("CL" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + UUID.randomUUID().toString().replace("-", "").substring(0, 10));
         order.setCreatedAt(LocalDateTime.now());
         orderMapper.insert(order);
+        // 锁券：条件更新只有「仍可用」才能命中；失败说明被并发订单抢走，整笔下单回滚
+        if (coupon != null && couponService.lock(r.getUserId(), coupon.getId(), order.getId()) != 1) {
+            throw new IllegalArgumentException("优惠券已被使用或已失效，请重新选择");
+        }
         // 真实热度：下单成功才累加店铺订单数（与订单写入同一事务）
         recommendMapper.increaseShopOrder(shop.getId());
         return Map.of("orderId", order.getId(), "id", order.getId(), "total", total, "payAmountCents", order.getPayAmountCents(), "outTradeNo", order.getOutTradeNo(), "payStatus", order.getPayStatus());

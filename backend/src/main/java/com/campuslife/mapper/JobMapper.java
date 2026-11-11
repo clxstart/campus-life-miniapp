@@ -33,6 +33,8 @@ public interface JobMapper extends BaseMapper<Job> {
           AND taken_by IS NULL
           AND workflow_status = 'open'
           AND `scope` = 'campus'
+          AND audit_status = 'passed'
+          AND (deadline_at IS NULL OR deadline_at > NOW())
         """)
     int takeCampus(@Param("jobId") Long jobId, @Param("uid") Long uid);
 
@@ -48,12 +50,31 @@ public interface JobMapper extends BaseMapper<Job> {
           AND audit_status = 'passed'
           AND accepted_count < headcount
           AND workflow_status IN ('open', 'recruiting')
+          AND (deadline_at IS NULL OR deadline_at > NOW())
         """)
     int occupySeat(@Param("jobId") Long jobId);
+
+    /**
+     * 释放一个录用名额：开工前取消时调用，否则 headcount=2 的岗位取消一个就永久少一个名额。
+     * 条件里 accepted_count > 0 防止把计数减成负数；影响行数 1 才算释放成功。
+     */
+    @Update("""
+        UPDATE job SET accepted_count = accepted_count - 1
+        WHERE id = #{jobId} AND accepted_count > 0
+        """)
+    int releaseSeat(@Param("jobId") Long jobId);
 
     /** 通用状态流转（白名单校验在 Service，数据库这一层只保证「从 from 到 to」原子成立）。 */
     @Update("UPDATE job SET workflow_status = #{to} WHERE id = #{id} AND workflow_status = #{from}")
     int setWorkflow(@Param("id") Long id, @Param("to") String to, @Param("from") String from);
+
+    /**
+     * 多名额岗位的聚合状态写入：由该岗位下所有履约单的状态重新计算，不做白名单限制。
+     * 单条 job.workflow_status 无法同时表达“一张已结算、一张还在履约”，只能聚合展示；
+     * 真正的权限判定始终在 job_contract 的状态条件 UPDATE 上，不依赖这一列。
+     */
+    @Update("UPDATE job SET workflow_status = #{to} WHERE id = #{id}")
+    int setWorkflowForced(@Param("id") Long id, @Param("to") String to);
 
     /** 管理端配置平台费率：只改这两列，不动报酬与状态。 */
     @Update("""
@@ -78,6 +99,18 @@ public interface JobMapper extends BaseMapper<Job> {
         WHERE id = #{id} AND workflow_status NOT IN ('settled', 'refunded')
         """)
     int reject(@Param("id") Long id, @Param("reason") String reason);
+
+    /**
+     * 下架但保留在途履约：只改审核状态，不动 workflow_status。
+     * 用于 taken/working/pending_confirm/disputed —— 已经有人在履约的单必须能继续结算/争议，
+     * 不能被“下架”砖住；新报名/新录用由 audit_status 条件挡住。
+     */
+    @Update("""
+        UPDATE job SET audit_status = 'rejected', audit_reason = #{reason}, audit_at = NOW(),
+               status = '已下架'
+        WHERE id = #{id} AND workflow_status IN ('taken','recruiting','working','pending_confirm','disputed')
+        """)
+    int rejectKeepingWorkflow(@Param("id") Long id, @Param("reason") String reason);
 
     // ---------- 用户端列表 ----------
 
@@ -216,6 +249,7 @@ public interface JobMapper extends BaseMapper<Job> {
                j.`scope` AS scope, j.employer_kind AS employerKind, j.take_mode AS takeMode,
                j.category_key AS categoryKey, j.pay_cents AS payCents, j.pay_unit AS payUnit,
                j.fee_mode AS feeMode, j.fee_value AS feeValue, j.headcount,
+               j.accepted_count AS acceptedCount, j.deadline_at AS deadlineAt,
                j.workflow_status AS workflowStatus, j.taken_by AS takenBy,
                j.audit_status AS auditStatus, j.audit_reason AS auditReason, j.audit_at AS auditAt,
                u.nickname AS publisherName, s.name AS schoolName

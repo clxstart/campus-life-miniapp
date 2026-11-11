@@ -10,20 +10,33 @@ import java.util.Map;
 public interface RecommendMapper {
 
     // 二手商品热度榜：浏览×3 + 收藏×5 + 咨询×8；同分按时间倒序
+    //
+    // 注意：这里刻意**不**带 "我收藏过没有"。那个标记是按人算的，放进这条 SQL 会
+    // 让整份结果无法按 (batch) 缓存，而且每行一次相关子查询。改由 favoriteGoodsIds()
+    // 在取回结果后补一次，见 RecommendService.home()。
     @Select("""
         <script>
         SELECT g.id, g.title, g.price, g.image, g.category, g.condition_level AS conditionLevel,
                g.description, g.mode, g.view_count AS viewCount, g.favorite_count AS favoriteCount,
                g.contact_count AS contactCount, g.created_at AS createdAt,
-               (g.view_count*3 + g.favorite_count*5 + g.contact_count*8) AS heat,
-               (SELECT COUNT(*) FROM goods_favorite f WHERE f.goods_id=g.id AND f.user_id=#{userId})>0 AS favored
+               (g.view_count*3 + g.favorite_count*5 + g.contact_count*8) AS heat
         FROM goods g
         WHERE g.status=1
         ORDER BY heat DESC, g.created_at DESC, g.id DESC
         LIMIT #{limit} OFFSET #{offset}
         </script>
         """)
-    List<Map<String,Object>> hotGoods(@Param("userId") Long userId, @Param("limit") int limit, @Param("offset") int offset);
+    List<Map<String,Object>> hotGoods(@Param("limit") int limit, @Param("offset") int offset);
+
+    // 当前用户在这批商品里收藏了哪几个（一次 IN 查询，替掉原来的逐行相关子查询）
+    @Select("""
+        <script>
+        SELECT goods_id FROM goods_favorite
+        WHERE user_id = #{userId} AND goods_id IN
+        <foreach collection="goodsIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+        </script>
+        """)
+    List<Long> favoriteGoodsIds(@Param("userId") Long userId, @Param("goodsIds") List<Long> goodsIds);
 
     @Select("SELECT COUNT(*) FROM goods WHERE status=1")
     long countGoods();

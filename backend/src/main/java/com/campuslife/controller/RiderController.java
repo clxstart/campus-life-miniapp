@@ -37,6 +37,12 @@ public class RiderController {
         return ApiResponse.ok(service.mine(riderId(request)));
     }
 
+    /** 承运骑手按单查看收件人完整电话；列表接口不再返回完整号码 */
+    @GetMapping("/orders/{id}/contact-phone")
+    public ApiResponse<Map<String,Object>> contactPhone(@PathVariable Long id, HttpServletRequest request) {
+        return ApiResponse.ok(Map.of("contactPhone", service.revealPhone(id, riderId(request))));
+    }
+
     @PostMapping("/orders/{id}/pick")
     public ApiResponse<Object> pick(@PathVariable Long id, HttpServletRequest request) {
         service.pick(id, riderId(request));

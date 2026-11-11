@@ -249,10 +249,11 @@ public class AdminModuleController {
     @GetMapping("/circles")
     public ApiResponse<Map<String, Object>> circles(@RequestParam(defaultValue = "") String keyword,
                                                   @RequestParam(required = false) Long schoolId,
+                                                    @RequestParam(required = false) Integer status,
                                                     @RequestParam(defaultValue = "1") int page,
                                                     @RequestParam(defaultValue = "20") int size,
                                                     HttpServletRequest req) {
-        return ApiResponse.ok(service.circles(effectiveSchool(req, schoolId), keyword, page, size));
+        return ApiResponse.ok(service.circles(effectiveSchool(req, schoolId), keyword, status, page, size));
     }
 
     @PostMapping("/circles")

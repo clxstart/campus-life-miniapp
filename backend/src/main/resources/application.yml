@@ -40,7 +40,28 @@ mybatis-plus:
 
 # 本文件只放「与环境无关」的开关与默认值；
 # 数据库地址、密钥、回调域名这类东西一律放 application-{dev,prod}.yml。
+# 部署形态（finding-10）：
+#   single  —— 单实例：上传落本机、限流/群聊房间/任务锁都在进程内。开发默认值。
+#   cluster —— 多实例：必须配置 Redis 与 S3 兼容对象存储，缺任何一项启动直接失败（不静默降级）。
+# 生产请通过环境变量显式声明，见 application-prod.yml。
 campus:
+  ha:
+    mode: ${CAMPUS_HA_MODE:single}
+    node-id: ${CAMPUS_HA_NODE_ID:}
+    redis-url: ${CAMPUS_HA_REDIS_URL:}
+    redis-timeout-ms: ${CAMPUS_HA_REDIS_TIMEOUT_MS:2000}
+    # readiness 探测 Redis 的有界上界，必须小于负载均衡/编排探针超时，避免 Redis 挂死时探针一起卡住
+    redis-health-timeout-ms: ${CAMPUS_HA_REDIS_HEALTH_TIMEOUT_MS:500}
+    # 共享限流不可用时是否放行；默认 false = 拒绝（fail-closed），避免 Redis 抖动导致限流失效
+    rate-limit-fail-open: ${CAMPUS_HA_RATE_LIMIT_FAIL_OPEN:false}
+    storage:
+      type: ${CAMPUS_HA_STORAGE_TYPE:local}
+      endpoint: ${CAMPUS_HA_STORAGE_ENDPOINT:}
+      region: ${CAMPUS_HA_STORAGE_REGION:}
+      bucket: ${CAMPUS_HA_STORAGE_BUCKET:}
+      access-key: ${CAMPUS_HA_STORAGE_ACCESS_KEY:}
+      secret-key: ${CAMPUS_HA_STORAGE_SECRET_KEY:}
+      public-base-url: ${CAMPUS_HA_STORAGE_PUBLIC_BASE_URL:}
   auth:
     # 写接口与「我的数据」接口是否强制校验 token。
     # 关掉会退回「谁传 userId 就代表谁」的旧行为（任何人可冒充任意用户），只允许本机调试时临时关闭。
@@ -60,6 +81,15 @@ campus:
     # 微信支付未开启时，是否允许「模拟支付」把订单直接标记为已付款。
     # 只用于本地演示：prod profile 下代码会拒绝模拟支付，写 true 也没用。
     simulate: ${CAMPUS_PAY_SIMULATE:true}
+    reconcile:
+      # 单轮对账处理的订单上限与时间预算（finding-11）：超出即顺延到下一轮，避免长事务与连接池耗尽
+      batch-size: ${CAMPUS_PAY_RECONCILE_BATCH:100}
+      budget-ms: ${CAMPUS_PAY_RECONCILE_BUDGET_MS:20000}
+      interval-ms: ${CAMPUS_PAY_RECONCILE_INTERVAL_MS:60000}
+    compensation:
+      # 「关单后到账」自动退款：默认开启，多个节点靠租约锁 + 确定性退款单号保证不会重复退
+      auto-refund: ${CAMPUS_PAY_AUTO_REFUND:true}
+      interval-ms: ${CAMPUS_PAY_COMPENSATION_INTERVAL_MS:120000}
   wx:
     appid: ${CAMPUS_WX_APPID:}
     secret: ${CAMPUS_WX_SECRET:}
@@ -100,6 +130,14 @@ management:
       # 完整明细通过 /api/admin/system/overview（管理员鉴权）读取
       show-details: never
       show-components: never
+      probes:
+        enabled: true
+      # liveness 只看进程本身：数据库/存储抖动时由 readiness 摘流量，不要让编排把实例反复重启（finding-10）
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,db,campus
   health:
     diskspace:
       enabled: true

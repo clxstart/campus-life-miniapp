@@ -10,9 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.BufferedReader;
+import org.springframework.http.HttpStatus;
+
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -30,12 +31,26 @@ public class PayController {
         return ApiResponse.ok(payService.createPayment(id, requestUserId(request)));
     }
 
+    /** 微信支付通知正文通常 1–2KB，超过该上限直接拒绝，不读入内存、不落库（finding-02） */
+    static final int MAX_NOTIFY_BYTES = 64 * 1024;
+
     @PostMapping("/pay/notify")
     public ResponseEntity<String> notify(HttpServletRequest request) throws Exception {
-        String body;
-        try (BufferedReader reader = request.getReader()) { body = reader.lines().collect(Collectors.joining("\n")); }
-        boolean ok = payService.handleNotify(body, request.getHeader("Wechatpay-Timestamp"), request.getHeader("Wechatpay-Nonce"), request.getHeader("Wechatpay-Signature"), request.getHeader("Wechatpay-Serial"));
-        return ResponseEntity.ok(ok ? "{\"code\":\"SUCCESS\",\"message\":\"成功\"}" : "{\"code\":\"FAIL\",\"message\":\"验签失败\"}");
+        if (request.getContentLengthLong() > MAX_NOTIFY_BYTES) return fail(HttpStatus.PAYLOAD_TOO_LARGE, "请求体过大");
+        byte[] raw = request.getInputStream().readNBytes(MAX_NOTIFY_BYTES + 1);
+        if (raw.length > MAX_NOTIFY_BYTES) return fail(HttpStatus.PAYLOAD_TOO_LARGE, "请求体过大");
+        String body = new String(raw, StandardCharsets.UTF_8);
+        PayService.NotifyResult result = payService.handleNotify(body, request.getHeader("Wechatpay-Timestamp"), request.getHeader("Wechatpay-Nonce"), request.getHeader("Wechatpay-Signature"), request.getHeader("Wechatpay-Serial"));
+        return switch (result) {
+            case ACK -> ResponseEntity.ok("{\"code\":\"SUCCESS\",\"message\":\"成功\"}");
+            // 微信只把 2xx 当成功：验签失败返回 401、暂时性故障返回 500，才会触发渠道重试
+            case REJECT -> fail(HttpStatus.UNAUTHORIZED, "验签失败");
+            case RETRY -> fail(HttpStatus.INTERNAL_SERVER_ERROR, "处理失败，请重试");
+        };
+    }
+
+    private static ResponseEntity<String> fail(HttpStatus status, String message) {
+        return ResponseEntity.status(status).body("{\"code\":\"FAIL\",\"message\":\"" + message + "\"}");
     }
 
     // 订单详情统一由 BizController#myOrder 提供（GET /api/orders/{id}），这里不再重复映射，避免 Ambiguous mapping。

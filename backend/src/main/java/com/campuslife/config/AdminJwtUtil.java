@@ -27,10 +27,16 @@ public class AdminJwtUtil {
     }
 
     public String issue(Long adminId, String role, Long schoolId, Long shopId, String name) {
+        return issue(adminId, role, schoolId, shopId, name, 0L);
+    }
+
+    /** tokenVersion 写入 tv 声明；账号停用/改权限时库里版本 +1，旧令牌即被 AdminTokenGuard 拒绝 */
+    public String issue(Long adminId, String role, Long schoolId, Long shopId, String name, long tokenVersion) {
         Instant now = Instant.now();
         var builder = Jwts.builder()
             .subject(String.valueOf(adminId))
             .claim("role", role == null ? "school" : role)
+            .claim("tv", tokenVersion)
             .claim("name", name == null ? "" : name)
             .issuedAt(Date.from(now))
             .expiration(Date.from(now.plusSeconds(ttlSeconds)));

@@ -133,6 +133,13 @@ public interface AuditMapper {
         @Param("snippet") String snippet, @Param("source") String source,
         @Param("result") String result, @Param("words") String words);
 
+    /**
+     * 这条内容当初是不是走「先发后审」上线的？
+     * 只有黄金免审发帖会写 source='fastlane' 的日志，用它区分「免审后被撤回」与普通违规。
+     */
+    @Select("SELECT COUNT(*) FROM audit_log WHERE target_type=#{type} AND target_id=#{targetId} AND source='fastlane'")
+    int countFastlaneLog(@Param("type") String type, @Param("targetId") Long targetId);
+
     @Update("UPDATE post SET audit_status=#{auditStatus},audit_reason=#{reason},audit_at=NOW(),status=#{visible} WHERE id=#{id}") int decidePost(@Param("id") Long id, @Param("auditStatus") String auditStatus, @Param("reason") String reason, @Param("visible") int visible);
     @Update("UPDATE `comment` SET audit_status=#{auditStatus},audit_reason=#{reason},audit_at=NOW() WHERE id=#{id}") int decideComment(@Param("id") Long id, @Param("auditStatus") String auditStatus, @Param("reason") String reason);
     @Update("UPDATE post SET comment_count=comment_count+1 WHERE id=#{postId}") int incrementPostComment(@Param("postId") Long postId);

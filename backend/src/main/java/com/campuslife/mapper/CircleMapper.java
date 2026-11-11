@@ -85,6 +85,26 @@ public interface CircleMapper {
     @Select("SELECT COUNT(*) FROM circle_member WHERE circle_id=#{circleId}")
     long memberCount(@Param("circleId") Long circleId);
 
+    /** 用户自建圈子的名额判断：无论待审还是已通过都占名额。 */
+    @Select("SELECT COUNT(*) FROM circle WHERE creator_id = #{creatorId}")
+    long countByCreator(@Param("creatorId") Long creatorId);
+
+    /** 用户建圈：status=0 待审，creator_id 记录创建者。 */
+    @Insert("""
+        INSERT INTO circle(name, slug, category, description, cover, theme, hot, sort,
+                           school_id, status, creator_id, member_count, audit_status, audit_reason, audit_at)
+        VALUES(#{name}, #{slug}, #{category}, #{description}, #{cover}, #{theme}, 0, 0,
+               #{schoolId}, 0, #{creatorId}, 1, #{auditStatus}, #{auditReason}, #{auditAt})
+        """)
+    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
+    int insertUserCircle(Map<String, Object> row);
+
+    @Insert("INSERT IGNORE INTO circle_member(circle_id,user_id,role) VALUES(#{circleId},#{userId},'owner')")
+    int addOwner(@Param("circleId") Long circleId, @Param("userId") Long userId);
+
+    @Select("SELECT COUNT(*) FROM circle WHERE slug = #{slug}")
+    long slugTaken(@Param("slug") String slug);
+
     @Insert("INSERT IGNORE INTO circle_member(circle_id,user_id,role) VALUES(#{circleId},#{userId},'member')")
     int join(@Param("circleId") Long circleId, @Param("userId") Long userId);
 

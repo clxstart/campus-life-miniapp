@@ -14,7 +14,6 @@ public interface RiderMapper {
         SELECT o.id, o.shop_id AS shopId, s.name AS shopName,
                COALESCE(NULLIF(s.address,''),s.notice,'') AS shopAddress,
                o.address, o.contact_name AS contactName, o.contact_phone AS contactPhone,
-               o.contact_phone AS contactPhoneFull,
                o.items, o.delivery_fee AS deliveryFee, o.created_at AS createdAt
         FROM user_order o JOIN shop s ON s.id=o.shop_id
         WHERE o.status='accepted' AND o.rider_id IS NULL AND s.school_id=#{schoolId}
@@ -37,7 +36,7 @@ public interface RiderMapper {
         SELECT o.id, o.shop_id AS shopId, s.name AS shopName,
                COALESCE(NULLIF(s.address,''),s.notice,'') AS shopAddress,
                s.contact_phone AS shopPhone, o.address, o.contact_name AS contactName,
-               o.contact_phone AS contactPhone, o.contact_phone AS contactPhoneFull,
+               o.contact_phone AS contactPhone,
                o.items, o.delivery_fee AS deliveryFee,
                o.created_at AS createdAt, o.picked_at AS pickedAt, o.status
         FROM user_order o JOIN shop s ON s.id=o.shop_id
@@ -55,6 +54,14 @@ public interface RiderMapper {
         WHERE o.id=#{orderId} AND o.status='accepted' AND o.rider_id IS NULL
         """)
     int grab(@Param("orderId") Long orderId, @Param("riderId") Long riderId, @Param("riderName") String riderName);
+
+    /**
+     * 履约中订单的收件人完整电话：只有该订单的承运骑手、且订单处于配送中/已取货时可查。
+     * 订单池（未分配）与已完成订单都查不到，避免完整号码随列表接口批量外泄。
+     */
+    @Select("SELECT contact_phone FROM user_order WHERE id=#{orderId} AND rider_id=#{riderId} AND status IN ('delivering','picked')")
+    String activeContactPhone(@Param("orderId") Long orderId, @Param("riderId") Long riderId);
+
 
     /** 查询一条属于该骑手的订单（用于状态机校验） */
     @Select("SELECT id, status, rider_id AS riderId FROM user_order WHERE id=#{orderId} AND rider_id=#{riderId}")

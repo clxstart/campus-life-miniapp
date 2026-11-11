@@ -31,24 +31,53 @@ public class AdminPaymentService {
     private final ShopMapper shopMapper;
     private final UserMapper userMapper;
     private final PayService payService;
+    private final com.campuslife.mapper.AdminPaymentMapper paymentMapper;
+
+    /** 关键词最长 32 字符（昵称上限 32、订单号/交易号 ≤ 32），超出直接拒绝，避免超长模糊匹配 */
+    static final int MAX_KEYWORD = 32;
+    /** 深分页上限：OFFSET 过大时扫描行数线性增长，引导用户缩小日期范围 */
+    static final long MAX_OFFSET = 10_000;
+    /** 单次导出上限；超过时明确拒绝并提示缩小范围，而不是静默截断（finding-06） */
+    public static final int MAX_EXPORT_ROWS = 50_000;
+    static final int EXPORT_BATCH = 500;
+
+    /** 筛选条件归一化后的形态，列表/计数/导出共用，保证三者口径一致 */
+    record Filter(List<Long> shopIds, String payStatus, LocalDateTime from, LocalDateTime to, String kw, boolean nickname) {}
+
+    Filter filter(Long schoolId, String role, String payStatus, Long shopId, String startDate, String endDate, String keyword) {
+        List<Long> shopIds = accessibleShopIds(schoolId, role, shopId);
+        String kw = keyword == null ? "" : keyword.trim();
+        if (kw.length() > MAX_KEYWORD) throw new IllegalArgumentException("关键词最多 " + MAX_KEYWORD + " 个字符");
+        // 形如单号（字母数字、≥8 位）的关键词只走可索引的前缀匹配；其余才额外匹配昵称
+        boolean nickname = !kw.isEmpty() && !kw.matches("^[A-Za-z0-9_-]{8,}$");
+        String status = payStatus == null || payStatus.isBlank() ? null : payStatus.trim();
+        return new Filter(shopIds, status, AdminOrderService.parseStart(startDate), AdminOrderService.parseEnd(endDate),
+            kw.isEmpty() ? null : escapeLike(kw), nickname);
+    }
 
     public Map<String, Object> list(Long schoolId, String role, String payStatus, Long shopId, String startDate, String endDate, String keyword, int page, int size) {
-        List<Long> shopIds = accessibleShopIds(schoolId, role, shopId);
-        if (shopIds.isEmpty()) return Map.of("list", List.of(), "total", 0, "page", page, "size", size);
-        LambdaQueryWrapper<UserOrder> wrapper = new LambdaQueryWrapper<UserOrder>().in(UserOrder::getShopId, shopIds).orderByDesc(UserOrder::getPaidAt, UserOrder::getId);
-        if (payStatus != null && !payStatus.isBlank()) wrapper.eq(UserOrder::getPayStatus, payStatus.trim());
-        LocalDateTime from = AdminOrderService.parseStart(startDate), to = AdminOrderService.parseEnd(endDate);
-        if (from != null) wrapper.ge(UserOrder::getPaidAt, from);
-        if (to != null) wrapper.lt(UserOrder::getPaidAt, to);
-        String kw = keyword == null ? "" : keyword.trim();
-        if (!kw.isEmpty()) {
-            List<Long> ids = userMapper.selectList(new LambdaQueryWrapper<User>().like(User::getNickname, kw)).stream().map(User::getId).toList();
-            List<String> tx = paymentRecordMapper.selectList(new LambdaQueryWrapper<PaymentRecord>().like(PaymentRecord::getTransactionId, kw)).stream().map(PaymentRecord::getOutTradeNo).toList();
-            wrapper.and(w -> w.like(UserOrder::getOutTradeNo, kw).or().in(!ids.isEmpty(), UserOrder::getUserId, ids).or().in(!tx.isEmpty(), UserOrder::getOutTradeNo, tx));
-        }
-        IPage<UserOrder> result = orderMapper.selectPage(new Page<>(Math.max(1, page), Math.min(100, Math.max(1, size))), wrapper);
-        return Map.of("list", result.getRecords().stream().map(this::row).toList(), "total", result.getTotal(), "page", result.getCurrent(), "size", result.getSize());
+        Filter f = filter(schoolId, role, payStatus, shopId, startDate, endDate, keyword);
+        int pageSize = Math.min(100, Math.max(1, size));
+        long current = Math.max(1, page);
+        if (f.shopIds().isEmpty()) return Map.of("list", List.of(), "total", 0, "page", current, "size", pageSize);
+        long offset = (current - 1) * pageSize;
+        if (offset > MAX_OFFSET) throw new IllegalArgumentException("翻页过深，请缩小日期范围或使用导出");
+        // 固定 2 条 SQL（分页 + 计数），用户/店铺/流水核验状态由联表一次取回
+        List<Map<String, Object>> rows = paymentMapper.page(f.shopIds(), f.payStatus(), f.from(), f.to(), f.kw(), f.nickname(), pageSize, offset);
+        long total = paymentMapper.count(f.shopIds(), f.payStatus(), f.from(), f.to(), f.kw(), f.nickname());
+        return Map.of("list", rows.stream().map(AdminPaymentService::present).toList(), "total", total, "page", current, "size", pageSize);
     }
+
+    /** 补充金额（元）字段，保持与旧响应字段语义一致 */
+    static Map<String, Object> present(Map<String, Object> row) {
+        Map<String, Object> out = new LinkedHashMap<>(row);
+        Object cents = row.get("amountCents");
+        out.put("amount", BigDecimal.valueOf(cents instanceof Number n ? n.longValue() : 0L).movePointLeft(2));
+        return out;
+    }
+
+    /** LIKE 通配符转义，防止用户输入 % _ 造成全表模糊匹配 */
+    static String escapeLike(String kw) { return kw.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_"); }
 
     /**
      * 支付统计。
@@ -105,18 +134,53 @@ public class AdminPaymentService {
         return payService.detail(order);
     }
 
-    public String exportCsv(Long schoolId, String role, String payStatus, Long shopId, String startDate, String endDate, String keyword) {
-        Map<String, Object> result = list(schoolId, role, payStatus, shopId, startDate, endDate, keyword, 1, 10000);
-        StringBuilder csv = new StringBuilder("\uFEFF订单号,微信交易号,用户ID,店铺,金额(元),支付状态,对账状态,支付时间\n");
-        for (Object value : (List<?>) result.get("list")) { Map<?, ?> row = (Map<?, ?>) value; csv.append(csv(row.get("outTradeNo"))).append(',').append(csv(row.get("transactionId"))).append(',').append(csv(row.get("userId"))).append(',').append(csv(row.get("shopName"))).append(',').append(csv(row.get("amount"))).append(',').append(csv(row.get("payStatus"))).append(',').append(csv(row.get("verified"))).append(',').append(csv(row.get("paidAt"))).append('\n'); }
-        return csv.toString();
+    /** 导出超限时抛出，控制器转成 413 + 明确提示 */
+    public static class ExportTooLargeException extends IllegalArgumentException {
+        public ExportTooLargeException(long total) {
+            super("符合条件的流水共 " + total + " 条，超过单次导出上限 " + MAX_EXPORT_ROWS + " 条，请缩小日期范围后分批导出");
+        }
     }
 
-    private Map<String, Object> row(UserOrder order) {
-        User user = userMapper.selectById(order.getUserId()); Shop shop = shopMapper.selectById(order.getShopId());
-        PaymentRecord record = paymentRecordMapper.selectOne(new LambdaQueryWrapper<PaymentRecord>().eq(PaymentRecord::getOrderId, order.getId()).orderByDesc(PaymentRecord::getId).last("LIMIT 1"));
-        Map<String, Object> row = new LinkedHashMap<>(); row.put("id", order.getId()); row.put("outTradeNo", order.getOutTradeNo()); row.put("transactionId", order.getTransactionId()); row.put("userId", order.getUserId()); row.put("userName", user == null ? "" : user.getNickname()); row.put("shopId", order.getShopId()); row.put("shopName", shop == null ? "" : shop.getName()); row.put("amountCents", order.getPayAmountCents()); row.put("amount", BigDecimal.valueOf(order.getPayAmountCents() == null ? 0 : order.getPayAmountCents()).movePointLeft(2)); row.put("payStatus", order.getPayStatus()); row.put("verified", record == null ? 1 : record.getVerified()); row.put("paidAt", order.getPaidAt()); return row;
+    /** 导出前计数：与列表同一筛选口径；超限直接拒绝，不产生被截断的文件 */
+    public long exportCount(Long schoolId, String role, String payStatus, Long shopId, String startDate, String endDate, String keyword) {
+        Filter f = filter(schoolId, role, payStatus, shopId, startDate, endDate, keyword);
+        if (f.shopIds().isEmpty()) return 0;
+        long total = paymentMapper.count(f.shopIds(), f.payStatus(), f.from(), f.to(), f.kw(), f.nickname());
+        if (total > MAX_EXPORT_ROWS) throw new ExportTooLargeException(total);
+        return total;
+    }
+
+    /**
+     * 流式导出（finding-06）：按 id 键集分页逐批写出，内存占用与总行数无关，
+     * 写出行数达到计数时停止，返回实际写出行数。
+     */
+    public long exportCsv(Long schoolId, String role, String payStatus, Long shopId, String startDate, String endDate, String keyword,
+                          java.io.Writer out) throws java.io.IOException {
+        Filter f = filter(schoolId, role, payStatus, shopId, startDate, endDate, keyword);
+        out.write("\uFEFF订单号,微信交易号,用户ID,店铺,金额(元),支付状态,对账状态,支付时间\n");
+        if (f.shopIds().isEmpty()) return 0;
+        long written = 0;
+        Long cursor = null;
+        while (written < MAX_EXPORT_ROWS) {
+            List<Map<String, Object>> batch = paymentMapper.exportBatch(f.shopIds(), f.payStatus(), f.from(), f.to(), f.kw(), f.nickname(), cursor, EXPORT_BATCH);
+            for (Map<String, Object> raw : batch) {
+                Map<String, Object> row = present(raw);
+                out.write(csv(row.get("outTradeNo")) + ',' + csv(row.get("transactionId")) + ',' + csv(row.get("userId")) + ','
+                    + csv(row.get("shopName")) + ',' + csv(row.get("amount")) + ',' + csv(row.get("payStatus")) + ','
+                    + csv(row.get("verified")) + ',' + csv(row.get("paidAt")) + '\n');
+                written++;
+            }
+            if (batch.size() < EXPORT_BATCH) break;
+            cursor = ((Number) batch.get(batch.size() - 1).get("id")).longValue();
+        }
+        out.flush();
+        return written;
     }
     private List<Long> accessibleShopIds(Long schoolId, String role, Long requestedShopId) { LambdaQueryWrapper<Shop> w = new LambdaQueryWrapper<Shop>().eq(Shop::getStatus, 1); if (!"super".equalsIgnoreCase(role)) w.eq(Shop::getSchoolId, schoolId); if (requestedShopId != null) w.eq(Shop::getId, requestedShopId); return shopMapper.selectList(w).stream().map(Shop::getId).toList(); }
-    private static String csv(Object value) { String s = value == null ? "" : String.valueOf(value); return "\"" + s.replace("\"", "\"\"") + "\""; }
+    /** CSV 转义；以 = + - @ 开头的单元格前置单引号，防止在 Excel 中被当作公式执行（CSV 注入） */
+    static String csv(Object value) {
+        String s = value == null ? "" : String.valueOf(value);
+        if (!s.isEmpty() && "=+-@\t\r".indexOf(s.charAt(0)) >= 0) s = "'" + s;
+        return "\"" + s.replace("\"", "\"\"") + "\"";
+    }
 }

@@ -1,6 +1,7 @@
 package com.campuslife.controller;
 
 import com.campuslife.config.AdminInterceptor;
+import com.campuslife.config.ForbiddenException;
 import com.campuslife.dto.ApiResponse;
 import com.campuslife.service.FeatureFlags;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,10 +31,20 @@ public class AdminFeatureFlagController {
         return ApiResponse.ok(featureFlags.list());
     }
 
+    /**
+     * 修改功能开关：**仅超级管理员**。
+     *
+     * feature_flag 是全局开关（没有学校维度），校管打开 job.offsite.enabled 会放行全平台
+     * 校外招聘、打开 job.paid.enabled 会放行全平台有偿接单 —— 这不是一个学校能决定的事。
+     * 因此这里必须比 AdminInterceptor 的「super|school」更严：只认 super。
+     */
     @PutMapping("/{key}")
     public ApiResponse<Object> update(@PathVariable String key,
                                       @RequestBody(required = false) Map<String, Object> body,
                                       HttpServletRequest request) {
+        if (!"super".equals(String.valueOf(request.getAttribute(AdminInterceptor.ADMIN_ROLE)))) {
+            throw new ForbiddenException("仅超级管理员可以修改全平台功能开关");
+        }
         Map<String, Object> input = body == null ? Map.of() : body;
         Object raw = input.get("enabled");
         boolean enabled = raw instanceof Boolean b ? b

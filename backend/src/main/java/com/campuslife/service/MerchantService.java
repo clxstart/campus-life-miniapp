@@ -21,10 +21,20 @@ public class MerchantService {
     private static final List<String> CATEGORIES = List.of("快餐", "奶茶", "水果", "超市", "其他", "快餐便当", "奶茶饮品", "水果轻食", "零食");
     private static final Pattern PHONE = Pattern.compile("^1\\d{10}$");
     private static final Pattern TIME = Pattern.compile("^([01]\\d|2[0-3]):[0-5]\\d$");
+    /** F10 交易埋点：外卖完成发分的任务键（10P/20G、日限 2 单，见 db/module-points-v31.sql）。 */
+    private static final String TASK_FOOD_ORDER = "food_order";
+    /** 模拟支付是否也发分：默认关闭，否则内测期「点一下完成」就能无限刷分。 */
+    private static final String FLAG_SIMULATED_AWARD = "points.award.simulated.pay";
     private final MerchantMapper mapper;
     private final MerchantRefundService refunds;
     private final DispatchService dispatch;
     private final ObjectMapper json;
+    /** 拒单/取消时释放锁定的券（功能 6 核销三态）。 */
+    private final CouponService coupons;
+    /** F10 交易埋点：外卖完成后发分（事务提交后、独立事务，失败只记日志）。 */
+    private final AfterCommitPointsAwarder awarder;
+    /** F10：判断模拟支付是否放开发分（points.award.simulated.pay，默认关闭）。 */
+    private final FeatureFlags flags;
 
     public Map<String,Object> submit(Map<String,Object> body) {
         if (body == null) throw new IllegalArgumentException("请填写申请信息");
@@ -202,12 +212,18 @@ public class MerchantService {
             throw new IllegalStateException("订单状态不允许接单（可能已被处理，请刷新）");
         }
         // 商家接单后按楼栋责任区自动派单。
-        // 派单失败只进异常队列，绝不能让"接单成功"因为派单问题而回滚或报错。
-        try {
-            dispatch.autoDispatch(id);
-        } catch (Exception e) {
-            log.warn("[campus] 订单 {} 自动派单异常（不影响接单）: {}", id, e.getMessage());
-        }
+        // 必须在事务提交后再派单：派单要读 status='accepted'，同一事务内另起事务看不到未提交状态。
+        // 派单失败只进异常队列，不影响已经提交的“接单成功”。
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    dispatch.autoDispatch(id);
+                } catch (RuntimeException e) {
+                    log.warn("[campus] 订单 {} 自动派单异常（不影响接单）: {}", id, e.getMessage());
+                }
+            }
+        });
     }
 
     @Transactional
@@ -216,6 +232,7 @@ public class MerchantService {
         if (rejection.length() > 200) throw new IllegalArgumentException("拒单原因不能超过 200 字");
         Map<String,Object> order=requireOwnedOrder(shopId,id);
         if (mapper.cancelOrder(id,shopId) != 1) throw new IllegalStateException("订单状态不允许拒单");
+        coupons.releaseByOrder(id);
         String status="not_required";
         Map<String,Object> result = new LinkedHashMap<>();
         result.put("status", "cancelled");
@@ -271,6 +288,48 @@ public class MerchantService {
         if (mapper.completeOrder(id, shopId) != 1) {
             throw new IllegalStateException("订单状态不允许完成（仅「已接单」状态的订单可完成）");
         }
+        // F10 交易任务埋点：订单确实送达完成才发分（+10P/+20G），提交后独立事务、失败只记日志。
+        awardFoodOrderAfterCommit(order);
+    }
+
+    /**
+     * 外卖订单完成发分（F10，设计稿「外卖发分的前置判断」）。
+     *
+     * 前置条件三件：订单刚由 accepted → completed（状态由上面的条件 UPDATE 保证）、
+     * 支付状态为 paid、且不是模拟支付（内测期谁都能点完成，发分等于开无限刷分口）。
+     * 发分放在事务提交之后、走 {@link AfterCommitPointsAwarder} 的独立事务：
+     * 积分服务抖动不能把「订单已完成」回滚掉。
+     *
+     * 幂等键 order:{orderId}：重复完成/重复回调同一订单只发一次（task_log 唯一键兜底）。
+     */
+    private void awardFoodOrderAfterCommit(Map<String,Object> order) {
+        Long orderId = number(order.get("id"));
+        Long userId = number(order.get("userId"));
+        if (orderId == null || orderId < 1 || userId == null || userId < 1) {
+            log.warn("[campus] 外卖订单完成但缺少订单号/用户，跳过发分 order={}", order.get("id"));
+            return;
+        }
+        if (!"paid".equals(text(order.get("payStatus")))) {
+            log.info("[campus] 外卖订单 {} 未实付即完成，跳过发分", orderId);
+            return;
+        }
+        // 模拟支付落库时 transaction_id 为 "SIM-<outTradeNo>"（见 PayService.createPayment）
+        if (text(order.get("transactionId")).startsWith("SIM-") && !flags.enabledStrict(FLAG_SIMULATED_AWARD)) {
+            log.info("[campus] 外卖订单 {} 为模拟支付，跳过发分（points.award.simulated.pay=0）", orderId);
+            return;
+        }
+        Runnable task = () -> awarder.award(userId, TASK_FOOD_ORDER, "order:" + orderId, "外卖订单完成");
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    task.run();
+                }
+            });
+        } else {
+            // 没有事务上下文（例如单测直接 new 出来的服务）：立即执行，行为等价于已提交
+            task.run();
+        }
     }
 
     public Map<String,Object> userOrders(Long userId, int page, int size) {
@@ -287,6 +346,24 @@ public class MerchantService {
         if (row == null) throw new ForbiddenException("订单不存在或无权查看");
         decorateOrder(row);
         return row;
+    }
+
+    /**
+     * F10 交易埋点：订单详情里回给前端的「实际到账积分」。
+     *
+     * 只读 point_log：模拟支付、退款、日上限命中都没能产生流水，所以一律返回 0；
+     * 前端据此决定要不要显示「订单完成，+10 积分已到账」——否则会出现
+     * 「页面说 +10、积分明细里查不到」这种对不上账的投诉。
+     * 查询失败按 0 处理：提示条是锦上添花，不能因为它把订单详情打成 500。
+     */
+    public int pointsAwardedForOrder(Long orderId, Long userId) {
+        if (orderId == null || orderId < 1 || userId == null || userId < 1) return 0;
+        try {
+            return mapper.awardedFoodOrderPoints(userId, orderId);
+        } catch (RuntimeException e) {
+            log.warn("[campus] 查询外卖发分状态失败（按未发分处理） order={}: {}", orderId, e.getMessage());
+            return 0;
+        }
     }
 
     private Map<String,Object> requireOwnedOrder(Long shopId,Long id) {

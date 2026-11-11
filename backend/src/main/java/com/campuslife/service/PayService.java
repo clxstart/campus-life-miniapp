@@ -54,13 +54,18 @@ public class PayService {
     private final RefundRecordMapper refundRecordMapper;
     private final UserMapper userMapper;
     private final ShopMapper shopMapper;
-    private final RiderMapper riderMapper;
-    /** 退款统一实现（商家拒单与用户退款共用，避免两套逻辑分叉） */
-    private final MerchantRefundService merchantRefundService;
+    /** 用户/管理端退款编排：短事务领取 + 事务外渠道提交（渠道提交与商家拒单共用 MerchantRefundService） */
+    private final UserRefundService userRefundService;
     private final ObjectMapper json;
     private final WxPayProperties properties;
     private final ObjectProvider<WxPayService> wxPayProvider;
     private final org.springframework.core.env.Environment environment;
+    /** 已验证支付结果的唯一入账口 */
+    private final PaymentLedgerService ledger;
+    private final PaymentAlerts alerts;
+    private final com.campuslife.ha.ClusterLock clusterLock;
+    /** 取消/关单时释放锁定的券（功能 6 核销三态）。 */
+    private final CouponService couponService;
 
     /** 是否允许在「微信支付未开启」时用模拟支付跑通流程；生产 profile 下永远不允许。 */
     @Value("${campus.pay.simulate:false}")
@@ -74,7 +79,8 @@ public class PayService {
         if (!OrderStatus.CREATED.value().equals(order.getStatus()) || !"unpaid".equals(order.getPayStatus())) throw new IllegalStateException("订单当前不可支付");
         if (!properties.isEnabled()) {
             requireSimulationAllowed(orderId);
-            markPaid(order, "SIM-" + order.getOutTradeNo(), "SUCCESS", "{\"simulated\":true}", true);
+            ledger.applyVerifiedPayment(order.getOutTradeNo(), "SIM-" + order.getOutTradeNo(), "SUCCESS",
+                order.getPayAmountCents(), "{\"simulated\":true}", "simulate");
             return Map.of("simulated", true, "payStatus", "paid", "outTradeNo", order.getOutTradeNo());
         }
         WxPayService wxPay = requireWxPay();
@@ -101,106 +107,134 @@ public class PayService {
         }
     }
 
-    @Transactional
-    public boolean handleNotify(String body, String timestamp, String nonce, String signature, String serial) {
-        if (!properties.isEnabled()) return false;
+    /** 支付回调处理结果：控制器据此决定 HTTP 状态（微信只把 2xx 视为成功，其余会重试） */
+    public enum NotifyResult { ACK, REJECT, RETRY }
+
+    /**
+     * 微信支付结果通知（finding-02/04）。
+     *
+     * - 不加事务：验签/解密是纯计算，入账由 {@link PaymentLedgerService} 开短事务完成；
+     * - 验签失败：**不写任何数据库记录**，只计数 + 限速告警，返回 REJECT（401），
+     *   这样伪造请求无法制造流水；若是证书轮换等导致的真实通知失败，微信会按策略重试；
+     * - 已验签：无论入账、重复、异常单登记，都 ACK，避免渠道无意义重试；
+     * - 数据库等暂时性故障：RETRY（500），交给微信重试，入账逻辑幂等。
+     */
+    public NotifyResult handleNotify(String body, String timestamp, String nonce, String signature, String serial) {
+        if (!properties.isEnabled()) {
+            alerts.warn("notify", "pay_disabled", "微信支付未启用时收到支付回调");
+            return NotifyResult.REJECT;
+        }
         WxPayNotifyV3Result notify;
         try {
             SignatureHeader header = new SignatureHeader(timestamp, nonce, signature, serial);
             notify = requireWxPay().parseOrderNotifyV3Result(body, header);
         } catch (Exception e) {
-            recordUnverifiedPlainNotify(body);
-            return false;
+            alerts.warn("notify", "verify_failed", "支付回调验签/解密失败：{}", e.getClass().getSimpleName());
+            return NotifyResult.REJECT;
         }
         WxPayNotifyV3Result.DecryptNotifyResult result = notify.getResult();
-        if (result == null || result.getTransactionId() == null || result.getOutTradeNo() == null) return false;
-        int amount = result.getAmount() == null || result.getAmount().getTotal() == null ? -1 : result.getAmount().getTotal();
-        UserOrder order = orderMapper.selectOne(new LambdaQueryWrapper<UserOrder>().eq(UserOrder::getOutTradeNo, result.getOutTradeNo()).last("LIMIT 1"));
-        if (order == null || amount != order.getPayAmountCents()) return false;
-        PaymentRecord duplicate = paymentRecordMapper.selectOne(new LambdaQueryWrapper<PaymentRecord>().eq(PaymentRecord::getTransactionId, result.getTransactionId()).last("LIMIT 1"));
-        if (duplicate != null) return true;
-        PaymentRecord record = new PaymentRecord();
-        record.setOrderId(order.getId()); record.setOutTradeNo(result.getOutTradeNo()); record.setTransactionId(result.getTransactionId()); record.setAmountCents(amount); record.setTradeState(result.getTradeState()); record.setRawBody(body); record.setVerified(1); record.setCreatedAt(LocalDateTime.now());
-        paymentRecordMapper.insert(record);
-        if ("SUCCESS".equalsIgnoreCase(result.getTradeState()) && !"paid".equals(order.getPayStatus())) markOrderPaid(order, result.getTransactionId());
-        return true;
-    }
-
-    /** Keep a best-effort audit row for plain or test notifications that fail verification. */
-    private void recordUnverifiedPlainNotify(String body) {
+        if (result == null) {
+            alerts.warn("notify", "empty_result", "已验签回调缺少解密结果");
+            return NotifyResult.ACK;
+        }
+        Integer amount = result.getAmount() == null ? null : result.getAmount().getTotal();
         try {
-            JsonNode root = json.readTree(body);
-            String outTradeNo = root.path("out_trade_no").asText(root.path("outTradeNo").asText(""));
-            String transactionId = root.path("transaction_id").asText(root.path("transactionId").asText("UNVERIFIED-" + UUID.randomUUID()));
-            if (outTradeNo.isBlank()) return;
-            if (paymentRecordMapper.selectOne(new LambdaQueryWrapper<PaymentRecord>().eq(PaymentRecord::getTransactionId, transactionId).last("LIMIT 1")) != null) return;
-            UserOrder order = orderMapper.selectOne(new LambdaQueryWrapper<UserOrder>().eq(UserOrder::getOutTradeNo, outTradeNo).last("LIMIT 1"));
-            PaymentRecord record = new PaymentRecord(); record.setOrderId(order == null ? null : order.getId()); record.setOutTradeNo(outTradeNo); record.setTransactionId(transactionId); record.setAmountCents(root.path("amount_cents").asInt(root.path("amount").path("total").asInt(0))); record.setTradeState(root.path("trade_state").asText(root.path("tradeState").asText("UNKNOWN"))); record.setRawBody(body); record.setVerified(0); record.setCreatedAt(LocalDateTime.now()); paymentRecordMapper.insert(record);
-        } catch (Exception ignored) { }
+            ledger.applyVerifiedPayment(result.getOutTradeNo(), result.getTransactionId(), result.getTradeState(), amount, body, "notify");
+            return NotifyResult.ACK;
+        } catch (RuntimeException e) {
+            alerts.warn("notify", "apply_failed", "支付回调入账失败 outTradeNo={}：{}", result.getOutTradeNo(), e.getClass().getSimpleName());
+            return NotifyResult.RETRY;
+        }
     }
 
-    @Transactional
+    /**
+     * 用户取消待支付订单（finding-04）。
+     * 先向渠道确认未付款并关闭渠道订单（网络调用在事务外），再用条件 UPDATE 原子关单；
+     * 若渠道显示已付款，则先入账并拒绝取消，引导用户走退款。
+     */
     public Map<String, Object> cancel(Long orderId, Long userId, String reason) {
         UserOrder order = requireOrder(orderId);
         requireOwner(order, userId);
         if (!OrderStatus.CREATED.value().equals(order.getStatus()) || !"unpaid".equals(order.getPayStatus())) throw new IllegalStateException("只有待支付订单可以取消");
-        transition(order, OrderStatus.CANCELLED.value());
-        order.setPayStatus("closed"); order.setCancelledAt(LocalDateTime.now()); order.setCancelReason(reason == null ? "用户取消" : reason.trim()); orderMapper.updateById(order);
-        return detail(order);
+        if (properties.isEnabled()) {
+            ChannelCheck check = closeAtChannel(order);
+            if (check == ChannelCheck.PAID) throw new IllegalStateException("该订单已支付成功，无法取消；如需退款请在订单详情申请退款");
+            if (check == ChannelCheck.PAYING) throw new IllegalStateException("支付正在处理中，请稍后再取消");
+            // UNKNOWN（渠道暂不可达）仍允许本地取消：若之后渠道到账，会登记「关单后到账」异常单并自动退款
+        }
+        String text = reason == null || reason.isBlank() ? "用户取消" : reason.trim();
+        if (text.length() > 100) text = text.substring(0, 100);
+        if (orderMapper.closeIfUnpaid(order.getId(), OrderStatus.CANCELLED.value(), text) != 1) {
+            throw new IllegalStateException("订单状态已变化，请刷新后重试");
+        }
+        couponService.releaseByOrder(order.getId());
+        return detail(requireOrder(orderId));
+    }
+
+    enum ChannelCheck { PAID, CLOSED, PAYING, UNKNOWN }
+
+    /**
+     * 查询渠道状态，未付款时关闭渠道订单，防止关单后用户仍能完成付款。
+     * 渠道已付款时直接入账并返回 PAID。全部网络调用都不持有数据库事务。
+     */
+    ChannelCheck closeAtChannel(UserOrder order) {
+        WxPayService wxPay = requireWxPay();
+        try {
+            // 注意参数顺序：queryOrderV3(transactionId, outTradeNo)。历史代码把商户单号传进了 transactionId 位，
+            // 导致对账查询永远查错单、异常又被吞掉。
+            WxPayOrderQueryV3Result result = wxPay.queryOrderV3(null, order.getOutTradeNo());
+            String state = result.getTradeState();
+            if ("SUCCESS".equalsIgnoreCase(state)) {
+                Integer total = result.getAmount() == null ? null : result.getAmount().getTotal();
+                ledger.applyVerifiedPayment(order.getOutTradeNo(), result.getTransactionId(), state, total, "{\"source\":\"query\"}", "query");
+                return ChannelCheck.PAID;
+            }
+            if ("USERPAYING".equalsIgnoreCase(state)) return ChannelCheck.PAYING;
+            if (!"CLOSED".equalsIgnoreCase(state)) wxPay.closeOrderV3(order.getOutTradeNo());
+            return ChannelCheck.CLOSED;
+        } catch (WxPayException e) {
+            alerts.warn("channel", "query_or_close_failed", "订单 {} 渠道查询/关单失败：{}", order.getId(), e.getErrCode());
+            return ChannelCheck.UNKNOWN;
+        }
     }
 
     /**
-     * 用户申请退款
+     * 用户申请退款（finding-followup：并发互斥 + 幂等单号）。
      *
-     * 与商家拒单退款统一走 MerchantRefundService：
-     *   - 同一套官方 APIv3 SDK（不再用 binarywang 的 refundV3）
-     *   - 同一套状态落库逻辑（MerchantRefundStatusService）
-     *   - 同一套「创建失败则查询兜底」的容错
+     * 事务边界与并发控制已下沉到 {@link UserRefundService} / {@link RefundInitiationService}：
+     *  - 短事务里锁订单行、条件迁移到 refunding、按每订单唯一写退款账本；
+     *  - 渠道调用在事务提交之后；
+     *  - 并发/超时重试复用同一个确定性退款单号，不生成第二个可出款单。
      *
-     * 历史问题：这里曾自己实现一套退款，与商家侧规则不一致，
-     * 改一处容易漏另一处，现合并为唯一实现。
+     * 这里只负责组装返回给客户端的订单详情，并附带退款单状态与幂等标记。
      */
-    @Transactional
     public Map<String, Object> refund(Long orderId, Long userId, String reason) {
-        UserOrder order = requireOrder(orderId);
-        requireOwner(order, userId);
-        if ("refunding".equals(order.getStatus()) || "refunded".equals(order.getStatus())) throw new IllegalStateException("订单已在退款流程中");
-        // 以 OrderStatus 状态机为准：paid / accepted / delivering / picked / completed 均可进入退款。
-        // 不再用手写列表，避免与状态机规则脱节（历史上 picked 可退但这里漏了）。
-        if (!OrderStatus.canTransit(order.getStatus(), OrderStatus.REFUNDING.value())) {
-            throw new IllegalStateException("当前订单状态（" + order.getStatus() + "）不能退款");
-        }
-        transition(order, OrderStatus.REFUNDING.value());
-        order.setPayStatus("refunding"); orderMapper.updateById(order);
+        return refundResult(userRefundService.refund(orderId, userId, reason));
+    }
 
-        // 写入退款单（与商家侧格式一致：RF + 时间戳 + 随机串，便于对账）
-        RefundRecord record = new RefundRecord();
-        record.setOrderId(order.getId());
-        record.setOutRefundNo("RF" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
-            + UUID.randomUUID().toString().replace("-", "").substring(0, 10));
-        record.setAmountCents(order.getPayAmountCents());
-        record.setReason(reason == null ? "用户申请退款" : reason.trim());
-        record.setStatus("pending");
-        record.setCreatedAt(LocalDateTime.now());
-        refundRecordMapper.insert(record);
+    /** 管理端退款：权限由 AdminInterceptor + AdminOrderService.assertAccessible 校验。 */
+    public Map<String, Object> refundByAdmin(Long orderId, String reason) {
+        return refundResult(userRefundService.refundAsAdmin(orderId, reason));
+    }
 
-        // 未配置真实支付时走模拟完成
-        if (!properties.isEnabled()) {
-            requireSimulationAllowed(order.getId());
-            completeRefund(order, record, "SIM-REFUND-" + record.getId());
-            return detail(order);
-        }
-
-        // 统一交给商家退款服务处理（内部含提交失败后查询兜底）
-        merchantRefundService.submitAfterCommit(order.getId());
-        return detail(order);
+    private Map<String, Object> refundResult(UserRefundService.Outcome outcome) {
+        UserOrder order = requireOrder(outcome.orderId());
+        Map<String, Object> out = detail(order);
+        out.put("refundStatus", outcome.refundStatus());
+        out.put("outRefundNo", outcome.outRefundNo());
+        out.put("idempotent", outcome.idempotent());
+        return out;
     }
 
     @Transactional
     public void transitionStatus(Long orderId, String target) {
+        // 退款状态只能由退款流程写入：refunding 走 refundByAdmin（建账本 + 提交渠道），
+        // refunded 只能由渠道确认成功后写入。直接改状态会造成「订单已退款但没有退款流水/没有出款」。
+        if (OrderStatus.REFUNDING.value().equals(target) || OrderStatus.REFUNDED.value().equals(target)) {
+            throw new IllegalStateException("退款状态只能通过退款流程变更，不能直接修改");
+        }
         UserOrder order = requireOrder(orderId);
         transition(order, target);
-        if (OrderStatus.REFUNDED.value().equals(target)) order.setPayStatus("refunded");
         orderMapper.updateById(order);
     }
 
@@ -220,45 +254,110 @@ public class PayService {
         return out;
     }
 
-    @Scheduled(fixedDelay = 60000, initialDelay = 60000)
-    @Transactional
+    /** 对账：超过 5 分钟未支付开始向渠道核验，超过 15 分钟仍未付则关单 */
+    static final int CHECK_AFTER_MINUTES = 5;
+    static final int CLOSE_AFTER_MINUTES = 15;
+    /** 渠道持续不可达超过该时长，仍按超时本地关单（之后到账走异常单自动退款），避免订单永远悬挂 */
+    static final int FORCE_CLOSE_AFTER_MINUTES = 120;
+
+    @Value("${campus.pay.reconcile.batch-size:100}")
+    private int reconcileBatchSize = 100;
+    @Value("${campus.pay.reconcile.budget-ms:20000}")
+    private long reconcileBudgetMs = 20000;
+
+    /** 单轮对账统计，供测试与日志使用 */
+    public record ReconcileStats(int scanned, int paid, int closed, int failed, int deferred) {}
+
+    /**
+     * 周期对账（finding-11）：多实例下只有拿到租约的节点执行；租约过期后的短暂重叠由入账/关单的条件更新兜底。
+     * 注意本方法不持有数据库事务——每单的查询、入账、关单各自是独立的短语句或短事务。
+     */
+    @Scheduled(fixedDelayString = "${campus.pay.reconcile.interval-ms:60000}", initialDelay = 60000)
     public void reconcile() {
-        LocalDateTime now = LocalDateTime.now();
-        List<UserOrder> stale = orderMapper.selectList(new LambdaQueryWrapper<UserOrder>().eq(UserOrder::getStatus, OrderStatus.CREATED.value()).eq(UserOrder::getPayStatus, "unpaid").lt(UserOrder::getCreatedAt, now.minusMinutes(5)).le(UserOrder::getCreatedAt, now));
-        for (UserOrder order : stale) {
-            if (order.getCreatedAt() != null && order.getCreatedAt().isBefore(now.minusMinutes(15))) {
-                transition(order, OrderStatus.CLOSED.value()); order.setPayStatus("closed"); order.setCancelledAt(now); order.setCancelReason("支付超时"); orderMapper.updateById(order); continue;
+        clusterLock.runExclusive("pay-reconcile", java.time.Duration.ofMillis(reconcileBudgetMs + 30_000), () -> {
+            ReconcileStats stats = reconcileOnce(LocalDateTime.now());
+            if (stats.scanned() > 0) log.info("[pay] 对账完成 {}", stats);
+        });
+    }
+
+    public ReconcileStats reconcileOnce(LocalDateTime now) {
+        long deadline = System.currentTimeMillis() + reconcileBudgetMs;
+        LocalDateTime cutoff = now.minusMinutes(CHECK_AFTER_MINUTES);
+        // recheckBefore：上一轮刚核验过（且未关单）的订单本轮跳过，给渠道/网络一点恢复时间
+        List<Map<String, Object>> batch = orderMapper.selectReconcileBatch(cutoff, now.minusSeconds(50), reconcileBatchSize);
+        int paid = 0, closed = 0, failed = 0, deferred = 0, scanned = 0;
+        for (Map<String, Object> row : batch) {
+            if (System.currentTimeMillis() > deadline) { deferred = batch.size() - scanned; break; }
+            scanned++;
+            switch (reconcileOne(row, now)) {
+                case PAID -> paid++;
+                case CLOSED -> closed++;
+                case FAILED -> failed++;
+                default -> { }
             }
-            if (!properties.isEnabled()) continue;
-            try {
-                WxPayOrderQueryV3Result result = requireWxPay().queryOrderV3(order.getOutTradeNo(), null);
-                if ("SUCCESS".equalsIgnoreCase(result.getTradeState()) && result.getTransactionId() != null && result.getAmount() != null && result.getAmount().getTotal() != null && result.getAmount().getTotal().equals(order.getPayAmountCents())) {
-                    markPaid(order, result.getTransactionId(), result.getTradeState(), "{\"source\":\"reconcile\"}", true);
-                }
-            } catch (Exception ignored) { }
+        }
+        try { alerts.gauge("campus.pay.reconcile.backlog", orderMapper.countReconcileBacklog(cutoff)); }
+        catch (RuntimeException ignored) { /* 指标失败不影响对账 */ }
+        if (deferred > 0) alerts.warn("reconcile", "budget_exceeded", "单轮预算耗尽，{} 单顺延到下一轮", deferred);
+        return new ReconcileStats(scanned, paid, closed, failed, deferred);
+    }
+
+    enum ReconcileResult { PAID, CLOSED, PENDING, FAILED }
+
+    ReconcileResult reconcileOne(Map<String, Object> row, LocalDateTime now) {
+        Long id = ((Number) row.get("id")).longValue();
+        String outTradeNo = String.valueOf(row.get("outTradeNo"));
+        LocalDateTime createdAt = toDateTime(row.get("createdAt"));
+        boolean expired = createdAt != null && createdAt.isBefore(now.minusMinutes(CLOSE_AFTER_MINUTES));
+        if (!properties.isEnabled()) {
+            if (!expired) return ReconcileResult.PENDING;
+            if (orderMapper.closeIfUnpaid(id, OrderStatus.CLOSED.value(), "支付超时") == 1) {
+                couponService.releaseByOrder(id);
+                return ReconcileResult.CLOSED;
+            }
+            return ReconcileResult.PENDING;
+        }
+        try {
+            WxPayOrderQueryV3Result result = requireWxPay().queryOrderV3(null, outTradeNo);
+            String state = result.getTradeState();
+            if ("SUCCESS".equalsIgnoreCase(state)) {
+                Integer total = result.getAmount() == null ? null : result.getAmount().getTotal();
+                ledger.applyVerifiedPayment(outTradeNo, result.getTransactionId(), state, total, "{\"source\":\"reconcile\"}", "reconcile");
+                orderMapper.recordPayCheck(id, null);
+                return ReconcileResult.PAID;
+            }
+            if (!expired || "USERPAYING".equalsIgnoreCase(state)) {
+                orderMapper.recordPayCheck(id, null);
+                return ReconcileResult.PENDING;
+            }
+            // 先关渠道单再关本地单：渠道关单失败时本轮不动本地状态，下轮重试，避免本地已关、用户仍能付款
+            if (!"CLOSED".equalsIgnoreCase(state)) requireWxPay().closeOrderV3(outTradeNo);
+            orderMapper.recordPayCheck(id, null);
+            if (orderMapper.closeIfUnpaid(id, OrderStatus.CLOSED.value(), "支付超时") == 1) {
+                couponService.releaseByOrder(id);
+                return ReconcileResult.CLOSED;
+            }
+            return ReconcileResult.PENDING;
+        } catch (Exception e) {
+            String error = (e.getClass().getSimpleName() + ": " + e.getMessage());
+            if (error.length() > 250) error = error.substring(0, 250);
+            try { orderMapper.recordPayCheck(id, error); } catch (RuntimeException ignored) { }
+            alerts.warn("reconcile", "channel_error", "订单 {} 对账失败：{}", id, e.getClass().getSimpleName());
+            boolean stuck = createdAt != null && createdAt.isBefore(now.minusMinutes(FORCE_CLOSE_AFTER_MINUTES));
+            if (stuck && orderMapper.closeIfUnpaid(id, OrderStatus.CLOSED.value(), "支付超时（渠道状态未确认）") == 1) {
+                couponService.releaseByOrder(id);
+                alerts.warn("reconcile", "force_closed", "订单 {} 渠道长期不可达，已本地关单", id);
+                return ReconcileResult.CLOSED;
+            }
+            return ReconcileResult.FAILED;
         }
     }
 
-    private void markPaid(UserOrder order, String transactionId, String tradeState, String rawBody, boolean verified) {
-        if (paymentRecordMapper.selectOne(new LambdaQueryWrapper<PaymentRecord>().eq(PaymentRecord::getTransactionId, transactionId).last("LIMIT 1")) != null) return;
-        PaymentRecord record = new PaymentRecord(); record.setOrderId(order.getId()); record.setOutTradeNo(order.getOutTradeNo()); record.setTransactionId(transactionId); record.setAmountCents(order.getPayAmountCents()); record.setTradeState(tradeState); record.setRawBody(rawBody); record.setVerified(verified ? 1 : 0); record.setCreatedAt(LocalDateTime.now()); paymentRecordMapper.insert(record);
-        if (verified) markOrderPaid(order, transactionId);
-    }
-
-    private void markOrderPaid(UserOrder order, String transactionId) {
-        if ("paid".equals(order.getPayStatus())) return;
-        if (!OrderStatus.canTransit(order.getStatus(), OrderStatus.PAID.value())) return;
-        transition(order, OrderStatus.PAID.value()); order.setPayStatus("paid"); order.setTransactionId(transactionId); order.setPaidAt(LocalDateTime.now()); orderMapper.updateById(order);
-    }
-
-    private void completeRefund(UserOrder order, RefundRecord record, String refundId) {
-        record.setRefundId(refundId); record.setStatus("success"); refundRecordMapper.updateById(record);
-        transition(order, OrderStatus.REFUNDED.value()); order.setPayStatus("refunded"); orderMapper.updateById(order);
-        // 订单退款后不再计入骑手进行中的任务，需重算骑手忙碌状态，
-        // 否则骑手会一直停在 busy，抢不到新单。
-        if (order.getRiderId() != null) {
-            try { riderMapper.refreshRiderStatus(order.getRiderId()); } catch (Exception ignored) {}
-        }
+    private static LocalDateTime toDateTime(Object value) {
+        if (value instanceof LocalDateTime t) return t;
+        if (value instanceof java.sql.Timestamp t) return t.toLocalDateTime();
+        if (value instanceof java.util.Date d) return new java.sql.Timestamp(d.getTime()).toLocalDateTime();
+        return null;
     }
 
     private void transition(UserOrder order, String target) { OrderStatus.requireTransition(order.getStatus(), target); order.setStatus(target); }

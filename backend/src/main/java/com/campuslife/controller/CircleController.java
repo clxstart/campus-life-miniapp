@@ -75,6 +75,18 @@ public class CircleController {
         return ApiResponse.ok(service.join(id, CurrentUser.resolve(request, claimed)));
     }
 
+    /**
+     * 用户创建圈子（黄金段位特权）。
+     * 写接口由 AuthInterceptor 保证已登录；段位/开关/名额在 Service 里校验。
+     */
+    @PostMapping("/circles")
+    public ApiResponse<Map<String, Object>> create(@RequestBody(required = false) Map<String, Object> body,
+                                                   HttpServletRequest request) {
+        Long userId = CurrentUser.optional(request);
+        if (userId == null) throw new com.campuslife.config.ForbiddenException("请先登录");
+        return ApiResponse.ok(service.createForUser(userId, body));
+    }
+
     @PostMapping("/circles/{id}/leave")
     public ApiResponse<Map<String, Object>> leave(@PathVariable Long id,
                                                   @RequestBody(required = false) Map<String, Long> r,

@@ -50,6 +50,8 @@ public class CircleStreakService {
     public boolean markActive(Long circleId, Long messageId, Long actorId) {
         if (circleId == null || circleId < 1) return false;
         LocalDate today = today();
+        // 先锁住圈子行，再“插入活动日 + 读旧值 + 写新值”，避免跨午夜并发互相覆盖。
+        mapper.lockCircle(circleId);
         int inserted = mapper.markDay(circleId, today, messageId, actorId);
         if (inserted != 1) {
             // 今天已经记过：同一天多条消息不重复计天

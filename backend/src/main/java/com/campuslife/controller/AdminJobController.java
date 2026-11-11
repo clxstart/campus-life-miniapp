@@ -75,13 +75,30 @@ public class AdminJobController {
             adminId(request), adminName(request), scopeSchool(request), ip(request)));
     }
 
+    /**
+     * 履约单列表（争议处理台）。
+     *
+     * 与 /contracts/{id} 分开：列表只给处理台需要的聚合字段，
+     * 点开某一单再取详情（含账单流水与结算估算），避免列表把账单全量带出来。
+     */
+    @GetMapping("/contracts")
+    public ApiResponse<Map<String, Object>> contracts(@RequestParam(defaultValue = "") String status,
+                                                      @RequestParam(required = false) Long jobId,
+                                                      @RequestParam(required = false) Long schoolId,
+                                                      @RequestParam(defaultValue = "1") int page,
+                                                      @RequestParam(defaultValue = "20") int size,
+                                                      HttpServletRequest request) {
+        requireManager(request);
+        return ApiResponse.ok(jobs.adminContracts(effectiveSchool(request, schoolId), jobId, status, page, size));
+    }
+
     @GetMapping("/contracts/{id}")
     public ApiResponse<Map<String, Object>> contract(@PathVariable Long id, HttpServletRequest request) {
         requireManager(request);
         return ApiResponse.ok(jobs.adminContract(id, scopeSchool(request)));
     }
 
-    /** 争议裁定：{decision: settled|refunded, reason}，必须留审计。 */
+    /** 争议裁定：{decision: settled|refunded, hours, reason}，必须留审计。 */
     @PostMapping("/contracts/{id}/arbitrate")
     public ApiResponse<Map<String, Object>> arbitrate(@PathVariable Long id,
                                                       @RequestBody(required = false) Map<String, Object> body,
@@ -89,8 +106,9 @@ public class AdminJobController {
         requireManager(request);
         if (body == null || body.get("decision") == null) throw new IllegalArgumentException("请选择裁定结果");
         String decision = String.valueOf(body.get("decision"));
+        Object hours = body.get("hours");
         String reason = body.get("reason") == null ? "" : String.valueOf(body.get("reason"));
-        return ApiResponse.ok(jobs.arbitrate(id, decision, reason,
+        return ApiResponse.ok(jobs.arbitrate(id, decision, hours, reason,
             adminId(request), adminName(request), scopeSchool(request), ip(request)));
     }
 

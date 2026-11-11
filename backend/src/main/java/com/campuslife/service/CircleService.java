@@ -1,16 +1,24 @@
 package com.campuslife.service;
 
+import com.campuslife.config.ForbiddenException;
 import com.campuslife.entity.User;
 import com.campuslife.mapper.CircleMapper;
 import com.campuslife.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service @RequiredArgsConstructor
 public class CircleService {
  private final CircleMapper mapper; private final UserMapper users; private final CircleStreakService streaks;
+ private final TierService tier; private final FeatureFlags flags; private final AuditService audit;
+
+ /** 用户可选的圈子分类：与现有分类保持一致，避免建出管理端筛不到的新词。 */
+ private static final Set<String> USER_CATEGORIES = Set.of("兴趣", "学习", "生活", "游戏", "运动");
+
+ private static String trim(Object value) { return value == null ? "" : String.valueOf(value).trim(); }
  private static long number(Object x){return x instanceof Boolean b?(b?1:0):x instanceof Number n?n.longValue():0;}
  /**
   * 圈子火花展示字段。
@@ -105,5 +113,56 @@ public class CircleService {
      row.remove("score");
    }
    return Map.of("list",rows,"total",mapper.countAllPosts(),"page",page,"size",size);
+ }
+
+ /**
+  * 用户建圈（黄金段位特权）。
+  *
+  * 校验顺序与设计稿一致：开关 → 段位 → 名额 → 参数 → 内容审核。
+  * 落库 status=0 待审：审核通过前不在圈子列表出现，避免群聊入口失控。
+  * 建圈即成为 owner；名额按 creator_id 统计，待审也占名额（防止反复提交刷名额）。
+  */
+ @Transactional
+ public Map<String,Object> createForUser(Long userId, Map<String,Object> body){
+   User u = user(userId);
+   if(!flags.isEnabled("circle.create.enabled")) throw new ForbiddenException("圈子创建暂未开放");
+   if(tier.rankOf(tier.effectiveTierCode(userId)) < tier.rankOf(TierService.GOLD))
+     throw new ForbiddenException("创建圈子需要黄金段位（成长值 200）");
+   if(mapper.countByCreator(userId) >= 1) throw new ForbiddenException("最多创建 1 个圈子");
+
+   Map<String,Object> data = body == null ? Map.of() : body;
+   String name = trim(data.get("name"));
+   if(name.isEmpty() || name.length() > 16) throw new IllegalArgumentException("圈子名称须为1至16字");
+   String category = trim(data.get("category"));
+   if(!USER_CATEGORIES.contains(category)) throw new IllegalArgumentException("请选择圈子分类");
+   String description = trim(data.get("description"));
+   if(description.length() > 64) throw new IllegalArgumentException("简介不能超过64字");
+   String cover = trim(data.get("cover"));
+
+   var textAudit = audit.checkText(name + "\n" + description, "circle", userId);
+   audit.rejectWithLog(textAudit, "circle", userId, name + "\n" + description);
+
+   String slug = "u" + userId + "-" + System.currentTimeMillis();
+   if(slug.length() > 32 || mapper.slugTaken(slug) > 0) throw new IllegalArgumentException("圈子标识冲突，请重试");
+   String auditStatus = audit.initialStatus(textAudit, false);
+   Map<String,Object> row = new LinkedHashMap<>();
+   row.put("name", name);
+   row.put("slug", slug);
+   row.put("category", category);
+   row.put("description", description);
+   row.put("cover", cover);
+   row.put("theme", "blue");
+   row.put("schoolId", u.getSchoolId());
+   row.put("creatorId", userId);
+   row.put("auditStatus", auditStatus);
+   row.put("auditReason", textAudit.reason());
+   row.put("auditAt", "passed".equals(auditStatus) ? LocalDateTime.now() : null);
+   mapper.insertUserCircle(row);
+   Object idValue = row.get("id");
+   Long circleId = idValue instanceof Number n ? n.longValue() : null;
+   if(circleId == null || circleId < 1) throw new IllegalStateException("圈子创建失败");
+   mapper.addOwner(circleId, userId);
+   mapper.syncMemberCount(circleId);
+   return Map.of("circleId", circleId, "status", "pending");
  }
 }

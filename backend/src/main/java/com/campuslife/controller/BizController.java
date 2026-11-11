@@ -65,6 +65,9 @@ public class BizController {
         // 统一走 PayService.detail：字段最全（支付/退款记录 + 骑手配送信息），小程序订单详情页依赖它
         Map<String, Object> detail = payService.detail(id);
         if (!authedId.equals(detail.get("userId"))) throw new UnauthorizedException("无权查看该订单");
+        // F10 交易埋点：这一单实际到账的积分（0 = 没发）。由 MerchantService 读 point_log 判定，
+        // 不信任订单状态自行推断 —— 模拟支付/退款/日上限命中都没有流水。
+        detail.put("pointsAwarded", merchantService.pointsAwardedForOrder(id, authedId));
         return ApiResponse.ok(detail);
     }
 
